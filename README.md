@@ -15,7 +15,6 @@ DARTS3 es una aplicación para consola que automatiza el proceso de descarga de 
 `DARTS3` posee las siguientes características::
 
 * **Multiplataforma**: `DARTS3` puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
-* **A prueba de fallos**: `DARTS3` es consistente y a prueba de fallos. Por lo que una vez iniciado, no se cerrará abruptamente en caso de algún error.
 * **Fácil de usar**: `DARTS3` es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
 * **Completamente asincrónico**: `DARTS3` es totalmente asincrónico, por lo que no se bloqueará debido a que realice varias operaciones al mismo tiempo dentro del programa, tales como descargar y agregar un nuevo listado a la descarga.
 
