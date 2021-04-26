@@ -7,7 +7,7 @@ DARTS3 es una aplicación para consola que automatiza el proceso de descarga de 
 - [Dependencias](#dependencias)
 - [Construcción](#construccion)
 - [Instalando dependencias](#instalando-dependencias)
-- [License](#license)
+- [Licencia](#licencia)
 
 <a name="caracteristicas"></a>
 ## Características
@@ -102,6 +102,6 @@ target_link_libraries(YourTarget PRIVATE Td::TdStatic)
 ```
 See [example/cpp/CMakeLists.txt](https://github.com/tdlib/td/tree/master/example/cpp/CMakeLists.txt).
 
-<a name="license"></a>
-## License
-`TDLib` is licensed under the terms of the Boost Software License. See [LICENSE_1_0.txt](http://www.boost.org/LICENSE_1_0.txt) for more information.
+<a name="licencia"></a>
+## Licencia
+`DARTS3` está licenciado bajo la licencia BSD. Vea [LICENSE_1_0.txt](http://www.boost.org/LICENSE_1_0.txt) for more information.
