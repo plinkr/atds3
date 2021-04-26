@@ -104,4 +104,4 @@ See [example/cpp/CMakeLists.txt](https://github.com/tdlib/td/tree/master/example
 
 <a name="licencia"></a>
 ## Licencia
-`DARTS3` está licenciado bajo la licencia BSD. Vea [LICENSE_1_0.txt](http://www.boost.org/LICENSE_1_0.txt) for more information.
+`DARTS3` está licenciado bajo la licencia BSD. Vea [LICENCIABSD3.txt](https://opensource.org/licenses/BSD-3-Clause) para más información.
