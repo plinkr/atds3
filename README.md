@@ -7,10 +7,6 @@ DARTS3 es una aplicación para consola que automatiza el proceso de descarga de 
 - [Dependencias](#dependencias)
 - [Construcción](#construccion)
 - [Installing dependencies](#installing-dependencies)
-- [Using in CMake C++ projects](#using-cxx)
-- [Using in Java projects](#using-java)
-- [Using in .NET projects](#using-dotnet)
-- [Using with other programming languages](#using-json)
 - [License](#license)
 
 <a name="caracteristicas"></a>
@@ -86,7 +82,7 @@ For C++ projects that use CMake, the best approach is to build `TDLib` as part o
 
 There are several libraries that you could use in your CMake project:
 
-* Td::TdJson, Td::TdJsonStatic — dynamic and static version of a JSON interface. This has a simple C interface, so it can be easily used with any programming language that is able to execute C functions.
+* Td::TdJson, Td::TdJsonStatic — dynamic and static version of a JSON interface. This has a simple C interface, so it can be easily used with any programming language that is able to execute C functions.
   See [td_json_client](https://core.telegram.org/tdlib/docs/td__json__client_8h.html) and [td_log](https://core.telegram.org/tdlib/docs/td__log_8h.html) documentation for more information.
 * Td::TdStatic — static library with C++ interface for general usage.
   See [Client](https://core.telegram.org/tdlib/docs/classtd_1_1_client.html) and [Log](https://core.telegram.org/tdlib/docs/classtd_1_1_log.html) documentation for more information.
@@ -105,38 +101,6 @@ find_package(Td 1.7.0 REQUIRED)
 target_link_libraries(YourTarget PRIVATE Td::TdStatic)
 ```
 See [example/cpp/CMakeLists.txt](https://github.com/tdlib/td/tree/master/example/cpp/CMakeLists.txt).
-
-<a name="using-java"></a>
-## Using in Java projects
-`TDLib` provides native Java interface through JNI. To enable it, specify option `-DTD_ENABLE_JNI=ON` to CMake.
-
-See [example/java](https://github.com/tdlib/td/tree/master/example/java) for example of using `TDLib` from Java and detailed build and usage instructions.
-
-<a name="using-dotnet"></a>
-## Using in .NET projects
-`TDLib` provides native .NET interface through `C++/CLI` and `C++/CX`. To enable it, specify option `-DTD_ENABLE_DOTNET=ON` to CMake.
-.NET Core supports `C++/CLI` only since version 3.1 and only on Windows, so if older .NET Core is used or portability is needed, then `TDLib` JSON interface should be used through P/Invoke instead.
-
-See [example/csharp](https://github.com/tdlib/td/tree/master/example/csharp) for example of using `TDLib` from C# and detailed build and usage instructions.
-See [example/uwp](https://github.com/tdlib/td/tree/master/example/uwp) for example of using `TDLib` from C# UWP application and detailed build and usage instructions for Visual Studio Extension "TDLib for Universal Windows Platform".
-
-When `TDLib` is built with `TD_ENABLE_DOTNET` option enabled, `C++` documentation is removed from some files. You need to checkout these files to return `C++` documentation back:
-```
-git checkout td/telegram/Client.h td/telegram/Log.h td/tl/TlObject.h
-```
-
-<a name="using-json"></a>
-## Using from other programming languages
-`TDLib` provides efficient native C++, Java, and .NET interfaces.
-But for most use cases we suggest to use the JSON interface, which can be easily used with any programming language that is able to execute C functions.
-See [td_json_client](https://core.telegram.org/tdlib/docs/td__json__client_8h.html) and [td_log](https://core.telegram.org/tdlib/docs/td__log_8h.html) documentation for detailed JSON interface description,
-the [td_api.tl](https://github.com/tdlib/td/blob/master/td/generate/scheme/td_api.tl) scheme or the automatically generated [HTML documentation](https://core.telegram.org/tdlib/docs/td__api_8h.html) for a list of
-all available `TDLib` [methods](https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_function.html) and [classes](https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_object.html).
-
-`TDLib` JSON interface adheres to semantic versioning and versions with the same major version number are binary and backward compatible, but the underlying `TDLib` API can be different for different minor and even patch versions.
-If you need to support different `TDLib` versions, then you can use a value of the `version` option to find exact `TDLib` version to use appropriate API methods.
-
-See [example/python/tdjson_example.py](https://github.com/tdlib/td/tree/master/example/python/tdjson_example.py) for an example of such usage.
 
 <a name="license"></a>
 ## License
