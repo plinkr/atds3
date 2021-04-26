@@ -6,7 +6,7 @@ DARTS3 es una aplicación para consola que automatiza el proceso de descarga de 
 - [Características](#caracteristicas)
 - [Dependencias](#dependencias)
 - [Construcción](#construccion)
-- [Installing dependencies](#installing-dependencies)
+- [Instalando dependencias](#instalando-dependencias)
 - [License](#license)
 
 <a name="caracteristicas"></a>
@@ -38,8 +38,8 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build . --target all
 ```
 
-<a name="installing-dependencies"></a>
-### Installing dependencies
+<a name="instalando-dependencias"></a>
+### Instalando dependencias
 
 <a name="macos"></a>
 #### macOS
