@@ -11,6 +11,11 @@ HEADERS += \
 	cabeceras/main.hpp \
 	cabeceras/ventanaprincipal.hpp
 
+RESOURCES += \
+	recursos/iconos.qrc
+
+DISTFILES += README.md
+
 INCLUDEPATH += cabeceras
 
 # Default rules for deployment.

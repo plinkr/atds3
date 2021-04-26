@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>iconos/agregar-desde-archivo.svg</file>
+        <file>iconos/agregar.svg</file>
+        <file>iconos/configurar.svg</file>
+        <file>iconos/descarga.svg</file>
+        <file>iconos/eliminar.svg</file>
+        <file>iconos/limpiar.svg</file>
+        <file>iconos/subida.svg</file>
+        <file>iconos/finalizado.svg</file>
+        <file>iconos/acerca.svg</file>
+    </qresource>
+</RCC>
