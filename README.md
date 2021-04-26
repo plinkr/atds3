@@ -1,6 +1,6 @@
 # Descargador de Archivos de la Red Todus (S3)
 
-DARTS3 es una aplicación para consola que automatiza el proceso de descarga de archivos desde los servidores de la red Todus (S3).
+`DARTS3` es una aplicación para consola que automatiza el proceso de descarga de archivos desde los servidores de la red Todus (S3).
 
 ## Tabla de contenidos
 - [Características](#caracteristicas)
