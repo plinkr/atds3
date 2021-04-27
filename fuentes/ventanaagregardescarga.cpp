@@ -28,6 +28,10 @@ void VentanaAgregarDescarga::limpiarCampos() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar'
  */
 void VentanaAgregarDescarga::eventoAgregarDescarga() {
+	if (_enlace->text().trimmed().size() == 0) {
+		return;
+	}
+
 	emit accept();
 }
 
