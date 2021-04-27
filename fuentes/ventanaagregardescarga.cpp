@@ -63,6 +63,7 @@ void VentanaAgregarDescarga::construirIU() {
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
 	setWindowFlags(Qt::Dialog | Qt::Popup);
+	setStyleSheet("QPushButton, QComboBox { qproperty-iconSize: 24px 24px; } ");
 
 	QVBoxLayout *diseno = new QVBoxLayout();
 

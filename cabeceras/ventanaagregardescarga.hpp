@@ -8,12 +8,7 @@
 #include <memory>
 
 
-struct _NuevaDescarga {
-	QString enlace;
-	QString nombre;
-	int categoria;
-	bool iniciar;
-};
+struct _NuevaDescarga;
 
 class VentanaAgregarDescarga : public QDialog
 {

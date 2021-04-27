@@ -19,5 +19,6 @@
         <file>iconos/categoria-otros.svg</file>
         <file>iconos/cancelar.svg</file>
         <file>iconos/reloj.svg</file>
+        <file>iconos/importar.svg</file>
     </qresource>
 </RCC>

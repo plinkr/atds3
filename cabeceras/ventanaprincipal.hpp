@@ -14,6 +14,7 @@ class QListView;
 class ModeloEntradas;
 class QTreeView;
 class VentanaAgregarDescarga;
+class VentanaAgregarDescargasDesdeArchivos;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -30,8 +31,24 @@ class VentanaPrincipal : public QMainWindow
 		void detenerEjecucion();
 
 	private slots:
+		/**
+		 * Agrega la descarga especificada por el usuario en la ventana 'Agrega descarga'
+		 */
 		void agregarDescarga();
+
+		/**
+		 * Agrega las descargas procesadas desde el archivo seleccionado por el usuario en la ventana 'Agrega descargas desde archivo'
+		 */
+		void agregarDescargasDesdeArchivo();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descarga'
+		 */
 		void eventoAgregarDescarga();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descargas desde archivo'
+		 */
 		void eventoAgregarDescargasDesdeArchivo();
 		void eventoEliminarDescarga();
 		void eventoEliminarTodasDescargas();
@@ -113,6 +130,11 @@ class VentanaPrincipal : public QMainWindow
 		 * Ventana 'Agregar descarga'
 		 */
 		std::unique_ptr<VentanaAgregarDescarga> _ventanaAgregarDescarga;
+
+		/**
+		 * Ventana 'Agregar descargas desde archivo'
+		 */
+		std::unique_ptr<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
 
 
 		/**

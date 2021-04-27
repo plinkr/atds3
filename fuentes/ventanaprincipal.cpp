@@ -4,6 +4,7 @@
 #include "delegacionvelocidad.hpp"
 #include "modeloentradas.hpp"
 #include "ventanaagregardescarga.hpp"
+#include "ventanaagregardescargasdesdearchivos.hpp"
 #include "main.hpp"
 #include <QVBoxLayout>
 #include <QToolBar>
@@ -75,6 +76,53 @@ void VentanaPrincipal::agregarDescarga() {
 }
 
 /**
+ * Agrega las descargas procesadas desde el archivo seleccionado por el usuario en la ventana 'Agrega descargas desde archivo'
+ */
+void VentanaPrincipal::agregarDescargasDesdeArchivo() {
+	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
+	QSqlDatabase bd = QSqlDatabase::database();
+	ModeloEntradas *modelo;
+
+	bd.transaction();
+	for (const _NuevaDescarga &nuevaDescarga : listadoDescargas) {
+		switch (nuevaDescarga.categoria) {
+			case _ListadoCategorias::Programas:
+				modelo = _modeloCategoriaProgramas.get();
+				break;
+			case _ListadoCategorias::Musica:
+				modelo = _modeloCategoriaMusica.get();
+				break;
+			case _ListadoCategorias::Videos:
+				modelo = _modeloCategoriaVideos.get();
+				break;
+			case _ListadoCategorias::Otros:
+				modelo = _modeloCategoriaOtros.get();
+				break;
+		}
+
+		QSqlRecord registro = modelo->record();
+		registro.remove(0); // Campo 'id'
+		registro.setValue("categoria", nuevaDescarga.categoria);
+		registro.setValue("estado", (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
+		registro.setValue("enlace", nuevaDescarga.enlace);
+		registro.setValue("ruta", "");
+		registro.setValue("nombre", nuevaDescarga.nombre);
+		registro.setValue("completado", 0);
+		registro.setValue("velocidad", 0);
+
+		if(modelo->insertRecord(-1, registro)) {
+			modelo->submitAll();
+		} else {
+			bd.rollback();
+			return;
+		}
+	}
+
+	bd.commit();
+	_modeloCategoriaDescargando->select();
+}
+
+/**
  * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descarga'
  */
 void VentanaPrincipal::eventoAgregarDescarga() {
@@ -82,7 +130,13 @@ void VentanaPrincipal::eventoAgregarDescarga() {
 	_ventanaAgregarDescarga->show();
 }
 
-void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descargas desde archivo'
+ */
+void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
+	_ventanaAgregarDescargasDesdeArchivo->limpiarCampos();
+	_ventanaAgregarDescargasDesdeArchivo->show();
+}
 
 void VentanaPrincipal::eventoEliminarDescarga() {}
 
@@ -428,6 +482,13 @@ void VentanaPrincipal::construirIU() {
 	_ventanaAgregarDescarga = std::make_unique<VentanaAgregarDescarga>(this);
 	_ventanaAgregarDescarga->setModal(true);
 	connect(_ventanaAgregarDescarga.get(), &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
+
+	/**
+	 * Construye la ventana 'Agregar descargas desde archivo'
+	 */
+	_ventanaAgregarDescargasDesdeArchivo = std::make_unique<VentanaAgregarDescargasDesdeArchivos>(this);
+	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
+	connect(_ventanaAgregarDescargasDesdeArchivo.get(), &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
 
 	statusBar()->showMessage("Listo");
 }

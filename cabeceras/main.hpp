@@ -35,5 +35,13 @@ enum _ListadoEstados {
 	Finalizada = 0x04
 };
 
+struct _NuevaDescarga {
+	QString enlace;
+	QString nombre;
+	int categoria;
+	bool iniciar;
+};
+
+
 #endif // MAIN_HPP
 

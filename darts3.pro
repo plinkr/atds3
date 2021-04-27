@@ -9,6 +9,7 @@ SOURCES += \
 	fuentes/delegacionbarraprogreso.cpp \
 	fuentes/delegacionvelocidad.cpp \
 	fuentes/ventanaagregardescarga.cpp \
+	fuentes/ventanaagregardescargasdesdearchivo.cpp \
 	fuentes/ventanaprincipal.cpp \
 	fuentes/main.cpp
 
@@ -18,6 +19,7 @@ HEADERS += \
 	cabeceras/delegacionbarraprogreso.hpp \
 	cabeceras/delegacionvelocidad.hpp \
 	cabeceras/ventanaagregardescarga.hpp \
+	cabeceras/ventanaagregardescargasdesdearchivos.hpp \
 	cabeceras/ventanaprincipal.hpp \
 	cabeceras/main.hpp
 
