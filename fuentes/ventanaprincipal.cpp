@@ -309,7 +309,7 @@ void VentanaPrincipal::inicializarBaseDatos() {
 	 * Crea las estructuras de las tablas
 	 */
 	QSqlQuery solicitudSQL;
-	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, ruta TEXT NOT NULL, enlace TEXT NOT NULL)");
+	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, enlace TEXT NOT NULL, categoria INTEGER NOT NULL, ruta TEXT NOT NULL, totalADescargar INTEGER DEFAULT 0, totalDescargado INTEGER DEFAULT 0)");
 }
 
 /**
@@ -370,12 +370,13 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 	_listadoDescargas->hideColumn(0);
-	_listadoDescargas->hideColumn(1);
-	_listadoDescargas->hideColumn(6);
+	for(int i = 6; i < 10; i++) {
+		_listadoDescargas->hideColumn(i);
+	}
 	_elementoIconoEstado = std::make_unique<DelegacionIconoEstado>();
 	_elementoBarraProgreso = std::make_unique<DelegacionBarraProgreso>();
-	_listadoDescargas->setItemDelegateForColumn(2, _elementoIconoEstado.get());
-	_listadoDescargas->setItemDelegateForColumn(4, _elementoBarraProgreso.get());
+	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado.get());
+	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso.get());
 
 	return _listadoDescargas.get();
 }
