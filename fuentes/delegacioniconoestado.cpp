@@ -27,5 +27,4 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 	}
 
 	icono.paint(pintor, opcion.rect);
-//	QApplication::style()->drawItemPixmap(pintor, geometria, 0, icono.pixmap());
 }

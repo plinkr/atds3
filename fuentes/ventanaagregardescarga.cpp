@@ -20,6 +20,7 @@ VentanaAgregarDescarga::VentanaAgregarDescarga(QWidget *parent)
  */
 void VentanaAgregarDescarga::limpiarCampos() {
 	_enlace->setText("");
+	_enlace->setFocus();
 	_nombre->setText("");
 }
 
