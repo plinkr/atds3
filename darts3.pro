@@ -1,20 +1,24 @@
-QT       += core gui network
+QT       += core gui sql network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++20
 
 SOURCES += \
-	fuentes/main.cpp \
-	fuentes/ventanaprincipal.cpp
+	fuentes/modeloentradas.cpp \
+	fuentes/delegacionbarraprogreso.cpp \
+	fuentes/ventanaprincipal.cpp \
+	fuentes/main.cpp
 
 HEADERS += \
-	cabeceras/main.hpp \
-	cabeceras/ventanaprincipal.hpp
+	cabeceras/modeloentradas.hpp \
+	cabeceras/delegacionbarraprogreso.hpp \
+	cabeceras/ventanaprincipal.hpp \
+	cabeceras/main.hpp
 
 RESOURCES += \
 	recursos/iconos.qrc
 
-DISTFILES += README.md
+DISTFILES += README.md LICENSE.txt
 
 INCLUDEPATH += cabeceras
 

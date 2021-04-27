@@ -1,12 +1,19 @@
 #include "ventanaprincipal.hpp"
+#include "delegacionbarraprogreso.hpp"
+#include "modeloentradas.hpp"
 #include "main.hpp"
 #include <QVBoxLayout>
 #include <QToolBar>
 #include <QDockWidget>
 #include <QStatusBar>
 #include <QStandardItemModel>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlTableModel>
 #include <QListView>
+#include <QProgressBar>
 #include <QTreeView>
+#include <QHeaderView>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
@@ -14,34 +21,71 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	Q_INIT_RESOURCE(iconos);
 	construirIU();
 }
-
-VentanaPrincipal::~VentanaPrincipal() {}
-
-void VentanaPrincipal::eventoAgregarDescarga() {
+VentanaPrincipal::~VentanaPrincipal() {
+	// Emitir la señal de detención de la aplicación para que todos los hilos de descargas cesen su ejecución
+	emit detenerEjecucion();
 }
 
-void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
-}
+void VentanaPrincipal::eventoAgregarDescarga() {}
 
-void VentanaPrincipal::eventoEliminarDescarga() {
-}
+void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {}
 
-void VentanaPrincipal::eventoEliminarTodasDescargas() {
-}
+void VentanaPrincipal::eventoEliminarDescarga() {}
 
-void VentanaPrincipal::eventoConfiguracion() {
-}
+void VentanaPrincipal::eventoEliminarTodasDescargas() {}
 
-void VentanaPrincipal::eventoAcerca() {
+void VentanaPrincipal::eventoIniciarDescarga() {}
+
+void VentanaPrincipal::eventoPausarDescarga() {}
+
+void VentanaPrincipal::eventoIniciarTodasDescargas() {}
+
+void VentanaPrincipal::eventoPausarTodasDescargas() {}
+
+void VentanaPrincipal::eventoConfiguracion() {}
+
+void VentanaPrincipal::eventoAcerca() {}
+
+/**
+ * @brief Evento que se dispara cuando se selecciona un elemento en el listado de categorías
+ * @param indice Índice del modelo
+ */
+void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
+	switch (indice.row()) {
+		case 0:
+			_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
+			break;
+		case 1:
+			_listadoDescargas->setModel(_modeloCategoriaFinalizadas.get());
+			break;
+		case 2:
+			_listadoDescargas->setModel(_modeloCategoriaProgramas.get());
+			break;
+		case 3:
+			_listadoDescargas->setModel(_modeloCategoriaMusica.get());
+			break;
+		case 4:
+			_listadoDescargas->setModel(_modeloCategoriaVideos.get());
+			break;
+		case 5:
+			_listadoDescargas->setModel(_modeloCategoriaOtros.get());
+			break;
+	}
+
+	if (indice.row() == 1) {
+		_listadoDescargas->hideColumn(4);
+		_listadoDescargas->hideColumn(5);
+	} else {
+		_listadoDescargas->showColumn(4);
+		_listadoDescargas->showColumn(5);
+	}
 }
 
 /**
- * @brief Construye la interfaz de usuario
+ * @brief Construye los botones de la barra de herramientas
+ * @param barraHerramientas Puntero al objeto de la barra de herramientas
  */
-void VentanaPrincipal::construirIU() {
-	QToolBar *barraHerramientas = new QToolBar();
-	barraHerramientas->setIconSize(QSize(48, 48));
-	barraHerramientas->setMovable(false);
+void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramientas) {
 
 	QAction *accionAgregarDescarga = new QAction();
 	accionAgregarDescarga->setIcon(QIcon(":/iconos/agregar.svg"));
@@ -81,6 +125,44 @@ void VentanaPrincipal::construirIU() {
 
 	barraHerramientas->addSeparator();
 
+	QAction *accionIniciarDescarga = new QAction();
+	accionIniciarDescarga->setIcon(QIcon(":/iconos/iniciar.svg"));
+	accionIniciarDescarga->setText("Iniciar descarga");
+	accionIniciarDescarga->setToolTip("Inicia la descarga seleccionada");
+	accionIniciarDescarga->setStatusTip("Inicia la descarga seleccionada");
+	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
+	connect(accionIniciarDescarga, &QAction::triggered, this, &VentanaPrincipal::eventoIniciarDescarga);
+	barraHerramientas->addAction(accionIniciarDescarga);
+
+	QAction *accionPausarDescarga = new QAction();
+	accionPausarDescarga->setIcon(QIcon(":/iconos/pausar.svg"));
+	accionPausarDescarga->setText("Pausar descarga");
+	accionPausarDescarga->setToolTip("Pausa la descarga seleccionada");
+	accionPausarDescarga->setStatusTip("Pausa la descarga seleccionada");
+	accionPausarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_D));
+	connect(accionPausarDescarga, &QAction::triggered, this, &VentanaPrincipal::eventoPausarDescarga);
+	barraHerramientas->addAction(accionPausarDescarga);
+
+	QAction *accionIniciarTodasDescargas = new QAction();
+	accionIniciarTodasDescargas->setIcon(QIcon(":/iconos/iniciar-todas.svg"));
+	accionIniciarTodasDescargas->setText("Iniciar todas las descargas");
+	accionIniciarTodasDescargas->setToolTip("Inicia todas las descargas");
+	accionIniciarTodasDescargas->setStatusTip("Inicia todas las descargas");
+	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_I));
+	connect(accionIniciarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoIniciarTodasDescargas);
+	barraHerramientas->addAction(accionIniciarTodasDescargas);
+
+	QAction *accionPausarTodasDescargas = new QAction();
+	accionPausarTodasDescargas->setIcon(QIcon(":/iconos/pausar-todas.svg"));
+	accionPausarTodasDescargas->setText("Pausar todas las descargas");
+	accionPausarTodasDescargas->setToolTip("Pausa todas las descargas");
+	accionPausarTodasDescargas->setStatusTip("Pausa todas las descargas");
+	accionPausarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_D));
+	connect(accionPausarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoPausarTodasDescargas);
+	barraHerramientas->addAction(accionPausarTodasDescargas);
+
+	barraHerramientas->addSeparator();
+
 	QAction *accionConfiguracion = new QAction();
 	accionConfiguracion->setIcon(QIcon(":/iconos/configurar.svg"));
 	accionConfiguracion->setText("Configuración");
@@ -101,51 +183,183 @@ void VentanaPrincipal::construirIU() {
 	barraHerramientas->addAction(accionAcerca);
 
 	addToolBar(barraHerramientas);
+}
 
+/**
+ * @brief Construye las categorías
+ * @return Puntero al elemento del listado de categorías
+ */
+QListView *VentanaPrincipal::construirListadoCategorias() {
+
+	_modeloListadoCategorias = std::make_unique<QStandardItemModel>();
+
+	QStandardItem *categoriaDescargando = new QStandardItem();
+	categoriaDescargando->setIcon(QIcon(":/iconos/descarga.svg"));
+	categoriaDescargando->setText("Descargando");
+	categoriaDescargando->setToolTip("Descargas activas");
+	_modeloListadoCategorias->appendRow(categoriaDescargando);
+
+	QStandardItem *categoriaFinalizadas = new QStandardItem();
+	categoriaFinalizadas->setIcon(QIcon(":/iconos/finalizado.svg"));
+	categoriaFinalizadas->setText("Finalizadas");
+	categoriaFinalizadas->setToolTip("Descargas finalizadas");
+	_modeloListadoCategorias->appendRow(categoriaFinalizadas);
+
+	QStandardItem *categoriaProgramas = new QStandardItem();
+	categoriaProgramas->setIcon(QIcon(":/iconos/categoria-programas.svg"));
+	categoriaProgramas->setText("Programas");
+	categoriaProgramas->setToolTip("Categoría 'Programas'");
+	_modeloListadoCategorias->appendRow(categoriaProgramas);
+
+	QStandardItem *categoriaMusica = new QStandardItem();
+	categoriaMusica->setIcon(QIcon(":/iconos/categoria-musica.svg"));
+	categoriaMusica->setText("Música");
+	categoriaMusica->setToolTip("Categoría 'Música'");
+	_modeloListadoCategorias->appendRow(categoriaMusica);
+
+	QStandardItem *categoriaVideo = new QStandardItem();
+	categoriaVideo->setIcon(QIcon(":/iconos/categoria-videos.svg"));
+	categoriaVideo->setText("Videos");
+	categoriaVideo->setToolTip("Categoría 'Videos'");
+	_modeloListadoCategorias->appendRow(categoriaVideo);
+
+	QStandardItem *categoriaOtros = new QStandardItem();
+	categoriaOtros->setIcon(QIcon(":/iconos/categoria-otros.svg"));
+	categoriaOtros->setText("Otros");
+	categoriaOtros->setToolTip("Categoría 'Otros'");
+	_modeloListadoCategorias->appendRow(categoriaOtros);
+
+	_listadoCategorias = std::make_unique<QListView>();
+	_listadoCategorias->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	_listadoCategorias->setFlow(QListView::TopToBottom);
+	_listadoCategorias->setModel(_modeloListadoCategorias.get());
+	_listadoCategorias->setUniformItemSizes(true);
+	_listadoCategorias->setStyleSheet("QListView::item { width: 120px; }");
+	_listadoCategorias->setWrapping(true);
+	_listadoCategorias->setViewMode(QListView::IconMode);
+	_listadoCategorias->setCurrentIndex(_modeloListadoCategorias->indexFromItem(categoriaDescargando));
+	connect(_listadoCategorias.get(), &QListView::activated, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
+
+	return _listadoCategorias.get();
+}
+
+/**
+ * @brief Inicializa la base de datos
+ */
+void VentanaPrincipal::inicializarBaseDatos() {
+	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+
+	db.setDatabaseName("darts3.db");
+	db.open();
+
+	/**
+	 * Crea las estructuras de las tablas
+	 */
+	QSqlQuery solicitudSQL;
+	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, enlace TEXT NOT NULL, ruta TEXT NOT NULL)");
+}
+
+/**
+ * @brief Construye el elemento del listado de descargas
+ * @return Puntero al elemento del listado de descargas
+ */
+QTreeView *VentanaPrincipal::construirListadoDescargas() {
+	/**
+	 * Modelo del listado de la categoría 'Descargando'
+	 */
+	_modeloCategoriaDescargando = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaDescargando->setFilter("estado = 1");
+	_modeloCategoriaDescargando->select();
+
+	/**
+	 * Modelo del listado de la categoría 'Finalizadas'
+	 */
+	_modeloCategoriaFinalizadas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaFinalizadas->setFilter("estado = 2");
+	_modeloCategoriaFinalizadas->select();
+
+	/**
+	 * Modelo del listado de la categoría 'Programas'
+	 */
+	_modeloCategoriaProgramas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(ListadoCategorias::Programas));
+	_modeloCategoriaProgramas->select();
+
+	/**
+	 * Modelo del listado de la categoría 'Música'
+	 */
+	_modeloCategoriaMusica = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(ListadoCategorias::Musica));
+	_modeloCategoriaMusica->select();
+
+	/**
+	 * Modelo del listado de la categoría 'Videos'
+	 */
+	_modeloCategoriaVideos = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(ListadoCategorias::Videos));
+	_modeloCategoriaVideos->select();
+
+	/**
+	 * Modelo del listado de la categoría 'Otros'
+	 */
+	_modeloCategoriaOtros = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(ListadoCategorias::Otros));
+	_modeloCategoriaOtros->select();
+
+	_listadoDescargas = std::make_unique<QTreeView>();
+	_listadoDescargas->setAlternatingRowColors(true);
+	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	_listadoDescargas->setItemsExpandable(false);
+	_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
+	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
+	_listadoDescargas->setRootIsDecorated(false);
+	_listadoDescargas->setSortingEnabled(true);
+	_listadoDescargas->sortByColumn(0, Qt::DescendingOrder);
+	_listadoDescargas->header()->setStretchLastSection(true);
+	_listadoDescargas->hideColumn(0);
+	_listadoDescargas->hideColumn(1);
+	_elementoBarraProgreso = std::make_unique<DelegacionBarraProgreso>();
+	_listadoDescargas->setItemDelegateForColumn(4, _elementoBarraProgreso.get());
+
+	return _listadoDescargas.get();
+}
+
+/**
+ * @brief Construye la interfaz de usuario
+ */
+void VentanaPrincipal::construirIU() {
+	setWindowIcon(QPixmap(":/iconos/descarga.svg"));
+
+	/**
+	 * Barra de herramientas
+	 */
+	QToolBar *barraHerramientas = new QToolBar();
+	barraHerramientas->setIconSize(QSize(48, 48));
+	barraHerramientas->setMovable(false);
+
+	construirBotonesBarraHerramientas(barraHerramientas);
+
+	/**
+	 * Listado de categorías
+	 */
 	QDockWidget *puertoCategorias = new QDockWidget();
 	puertoCategorias->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	puertoCategorias->setFeatures(QDockWidget::DockWidgetMovable);
 	puertoCategorias->setFixedWidth(128);
 
-	QStandardItemModel *modeloListadoCategorias = new QStandardItemModel();
+	puertoCategorias->setWidget(construirListadoCategorias());
 
-	QStandardItem *elementoDescargando = new QStandardItem();
-	elementoDescargando->setIcon(QIcon(":/iconos/descarga.svg"));
-	elementoDescargando->setText("Descargando");
-	elementoDescargando->setToolTip("Descargas activas");
-	modeloListadoCategorias->appendRow(elementoDescargando);
-/*
-	QStandardItem *elementoSubiendo = new QStandardItem();
-	elementoSubiendo->setIcon(QIcon(":/iconos/subida.svg"));
-	elementoSubiendo->setText("Subiendo");
-	elementoSubiendo->setToolTip("Subidas activas");
-	modeloListadoCategorias->appendRow(elementoSubiendo);
-*/
-	QStandardItem *elementoFinalizado = new QStandardItem();
-	elementoFinalizado->setIcon(QIcon(":/iconos/finalizado.svg"));
-	elementoFinalizado->setText("Finalizadas");
-	elementoFinalizado->setToolTip("Descargas finalizadas");
-	modeloListadoCategorias->appendRow(elementoFinalizado);
-
-	_listadoCategorias = new QListView();
-	_listadoCategorias->setFlow(QListView::TopToBottom);
-	_listadoCategorias->setModel(modeloListadoCategorias);
-	_listadoCategorias->setUniformItemSizes(true);
-	_listadoCategorias->setStyleSheet("QListView::item { width: 120px; }");
-	_listadoCategorias->setWrapping(true);
-	_listadoCategorias->setViewMode(QListView::IconMode);
-	_listadoCategorias->setCurrentIndex(modeloListadoCategorias->indexFromItem(elementoDescargando));
-
-	puertoCategorias->setWidget(_listadoCategorias);
 	addDockWidget(Qt::LeftDockWidgetArea, puertoCategorias);
 
-	_modeloListadoDescargas = new QStandardItemModel();
-	_modeloListadoDescargas->setHorizontalHeaderLabels(QStringList({"", "Nombre", "Completado", "Velocidad", "Enlace"}));
+	/**
+	 * Inicializa la base de datos
+	 */
+	inicializarBaseDatos();
 
-	_listadoDescargas = new QTreeView();
-	_listadoDescargas->setModel(_modeloListadoDescargas);
-	_listadoDescargas->setMinimumSize(QSize(640, (640*9)/16));
-	setCentralWidget(_listadoDescargas);
+	/**
+	 * Construir elemento central: listado de descargas
+	 */
+	setCentralWidget(construirListadoDescargas());
 	setContentsMargins(QMargins(5, 5, 5, 5));
 
 	statusBar()->showMessage("Listo");

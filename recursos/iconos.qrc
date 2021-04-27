@@ -9,5 +9,13 @@
         <file>iconos/subida.svg</file>
         <file>iconos/finalizado.svg</file>
         <file>iconos/acerca.svg</file>
+        <file>iconos/iniciar.svg</file>
+        <file>iconos/iniciar-todas.svg</file>
+        <file>iconos/pausar.svg</file>
+        <file>iconos/pausar-todas.svg</file>
+        <file>iconos/categoria-musica.svg</file>
+        <file>iconos/categoria-programas.svg</file>
+        <file>iconos/categoria-videos.svg</file>
+        <file>iconos/categoria-otros.svg</file>
     </qresource>
 </RCC>
