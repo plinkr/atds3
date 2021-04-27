@@ -1,7 +1,7 @@
 #include "delegacioniconoestado.hpp"
 #include "main.hpp"
 #include <QApplication>
-#include <QStyledItemDelegate>
+#include <QItemDelegate>
 #include <QIcon>
 
 

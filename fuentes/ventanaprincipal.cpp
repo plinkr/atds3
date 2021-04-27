@@ -1,6 +1,7 @@
 #include "ventanaprincipal.hpp"
 #include "delegacioniconoestado.hpp"
 #include "delegacionbarraprogreso.hpp"
+#include "delegacionvelocidad.hpp"
 #include "modeloentradas.hpp"
 #include "ventanaagregardescarga.hpp"
 #include "main.hpp"
@@ -56,7 +57,7 @@ void VentanaPrincipal::agregarDescarga() {
 	QSqlRecord registro = modelo->record();
 	registro.remove(0); // Campo 'id'
 	registro.setValue("categoria", datos.categoria);
-	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::Iniciada : _ListadoEstados::Pausada));
+	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
 	registro.setValue("enlace", datos.enlace);
 	registro.setValue("ruta", "");
 	registro.setValue("nombre", datos.nombre);
@@ -375,8 +376,10 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	}
 	_elementoIconoEstado = std::make_unique<DelegacionIconoEstado>();
 	_elementoBarraProgreso = std::make_unique<DelegacionBarraProgreso>();
+	_elementoVelocidad = std::make_unique<DelegacionVelocidad>();
 	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado.get());
 	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso.get());
+	_listadoDescargas->setItemDelegateForColumn(4, _elementoVelocidad.get());
 
 	return _listadoDescargas.get();
 }

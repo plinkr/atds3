@@ -4,8 +4,6 @@
 #include <QItemDelegate>
 
 
-class QSize;
-
 class DelegacionIconoEstado : public QItemDelegate {
 	Q_OBJECT
 

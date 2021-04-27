@@ -8,6 +8,7 @@
 
 class DelegacionIconoEstado;
 class DelegacionBarraProgreso;
+class DelegacionVelocidad;
 class QStandardItemModel;
 class QListView;
 class ModeloEntradas;
@@ -97,6 +98,11 @@ class VentanaPrincipal : public QMainWindow
 		 * Elemento que representa una barra de progreso en el campo 'Completado' dentro del listado de descargas
 		 */
 		std::unique_ptr<DelegacionBarraProgreso> _elementoBarraProgreso;
+
+		/**
+		 * Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
+		 */
+		std::unique_ptr<DelegacionVelocidad> _elementoVelocidad;
 
 		/**
 		 * Listado de descargas

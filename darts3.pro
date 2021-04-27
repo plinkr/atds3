@@ -7,6 +7,7 @@ SOURCES += \
 	fuentes/modeloentradas.cpp \
 	fuentes/delegacioniconoestado.cpp \
 	fuentes/delegacionbarraprogreso.cpp \
+	fuentes/delegacionvelocidad.cpp \
 	fuentes/ventanaagregardescarga.cpp \
 	fuentes/ventanaprincipal.cpp \
 	fuentes/main.cpp
@@ -15,6 +16,7 @@ HEADERS += \
 	cabeceras/modeloentradas.hpp \
 	cabeceras/delegacioniconoestado.hpp \
 	cabeceras/delegacionbarraprogreso.hpp \
+	cabeceras/delegacionvelocidad.hpp \
 	cabeceras/ventanaagregardescarga.hpp \
 	cabeceras/ventanaprincipal.hpp \
 	cabeceras/main.hpp
