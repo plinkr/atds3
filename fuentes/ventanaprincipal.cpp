@@ -367,6 +367,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSortingEnabled(true);
+	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 	_listadoDescargas->hideColumn(0);
 	_listadoDescargas->hideColumn(1);
