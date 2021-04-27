@@ -118,7 +118,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	QVBoxLayout *diseno = new QVBoxLayout();
 
 	QGroupBox *cajaDatos = new QGroupBox();
-	cajaDatos->setTitle("Datos de la descarga");
+	cajaDatos->setTitle("Datos de las descargas");
 	cajaDatos->setMinimumWidth(600);
 
 	QFormLayout *disenoFormulario = new QFormLayout();
@@ -150,7 +150,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	disenoFormulario->addRow("", botonSeleccionarArchivo);
 	disenoFormulario->addRow("Elementos procesados:", elementosProcesados);
 	disenoFormulario->addRow("Categoría:", _categoria.get());
-	disenoFormulario->addRow("Iniciar descarga?", _iniciar.get());
+	disenoFormulario->addRow("Iniciar descargas?", _iniciar.get());
 
 	cajaDatos->setLayout(disenoFormulario);
 
