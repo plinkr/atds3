@@ -17,5 +17,7 @@
         <file>iconos/categoria-programas.svg</file>
         <file>iconos/categoria-videos.svg</file>
         <file>iconos/categoria-otros.svg</file>
+        <file>iconos/cancelar.svg</file>
+        <file>iconos/reloj.svg</file>
     </qresource>
 </RCC>

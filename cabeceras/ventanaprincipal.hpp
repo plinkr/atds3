@@ -6,12 +6,13 @@
 #include <memory>
 
 
-class VentanaPrincipal;
+class DelegacionIconoEstado;
 class DelegacionBarraProgreso;
 class QStandardItemModel;
 class QListView;
 class ModeloEntradas;
 class QTreeView;
+class VentanaAgregarDescarga;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -28,6 +29,7 @@ class VentanaPrincipal : public QMainWindow
 		void detenerEjecucion();
 
 	private slots:
+		void agregarDescarga();
 		void eventoAgregarDescarga();
 		void eventoAgregarDescargasDesdeArchivo();
 		void eventoEliminarDescarga();
@@ -46,7 +48,14 @@ class VentanaPrincipal : public QMainWindow
 		void eventoCategoriaSeleccionada(const QModelIndex &indice);
 
 	private:
+		/**
+		 * Modelo del listado de categorías
+		 */
 		std::unique_ptr<QStandardItemModel> _modeloListadoCategorias;
+
+		/**
+		 * Elemento que muestra el listado de categorías
+		 */
 		std::unique_ptr<QListView> _listadoCategorias;
 
 		/**
@@ -78,8 +87,27 @@ class VentanaPrincipal : public QMainWindow
 		 * Modelo del listado de la categoría 'Otros'
 		 */
 		std::unique_ptr<ModeloEntradas> _modeloCategoriaOtros;
+
+		/**
+		 * Elemento que representa un icono en el campo 'Estado' dentro del listado de descargas
+		 */
+		std::unique_ptr<DelegacionIconoEstado> _elementoIconoEstado;
+
+		/**
+		 * Elemento que representa una barra de progreso en el campo 'Completado' dentro del listado de descargas
+		 */
 		std::unique_ptr<DelegacionBarraProgreso> _elementoBarraProgreso;
+
+		/**
+		 * Listado de descargas
+		 */
 		std::unique_ptr<QTreeView> _listadoDescargas;
+
+		/**
+		 * Ventana 'Agregar descarga'
+		 */
+		std::unique_ptr<VentanaAgregarDescarga> _ventanaAgregarDescarga;
+
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas

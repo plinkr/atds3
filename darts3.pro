@@ -5,13 +5,17 @@ CONFIG += c++20
 
 SOURCES += \
 	fuentes/modeloentradas.cpp \
+	fuentes/delegacioniconoestado.cpp \
 	fuentes/delegacionbarraprogreso.cpp \
+	fuentes/ventanaagregardescarga.cpp \
 	fuentes/ventanaprincipal.cpp \
 	fuentes/main.cpp
 
 HEADERS += \
 	cabeceras/modeloentradas.hpp \
+	cabeceras/delegacioniconoestado.hpp \
 	cabeceras/delegacionbarraprogreso.hpp \
+	cabeceras/ventanaagregardescarga.hpp \
 	cabeceras/ventanaprincipal.hpp \
 	cabeceras/main.hpp
 
