@@ -1,6 +1,8 @@
 #include "main.hpp"
 #include "ventanaprincipal.hpp"
 #include <QApplication>
+#include <QStandardPaths>
+#include <QDir>
 
 
 /**
@@ -18,6 +20,16 @@ QString _aplicacionNombreCorto;
  */
 QString _aplicacionVersion;
 
+/**
+ * @brief Ruta en donde almacenar las descargas
+ */
+QString _rutaDescargas;
+
+/**
+ * @brief Crea los directorios para alojar los archivos descargados
+ */
+void crearDirectoriosDescargas();
+
 
 int main(int argc, char *argv[])
 {
@@ -32,7 +44,35 @@ int main(int argc, char *argv[])
 	app.setApplicationName(_aplicacionNombreCorto);
 	app.setApplicationVersion(_aplicacionVersion);
 
+	crearDirectoriosDescargas();
+
 	vp.show();
 
 	return app.exec();
+}
+
+/**
+ * @brief Crea los directorios para alojar los archivos descargados
+ */
+void crearDirectoriosDescargas() {
+	QString rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+	QDir directorioDescarga;
+
+	if (rutaDescarga.size() == 0) {
+		rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+	}
+
+	directorioDescarga.cd(rutaDescarga);
+	_rutaDescargas = rutaDescarga + "/" + _aplicacionNombreCorto.toLower();
+
+	if (directorioDescarga.exists(_aplicacionNombreCorto.toLower()) == true) {
+		return;
+	}
+
+	directorioDescarga.mkdir(_aplicacionNombreCorto.toLower());
+	directorioDescarga.cd(_aplicacionNombreCorto.toLower());
+	directorioDescarga.mkdir("programas");
+	directorioDescarga.mkdir("musica");
+	directorioDescarga.mkdir("videos");
+	directorioDescarga.mkdir("otros");
 }

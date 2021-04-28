@@ -21,6 +21,11 @@ extern QString _aplicacionNombreCorto;
 extern QString _aplicacionVersion;
 
 /**
+ * @brief Ruta en donde almacenar las descargas
+ */
+extern QString _rutaDescargas;
+
+/**
  * @brief Listado de categorías
  */
 enum _ListadoCategorias {

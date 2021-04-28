@@ -38,7 +38,7 @@ VentanaPrincipal::~VentanaPrincipal() {
 void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
 	ModeloEntradas *modelo;
-	QString rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower();
+	QString rutaDescarga = _rutaDescargas;
 
 	switch (datos.categoria) {
 		case _ListadoCategorias::Programas:
@@ -81,7 +81,7 @@ void VentanaPrincipal::agregarDescarga() {
 void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
 	ModeloEntradas *modelo;
-	QString rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower();
+	QString rutaDescarga = _rutaDescargas;
 
 	switch (listadoDescargas[0].categoria) {
 		case _ListadoCategorias::Programas:
