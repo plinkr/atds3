@@ -72,20 +72,20 @@ void VentanaAgregarDescarga::construirIU() {
 	cajaDatos->setMinimumWidth(500);
 
 	QFormLayout *disenoFormulario = new QFormLayout();
-	_enlace = std::make_unique<QLineEdit>();
-	_nombre = std::make_unique<QLineEdit>();
-	_categoria = std::make_unique<QComboBox>();
+	_enlace = new QLineEdit();
+	_nombre = new QLineEdit();
+	_categoria = new QComboBox();
 	_categoria->addItem(QIcon(":/iconos/categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
 	_categoria->addItem(QIcon(":/iconos/categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
 	_categoria->addItem(QIcon(":/iconos/categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
 	_categoria->addItem(QIcon(":/iconos/categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
-	_iniciar = std::make_unique<QCheckBox>();
+	_iniciar = new QCheckBox();
 	_iniciar->setChecked(true);
 
-	disenoFormulario->addRow("Enlace:", _enlace.get());
-	disenoFormulario->addRow("Nombre del archivo:", _nombre.get());
-	disenoFormulario->addRow("Categoría:", _categoria.get());
-	disenoFormulario->addRow("Iniciar descarga?", _iniciar.get());
+	disenoFormulario->addRow("Enlace:", _enlace);
+	disenoFormulario->addRow("Nombre del archivo:", _nombre);
+	disenoFormulario->addRow("Categoría:", _categoria);
+	disenoFormulario->addRow("Iniciar descarga?", _iniciar);
 
 	cajaDatos->setLayout(disenoFormulario);
 

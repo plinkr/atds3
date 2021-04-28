@@ -23,6 +23,7 @@ VentanaAgregarDescargasDesdeArchivos::VentanaAgregarDescargasDesdeArchivos(QWidg
  * @brief Limpia los campos
  */
 void VentanaAgregarDescargasDesdeArchivos::limpiarCampos() {
+	_botonSeleccionarArchivos->setFocus();
 	_listadoElementosProcesados.clear();
 	_modeloElementosProcesados->clear();
 	_modeloElementosProcesados->setColumnCount(2);
@@ -127,34 +128,34 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 
 	QFormLayout *disenoFormulario = new QFormLayout();
 
-	QPushButton *botonSeleccionarArchivos = new QPushButton();
-	botonSeleccionarArchivos->setIcon(QIcon(":/iconos/importar.svg"));
-	botonSeleccionarArchivos->setText("Seleccionar los archivos y procesarlos");
-	connect(botonSeleccionarArchivos, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar);
+	_botonSeleccionarArchivos = new QPushButton();
+	_botonSeleccionarArchivos->setIcon(QIcon(":/iconos/importar.svg"));
+	_botonSeleccionarArchivos->setText("Seleccionar los archivos y procesarlos");
+	connect(_botonSeleccionarArchivos, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar);
 
-	_modeloElementosProcesados = std::make_unique<QStandardItemModel>();
+	_modeloElementosProcesados = new QStandardItemModel();
 	QTreeView *elementosProcesados = new QTreeView(this);
 	elementosProcesados->setAlternatingRowColors(true);
 	elementosProcesados->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	elementosProcesados->setItemsExpandable(false);
-	elementosProcesados->setModel(_modeloElementosProcesados.get());
+	elementosProcesados->setModel(_modeloElementosProcesados);
 	elementosProcesados->setRootIsDecorated(false);
 	elementosProcesados->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	elementosProcesados->header()->setStretchLastSection(true);
 
-	_categoria = std::make_unique<QComboBox>();
+	_categoria = new QComboBox();
 	_categoria->addItem(QIcon(":/iconos/categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
 	_categoria->addItem(QIcon(":/iconos/categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
 	_categoria->addItem(QIcon(":/iconos/categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
 	_categoria->addItem(QIcon(":/iconos/categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
 
-	_iniciar = std::make_unique<QCheckBox>();
+	_iniciar = new QCheckBox();
 	_iniciar->setChecked(true);
 
-	disenoFormulario->addRow("", botonSeleccionarArchivos);
+	disenoFormulario->addRow("", _botonSeleccionarArchivos);
 	disenoFormulario->addRow("Elementos procesados:", elementosProcesados);
-	disenoFormulario->addRow("Categoría:", _categoria.get());
-	disenoFormulario->addRow("Iniciar descargas?", _iniciar.get());
+	disenoFormulario->addRow("Categoría:", _categoria);
+	disenoFormulario->addRow("Iniciar descargas?", _iniciar);
 
 	cajaDatos->setLayout(disenoFormulario);
 

@@ -10,5 +10,5 @@ ModeloEntradas::ModeloEntradas(QObject *padre, const QSqlDatabase &baseDatos)
 	setHeaderData(2, Qt::Horizontal, "Nombre");
 	setHeaderData(3, Qt::Horizontal, "Completado");
 	setHeaderData(4, Qt::Horizontal, "Velocidad");
-	setHeaderData(5, Qt::Horizontal, "Enlace");
+	setHeaderData(5, Qt::Horizontal, "Ruta de guardado");
 }

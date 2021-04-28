@@ -26,5 +26,6 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 			break;
 	}
 
-	icono.paint(pintor, opcion.rect);
+	drawBackground(pintor, opcion, indice);
+	drawDecoration(pintor, opcion, opcion.rect, icono.pixmap(QSize(24, 24)));
 }

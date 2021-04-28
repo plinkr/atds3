@@ -3,10 +3,11 @@
 
 #include "main.hpp"
 #include <QDialog>
+#include <QPointer>
 #include <QStandardItemModel>
+#include <QPushButton>
 #include <QComboBox>
 #include <QCheckBox>
-#include <memory>
 
 
 class VentanaAgregarDescargasDesdeArchivos : public QDialog
@@ -45,6 +46,11 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		QString _tituloVentana;
 
 		/**
+		 * Botón para seleccionar los archivos a procesar
+		 */
+		QPointer<QPushButton> _botonSeleccionarArchivos;
+
+		/**
 		 * Listado de elementos procesados
 		 */
 		QVector<_NuevaDescarga> _listadoElementosProcesados;
@@ -52,17 +58,17 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		/**
 		 * Modelo del listado de elementos procesados
 		 */
-		std::unique_ptr<QStandardItemModel> _modeloElementosProcesados;
+		QPointer<QStandardItemModel> _modeloElementosProcesados;
 
 		/**
 		 * Categoría a donde asignar la descarga
 		 */
-		std::unique_ptr<QComboBox> _categoria;
+		QPointer<QComboBox> _categoria;
 
 		/**
 		 * Iniciar la descarga inmediatamente?
 		 */
-		std::unique_ptr<QCheckBox> _iniciar;
+		QPointer<QCheckBox> _iniciar;
 
 		/**
 		 * @brief Procesa un archivo en búsqueda de entradas compatibles

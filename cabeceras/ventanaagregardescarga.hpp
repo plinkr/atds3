@@ -2,10 +2,10 @@
 #define VENTANAAGREGARDESCARGA_HPP
 
 #include <QDialog>
+#include <QPointer>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
-#include <memory>
 
 
 struct _NuevaDescarga;
@@ -43,22 +43,22 @@ class VentanaAgregarDescarga : public QDialog
 		/**
 		 * Enlace de la descarga
 		 */
-		std::unique_ptr<QLineEdit> _enlace;
+		QPointer<QLineEdit> _enlace;
 
 		/**
 		 * Nombre del archivo a guardar
 		 */
-		std::unique_ptr<QLineEdit> _nombre;
+		QPointer<QLineEdit> _nombre;
 
 		/**
 		 * Categoría a donde asignar la descarga
 		 */
-		std::unique_ptr<QComboBox> _categoria;
+		QPointer<QComboBox> _categoria;
 
 		/**
 		 * Iniciar la descarga inmediatamente?
 		 */
-		std::unique_ptr<QCheckBox> _iniciar;
+		QPointer<QCheckBox> _iniciar;
 
 		/**
 		 * @brief Construye la interfaz de usuario

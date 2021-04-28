@@ -11,6 +11,11 @@
 extern QString _aplicacionTitulo;
 
 /**
+ * @brief Nombre corto de la aplicación
+ */
+extern QString _aplicacionNombreCorto;
+
+/**
  * @brief Versión de la aplicación
  */
 extern QString _aplicacionVersion;

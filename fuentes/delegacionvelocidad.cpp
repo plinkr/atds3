@@ -3,8 +3,7 @@
 #include <QItemDelegate>
 
 
-DelegacionVelocidad::DelegacionVelocidad(QObject *padre)
-	: QItemDelegate(padre) {}
+DelegacionVelocidad::DelegacionVelocidad(QObject *padre) : QItemDelegate(padre) {}
 
 void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &opcion, const QModelIndex &indice) const {
 	QVector<QString> listadoUnidadesVelocidad {"B/s", "KiB/s", "MiB/s", "GiB/s"};
@@ -17,5 +16,6 @@ void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &op
 		velocidadTexto = QString("%1 %2").arg(velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad++]);
 	}
 
-	QApplication::style()->drawItemText(pintor, opcion.rect, 0, opcion.palette, true, velocidadTexto);
+	drawBackground(pintor, opcion, indice);
+	drawDisplay(pintor, opcion, opcion.rect, velocidadTexto);
 }

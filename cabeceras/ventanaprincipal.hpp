@@ -3,6 +3,8 @@
 
 #include <QThread>
 #include <QMainWindow>
+#include <QPointer>
+#include <QStandardItemModel>
 #include <memory>
 
 
@@ -15,6 +17,14 @@ class ModeloEntradas;
 class QTreeView;
 class VentanaAgregarDescarga;
 class VentanaAgregarDescargasDesdeArchivos;
+
+class ModeloCategorias : public QStandardItemModel {
+	Q_OBJECT
+
+	public:
+		ModeloCategorias(QObject *padre = nullptr) : QStandardItemModel(padre) {}
+		Qt::ItemFlags flags(const QModelIndex &) const override { return Qt::ItemIsEnabled | Qt::ItemIsSelectable; }
+};
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -61,9 +71,24 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		void eventoEliminarTodasDescargas();
 
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar descarga'
+		 */
 		void eventoIniciarDescarga();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar descarga'
+		 */
 		void eventoPausarDescarga();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar todas las descargas'
+		 */
 		void eventoIniciarTodasDescargas();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar todas las descargas'
+		 */
 		void eventoPausarTodasDescargas();
 		void eventoConfiguracion();
 		void eventoAcerca();
@@ -78,73 +103,72 @@ class VentanaPrincipal : public QMainWindow
 		/**
 		 * Modelo del listado de categorías
 		 */
-		std::unique_ptr<QStandardItemModel> _modeloListadoCategorias;
+		QPointer<ModeloCategorias> _modeloListadoCategorias;
 
 		/**
 		 * Elemento que muestra el listado de categorías
 		 */
-		std::unique_ptr<QListView> _listadoCategorias;
+		QPointer<QListView> _listadoCategorias;
 
 		/**
 		 * Modelo del listado de la categoría 'Descargando'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaDescargando;
+		QPointer<ModeloEntradas> _modeloCategoriaDescargando;
 
 		/**
 		 * Modelo del listado de la categoría 'Finalizadas'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaFinalizadas;
+		QPointer<ModeloEntradas> _modeloCategoriaFinalizadas;
 
 		/**
 		 * Modelo del listado de la categoría 'Programas'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaProgramas;
+		QPointer<ModeloEntradas> _modeloCategoriaProgramas;
 
 		/**
 		 * Modelo del listado de la categoría 'Música'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaMusica;
+		QPointer<ModeloEntradas> _modeloCategoriaMusica;
 
 		/**
 		 * Modelo del listado de la categoría 'Videos'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaVideos;
+		QPointer<ModeloEntradas> _modeloCategoriaVideos;
 
 		/**
 		 * Modelo del listado de la categoría 'Otros'
 		 */
-		std::unique_ptr<ModeloEntradas> _modeloCategoriaOtros;
+		QPointer<ModeloEntradas> _modeloCategoriaOtros;
 
 		/**
 		 * Elemento que representa un icono en el campo 'Estado' dentro del listado de descargas
 		 */
-		std::unique_ptr<DelegacionIconoEstado> _elementoIconoEstado;
+		QPointer<DelegacionIconoEstado> _elementoIconoEstado;
 
 		/**
 		 * Elemento que representa una barra de progreso en el campo 'Completado' dentro del listado de descargas
 		 */
-		std::unique_ptr<DelegacionBarraProgreso> _elementoBarraProgreso;
+		QPointer<DelegacionBarraProgreso> _elementoBarraProgreso;
 
 		/**
 		 * Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
 		 */
-		std::unique_ptr<DelegacionVelocidad> _elementoVelocidad;
+		QPointer<DelegacionVelocidad> _elementoVelocidad;
 
 		/**
 		 * Listado de descargas
 		 */
-		std::unique_ptr<QTreeView> _listadoDescargas;
+		QPointer<QTreeView> _listadoDescargas;
 
 		/**
 		 * Ventana 'Agregar descarga'
 		 */
-		std::unique_ptr<VentanaAgregarDescarga> _ventanaAgregarDescarga;
+		QPointer<VentanaAgregarDescarga> _ventanaAgregarDescarga;
 
 		/**
 		 * Ventana 'Agregar descargas desde archivo'
 		 */
-		std::unique_ptr<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
-
+		QPointer<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas

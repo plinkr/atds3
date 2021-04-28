@@ -19,8 +19,7 @@
 #include <QTreeView>
 #include <QHeaderView>
 #include <QSqlRecord>
-#include <QSqlError>
-#include <iostream>
+#include <QStandardPaths>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
@@ -39,19 +38,24 @@ VentanaPrincipal::~VentanaPrincipal() {
 void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
 	ModeloEntradas *modelo;
+	QString rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower();
 
 	switch (datos.categoria) {
 		case _ListadoCategorias::Programas:
-			modelo = _modeloCategoriaProgramas.get();
+			modelo = _modeloCategoriaProgramas;
+			rutaDescarga += "/programas";
 			break;
 		case _ListadoCategorias::Musica:
-			modelo = _modeloCategoriaMusica.get();
+			modelo = _modeloCategoriaMusica;
+			rutaDescarga += "/musica";
 			break;
 		case _ListadoCategorias::Videos:
-			modelo = _modeloCategoriaVideos.get();
+			modelo = _modeloCategoriaVideos;
+			rutaDescarga += "/videos";
 			break;
 		case _ListadoCategorias::Otros:
-			modelo = _modeloCategoriaOtros.get();
+			modelo = _modeloCategoriaOtros;
+			rutaDescarga += "/otros";
 			break;
 	}
 
@@ -60,7 +64,7 @@ void VentanaPrincipal::agregarDescarga() {
 	registro.setValue("categoria", datos.categoria);
 	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
 	registro.setValue("enlace", datos.enlace);
-	registro.setValue("ruta", "");
+	registro.setValue("ruta", rutaDescarga);
 	registro.setValue("nombre", datos.nombre);
 	registro.setValue("completado", 0);
 	registro.setValue("velocidad", 0);
@@ -77,20 +81,24 @@ void VentanaPrincipal::agregarDescarga() {
 void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
 	ModeloEntradas *modelo;
+	QString rutaDescarga = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower();
 
 	switch (listadoDescargas[0].categoria) {
 		case _ListadoCategorias::Programas:
-			modelo = _modeloCategoriaProgramas.get();
+			modelo = _modeloCategoriaProgramas;
+			rutaDescarga += "/programas";
 			break;
 		case _ListadoCategorias::Musica:
-			modelo = _modeloCategoriaMusica.get();
+			modelo = _modeloCategoriaMusica;
+			rutaDescarga += "/musica";
 			break;
 		case _ListadoCategorias::Videos:
-			modelo = _modeloCategoriaVideos.get();
+			modelo = _modeloCategoriaVideos;
+			rutaDescarga += "/videos";
 			break;
 		case _ListadoCategorias::Otros:
-			modelo = _modeloCategoriaOtros.get();
-			break;
+			modelo = _modeloCategoriaOtros;
+			rutaDescarga += "/otros";
 	}
 
 	for (const _NuevaDescarga &nuevaDescarga : listadoDescargas) {
@@ -99,7 +107,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		registro.setValue("categoria", nuevaDescarga.categoria);
 		registro.setValue("estado", (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
 		registro.setValue("enlace", nuevaDescarga.enlace);
-		registro.setValue("ruta", "");
+		registro.setValue("ruta", rutaDescarga);
 		registro.setValue("nombre", nuevaDescarga.nombre);
 		registro.setValue("completado", 0);
 		registro.setValue("velocidad", 0);
@@ -132,7 +140,15 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar descarga'
  */
 void VentanaPrincipal::eventoEliminarDescarga() {
-	//for (const auto &indice: _listadoDescargas->)
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+
+	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
+			modelo->removeRow(i.row());
+		}
+		_listadoDescargas->selectionModel()->selectedIndexes().clear();
+		modelo->submitAll();
+	}
 }
 
 /**
@@ -143,16 +159,77 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 
 	modelo->removeRows(0, modelo->rowCount());
 	modelo->submitAll();
-	modelo->select();
 }
 
-void VentanaPrincipal::eventoIniciarDescarga() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar descarga'
+ */
+void VentanaPrincipal::eventoIniciarDescarga() {
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QModelIndex indice;
 
-void VentanaPrincipal::eventoPausarDescarga() {}
+	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
+			indice = modelo->index(i.row(), 1);
+			if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
+				modelo->setData(indice, _ListadoEstados::EnEspera);
+			}
+		}
+		modelo->submitAll();
+	}
+}
 
-void VentanaPrincipal::eventoIniciarTodasDescargas() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar descarga'
+ */
+void VentanaPrincipal::eventoPausarDescarga() {
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QModelIndex indice;
 
-void VentanaPrincipal::eventoPausarTodasDescargas() {}
+	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
+			indice = modelo->index(i.row(), 1);
+			if (modelo->data(indice).toInt() == _ListadoEstados::EnEspera || modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+				modelo->setData(indice, _ListadoEstados::Pausada);
+			}
+		}
+		modelo->submitAll();
+	}
+}
+
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar todas las descargas'
+ */
+void VentanaPrincipal::eventoIniciarTodasDescargas() {
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QModelIndex indice;
+
+	for (int f = 0; f < modelo->rowCount(); f++) {
+		indice = modelo->index(f, 1);
+		if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
+			modelo->setData(indice, _ListadoEstados::EnEspera);
+		}
+	}
+
+	modelo->submitAll();
+}
+
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar todas las descargas'
+ */
+void VentanaPrincipal::eventoPausarTodasDescargas() {
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QModelIndex indice;
+
+	for (int f = 0; f < modelo->rowCount(); f++) {
+		indice = modelo->index(f, 1);
+		if (modelo->data(indice).toInt() == _ListadoEstados::EnEspera || modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+			modelo->setData(indice, _ListadoEstados::Pausada);
+		}
+	}
+
+	modelo->submitAll();
+}
 
 void VentanaPrincipal::eventoConfiguracion() {}
 
@@ -165,22 +242,22 @@ void VentanaPrincipal::eventoAcerca() {}
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 	switch (indice.row()) {
 		case 0:
-			_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
+			_listadoDescargas->setModel(_modeloCategoriaDescargando);
 			break;
 		case 1:
-			_listadoDescargas->setModel(_modeloCategoriaFinalizadas.get());
+			_listadoDescargas->setModel(_modeloCategoriaFinalizadas);
 			break;
 		case 2:
-			_listadoDescargas->setModel(_modeloCategoriaProgramas.get());
+			_listadoDescargas->setModel(_modeloCategoriaProgramas);
 			break;
 		case 3:
-			_listadoDescargas->setModel(_modeloCategoriaMusica.get());
+			_listadoDescargas->setModel(_modeloCategoriaMusica);
 			break;
 		case 4:
-			_listadoDescargas->setModel(_modeloCategoriaVideos.get());
+			_listadoDescargas->setModel(_modeloCategoriaVideos);
 			break;
 		case 5:
-			_listadoDescargas->setModel(_modeloCategoriaOtros.get());
+			_listadoDescargas->setModel(_modeloCategoriaOtros);
 			break;
 	}
 
@@ -303,7 +380,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
  */
 QListView *VentanaPrincipal::construirListadoCategorias() {
 
-	_modeloListadoCategorias = std::make_unique<QStandardItemModel>();
+	_modeloListadoCategorias = new ModeloCategorias();
 
 	QStandardItem *categoriaDescargando = new QStandardItem();
 	categoriaDescargando->setIcon(QIcon(":/iconos/descarga.svg"));
@@ -341,18 +418,21 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
 	categoriaOtros->setToolTip("Categoría 'Otros'");
 	_modeloListadoCategorias->appendRow(categoriaOtros);
 
-	_listadoCategorias = std::make_unique<QListView>();
+	_listadoCategorias = new QListView();
+	_listadoCategorias->setAcceptDrops(false);
+	_listadoCategorias->setDefaultDropAction(Qt::IgnoreAction);
+	_listadoCategorias->setDragDropMode(QAbstractItemView::NoDragDrop);
 	_listadoCategorias->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoCategorias->setFlow(QListView::TopToBottom);
-	_listadoCategorias->setModel(_modeloListadoCategorias.get());
+	_listadoCategorias->setModel(_modeloListadoCategorias);
 	_listadoCategorias->setUniformItemSizes(true);
 	_listadoCategorias->setStyleSheet("QListView::item { width: 120px; }");
 	_listadoCategorias->setWrapping(true);
 	_listadoCategorias->setViewMode(QListView::IconMode);
 	_listadoCategorias->setCurrentIndex(_modeloListadoCategorias->indexFromItem(categoriaDescargando));
-	connect(_listadoCategorias.get(), &QListView::activated, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
+	connect(_listadoCategorias, &QListView::activated, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
 
-	return _listadoCategorias.get();
+	return _listadoCategorias;
 }
 
 /**
@@ -368,7 +448,7 @@ void VentanaPrincipal::inicializarBaseDatos() {
 	 * Crea las estructuras de las tablas
 	 */
 	QSqlQuery solicitudSQL;
-	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, enlace TEXT NOT NULL, categoria INTEGER NOT NULL, ruta TEXT NOT NULL, totalADescargar INTEGER DEFAULT 0, totalDescargado INTEGER DEFAULT 0)");
+	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, ruta TEXT NOT NULL, categoria INTEGER NOT NULL, enlace TEXT NOT NULL, totalADescargar INTEGER DEFAULT 0, totalDescargado INTEGER DEFAULT 0)");
 }
 
 /**
@@ -379,7 +459,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
-	_modeloCategoriaDescargando = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaDescargando = new ModeloEntradas();
 	_modeloCategoriaDescargando->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaDescargando->setFilter(QString("estado = %1 OR estado = %2").arg(_ListadoEstados::EnEspera).arg(_ListadoEstados::Iniciada));
 	_modeloCategoriaDescargando->select();
@@ -387,7 +467,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Finalizadas'
 	 */
-	_modeloCategoriaFinalizadas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaFinalizadas = new ModeloEntradas();
 	_modeloCategoriaFinalizadas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaFinalizadas->setFilter(QString("estado = %1").arg(_ListadoEstados::Finalizada));
 	_modeloCategoriaFinalizadas->select();
@@ -395,7 +475,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Programas'
 	 */
-	_modeloCategoriaProgramas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaProgramas = new ModeloEntradas();
 	_modeloCategoriaProgramas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Programas));
 	_modeloCategoriaProgramas->select();
@@ -403,7 +483,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Música'
 	 */
-	_modeloCategoriaMusica = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaMusica = new ModeloEntradas();
 	_modeloCategoriaMusica->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Musica));
 	_modeloCategoriaMusica->select();
@@ -411,7 +491,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Videos'
 	 */
-	_modeloCategoriaVideos = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaVideos = new ModeloEntradas();
 	_modeloCategoriaVideos->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Videos));
 	_modeloCategoriaVideos->select();
@@ -419,16 +499,16 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Otros'
 	 */
-	_modeloCategoriaOtros = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaOtros = new ModeloEntradas();
 	_modeloCategoriaOtros->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Otros));
 	_modeloCategoriaOtros->select();
 
-	_listadoDescargas = std::make_unique<QTreeView>();
+	_listadoDescargas = new QTreeView();
 	_listadoDescargas->setAlternatingRowColors(true);
 	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoDescargas->setItemsExpandable(false);
-	_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
+	_listadoDescargas->setModel(_modeloCategoriaDescargando);
 	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -436,18 +516,20 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setSortingEnabled(true);
 	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
+
 	_listadoDescargas->hideColumn(0);
 	for(int i = 6; i < 10; i++) {
 		_listadoDescargas->hideColumn(i);
 	}
-	_elementoIconoEstado = std::make_unique<DelegacionIconoEstado>();
-	_elementoBarraProgreso = std::make_unique<DelegacionBarraProgreso>();
-	_elementoVelocidad = std::make_unique<DelegacionVelocidad>();
-	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado.get());
-	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso.get());
-	_listadoDescargas->setItemDelegateForColumn(4, _elementoVelocidad.get());
 
-	return _listadoDescargas.get();
+	_elementoIconoEstado = new DelegacionIconoEstado();
+	_elementoBarraProgreso = new DelegacionBarraProgreso();
+	_elementoVelocidad = new DelegacionVelocidad();
+	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado);
+	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso);
+	_listadoDescargas->setItemDelegateForColumn(4, _elementoVelocidad);
+
+	return _listadoDescargas;
 }
 
 /**
@@ -491,16 +573,16 @@ void VentanaPrincipal::construirIU() {
 	/**
 	 * Construye la ventana 'Agregar descarga'
 	 */
-	_ventanaAgregarDescarga = std::make_unique<VentanaAgregarDescarga>(this);
+	_ventanaAgregarDescarga = new VentanaAgregarDescarga(this);
 	_ventanaAgregarDescarga->setModal(true);
-	connect(_ventanaAgregarDescarga.get(), &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
+	connect(_ventanaAgregarDescarga, &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
 
 	/**
 	 * Construye la ventana 'Agregar descargas desde archivo'
 	 */
-	_ventanaAgregarDescargasDesdeArchivo = std::make_unique<VentanaAgregarDescargasDesdeArchivos>(this);
+	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
 	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
-	connect(_ventanaAgregarDescargasDesdeArchivo.get(), &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
+	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
 
 	statusBar()->showMessage("Listo");
 }
