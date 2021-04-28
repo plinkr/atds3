@@ -98,7 +98,7 @@ void VentanaAgregarDescargasDesdeArchivos::procesarArchivo(const QString &archiv
 					nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
 				} else {
 					nuevaDescarga.nombre = QString::fromLocal8Bit(campos[0]).trimmed();
-					nuevaDescarga.nombre.remove(0, campos[0].lastIndexOf("/"));
+					nuevaDescarga.nombre.remove(0, campos[0].lastIndexOf("/") + 1);
 					nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
 				}
 				_modeloElementosProcesados->appendRow(QList<QStandardItem *>{new QStandardItem(nuevaDescarga.nombre), new QStandardItem(nuevaDescarga.enlace)});
