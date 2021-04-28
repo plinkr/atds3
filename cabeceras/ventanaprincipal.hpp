@@ -50,8 +50,17 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descargas desde archivo'
 		 */
 		void eventoAgregarDescargasDesdeArchivo();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar descarga'
+		 */
 		void eventoEliminarDescarga();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar todas las descargas'
+		 */
 		void eventoEliminarTodasDescargas();
+
 		void eventoIniciarDescarga();
 		void eventoPausarDescarga();
 		void eventoIniciarTodasDescargas();

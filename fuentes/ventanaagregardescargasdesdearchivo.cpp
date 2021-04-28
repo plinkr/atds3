@@ -34,6 +34,10 @@ void VentanaAgregarDescargasDesdeArchivos::limpiarCampos() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descargas'
  */
 void VentanaAgregarDescargasDesdeArchivos::eventoAgregarDescargas() {
+	if (_listadoElementosProcesados.size() == 0) {
+		return;
+	}
+
 	for (_NuevaDescarga &nuevaDescarga : _listadoElementosProcesados) {
 		nuevaDescarga.categoria = _categoria->currentData().toInt();
 		nuevaDescarga.iniciar = _iniciar->isChecked();
@@ -43,9 +47,9 @@ void VentanaAgregarDescargasDesdeArchivos::eventoAgregarDescargas() {
 }
 
 /**
- * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar archivo y procesar'
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar archivos y procesarlos'
  */
-void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivoAProcesar() {
+void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() {
 	QFileDialog dialogoSeleccion(this);
 	QStringList listadoArchivos;
 
@@ -53,6 +57,8 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivoAProcesar() {
 	dialogoSeleccion.setNameFilter(tr("Archivos de texto(*.txt)"));
 	if (dialogoSeleccion.exec() == true) {
 		listadoArchivos = dialogoSeleccion.selectedFiles();
+
+		limpiarCampos();
 
 		// Procesar los archivos seleccionados
 		for (const auto &archivo : listadoArchivos) {
@@ -78,8 +84,6 @@ void VentanaAgregarDescargasDesdeArchivos::procesarArchivo(const QString &archiv
 	if (lector.open(QIODevice::ReadOnly | QIODevice::Text) == false) {
 		return;
 	}
-
-	limpiarCampos();
 
 	while (lector.atEnd() == false) {
 		QList<QByteArray> campos = lector.readLine().split('\t');
@@ -123,10 +127,10 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 
 	QFormLayout *disenoFormulario = new QFormLayout();
 
-	QPushButton *botonSeleccionarArchivo = new QPushButton();
-	botonSeleccionarArchivo->setIcon(QIcon(":/iconos/importar.svg"));
-	botonSeleccionarArchivo->setText("Seleccionar archivo y procesar");
-	connect(botonSeleccionarArchivo, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivoAProcesar);
+	QPushButton *botonSeleccionarArchivos = new QPushButton();
+	botonSeleccionarArchivos->setIcon(QIcon(":/iconos/importar.svg"));
+	botonSeleccionarArchivos->setText("Seleccionar los archivos y procesarlos");
+	connect(botonSeleccionarArchivos, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar);
 
 	_modeloElementosProcesados = std::make_unique<QStandardItemModel>();
 	QTreeView *elementosProcesados = new QTreeView(this);
@@ -147,7 +151,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	_iniciar = std::make_unique<QCheckBox>();
 	_iniciar->setChecked(true);
 
-	disenoFormulario->addRow("", botonSeleccionarArchivo);
+	disenoFormulario->addRow("", botonSeleccionarArchivos);
 	disenoFormulario->addRow("Elementos procesados:", elementosProcesados);
 	disenoFormulario->addRow("Categoría:", _categoria.get());
 	disenoFormulario->addRow("Iniciar descargas?", _iniciar.get());

@@ -19,6 +19,8 @@
 #include <QTreeView>
 #include <QHeaderView>
 #include <QSqlRecord>
+#include <QSqlError>
+#include <iostream>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
@@ -36,7 +38,6 @@ VentanaPrincipal::~VentanaPrincipal() {
  */
 void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
-	QSqlDatabase bd = QSqlDatabase::database();
 	ModeloEntradas *modelo;
 
 	switch (datos.categoria) {
@@ -54,7 +55,6 @@ void VentanaPrincipal::agregarDescarga() {
 			break;
 	}
 
-	bd.transaction();
 	QSqlRecord registro = modelo->record();
 	registro.remove(0); // Campo 'id'
 	registro.setValue("categoria", datos.categoria);
@@ -65,12 +65,8 @@ void VentanaPrincipal::agregarDescarga() {
 	registro.setValue("completado", 0);
 	registro.setValue("velocidad", 0);
 
-	if(modelo->insertRecord(-1, registro)) {
-		modelo->submitAll();
-		bd.commit();
-	} else {
-		bd.rollback();
-	}
+	modelo->insertRecord(-1, registro);
+	modelo->submitAll();
 
 	_modeloCategoriaDescargando->select();
 }
@@ -80,26 +76,24 @@ void VentanaPrincipal::agregarDescarga() {
  */
 void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
-	QSqlDatabase bd = QSqlDatabase::database();
 	ModeloEntradas *modelo;
 
-	bd.transaction();
-	for (const _NuevaDescarga &nuevaDescarga : listadoDescargas) {
-		switch (nuevaDescarga.categoria) {
-			case _ListadoCategorias::Programas:
-				modelo = _modeloCategoriaProgramas.get();
-				break;
-			case _ListadoCategorias::Musica:
-				modelo = _modeloCategoriaMusica.get();
-				break;
-			case _ListadoCategorias::Videos:
-				modelo = _modeloCategoriaVideos.get();
-				break;
-			case _ListadoCategorias::Otros:
-				modelo = _modeloCategoriaOtros.get();
-				break;
-		}
+	switch (listadoDescargas[0].categoria) {
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas.get();
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica.get();
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos.get();
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros.get();
+			break;
+	}
 
+	for (const _NuevaDescarga &nuevaDescarga : listadoDescargas) {
 		QSqlRecord registro = modelo->record();
 		registro.remove(0); // Campo 'id'
 		registro.setValue("categoria", nuevaDescarga.categoria);
@@ -110,15 +104,11 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		registro.setValue("completado", 0);
 		registro.setValue("velocidad", 0);
 
-		if(modelo->insertRecord(-1, registro)) {
-			modelo->submitAll();
-		} else {
-			bd.rollback();
-			return;
-		}
+		modelo->insertRecord(-1, registro);
 	}
 
-	bd.commit();
+	modelo->submitAll();
+
 	_modeloCategoriaDescargando->select();
 }
 
@@ -138,9 +128,23 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
 	_ventanaAgregarDescargasDesdeArchivo->show();
 }
 
-void VentanaPrincipal::eventoEliminarDescarga() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar descarga'
+ */
+void VentanaPrincipal::eventoEliminarDescarga() {
+	//for (const auto &indice: _listadoDescargas->)
+}
 
-void VentanaPrincipal::eventoEliminarTodasDescargas() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar todas las descargas'
+ */
+void VentanaPrincipal::eventoEliminarTodasDescargas() {
+	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+
+	modelo->removeRows(0, modelo->rowCount());
+	modelo->submitAll();
+	modelo->select();
+}
 
 void VentanaPrincipal::eventoIniciarDescarga() {}
 
@@ -376,6 +380,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
 	_modeloCategoriaDescargando = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaDescargando->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaDescargando->setFilter(QString("estado = %1 OR estado = %2").arg(_ListadoEstados::EnEspera).arg(_ListadoEstados::Iniciada));
 	_modeloCategoriaDescargando->select();
 
@@ -383,6 +388,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Finalizadas'
 	 */
 	_modeloCategoriaFinalizadas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaFinalizadas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaFinalizadas->setFilter(QString("estado = %1").arg(_ListadoEstados::Finalizada));
 	_modeloCategoriaFinalizadas->select();
 
@@ -390,6 +396,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Programas'
 	 */
 	_modeloCategoriaProgramas = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaProgramas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Programas));
 	_modeloCategoriaProgramas->select();
 
@@ -397,6 +404,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Música'
 	 */
 	_modeloCategoriaMusica = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaMusica->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Musica));
 	_modeloCategoriaMusica->select();
 
@@ -404,6 +412,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Videos'
 	 */
 	_modeloCategoriaVideos = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaVideos->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Videos));
 	_modeloCategoriaVideos->select();
 
@@ -411,6 +420,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Otros'
 	 */
 	_modeloCategoriaOtros = std::make_unique<ModeloEntradas>();
+	_modeloCategoriaOtros->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Otros));
 	_modeloCategoriaOtros->select();
 
@@ -421,6 +431,8 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
 	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
 	_listadoDescargas->setRootIsDecorated(false);
+	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
+	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_listadoDescargas->setSortingEnabled(true);
 	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);

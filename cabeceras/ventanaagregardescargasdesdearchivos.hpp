@@ -34,9 +34,9 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		void eventoAgregarDescargas();
 
 		/**
-		 * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar archivo y procesar'
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar archivoos y procesarlos'
 		 */
-		void eventoSeleccionarArchivoAProcesar();
+		void eventoSeleccionarArchivosAProcesar();
 
 	private:
 		/**
