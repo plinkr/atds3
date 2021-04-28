@@ -34,7 +34,6 @@ void crearDirectoriosDescargas();
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
-	VentanaPrincipal vp;
 
 	_aplicacionTitulo = "Descargador de Archivos de la Red Todus (S3)";
 	_aplicacionNombreCorto = "DARTS3";
@@ -46,6 +45,7 @@ int main(int argc, char *argv[])
 
 	crearDirectoriosDescargas();
 
+	VentanaPrincipal vp;
 	vp.show();
 
 	return app.exec();

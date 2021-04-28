@@ -20,6 +20,7 @@
 #include <QHeaderView>
 #include <QSqlRecord>
 #include <QStandardPaths>
+#include <QSettings>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
@@ -440,8 +441,9 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
  */
 void VentanaPrincipal::inicializarBaseDatos() {
 	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+	QString archivoBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/darts3.db";
 
-	db.setDatabaseName("darts3.db");
+	db.setDatabaseName(archivoBaseDatos);
 	db.open();
 
 	/**
