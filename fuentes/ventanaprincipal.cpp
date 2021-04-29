@@ -2,9 +2,12 @@
 #include "delegacioniconoestado.hpp"
 #include "delegacionbarraprogreso.hpp"
 #include "delegacionvelocidad.hpp"
+#include "modelocategorias.hpp"
 #include "modeloentradas.hpp"
 #include "ventanaagregardescarga.hpp"
 #include "ventanaagregardescargasdesdearchivos.hpp"
+#include "ventanaconfiguracion.hpp"
+#include "descarga.hpp"
 #include "main.hpp"
 #include <QVBoxLayout>
 #include <QToolBar>
@@ -24,7 +27,7 @@
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
-	: QMainWindow(parent) {
+	: QMainWindow(parent), _categoriaActiva(0) {
 	Q_INIT_RESOURCE(iconos);
 	construirIU();
 }
@@ -38,8 +41,9 @@ VentanaPrincipal::~VentanaPrincipal() {
  */
 void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
-	ModeloEntradas *modelo;
-	QString rutaDescarga = _rutaDescargas;
+	QSharedPointer<ModeloEntradas> modelo;
+	QSettings configuracion;
+	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
 
 	switch (datos.categoria) {
 		case _ListadoCategorias::Programas:
@@ -63,7 +67,7 @@ void VentanaPrincipal::agregarDescarga() {
 	QSqlRecord registro = modelo->record();
 	registro.remove(0); // Campo 'id'
 	registro.setValue("categoria", datos.categoria);
-	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
+	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada));
 	registro.setValue("enlace", datos.enlace);
 	registro.setValue("ruta", rutaDescarga);
 	registro.setValue("nombre", datos.nombre);
@@ -81,8 +85,9 @@ void VentanaPrincipal::agregarDescarga() {
  */
 void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
-	ModeloEntradas *modelo;
-	QString rutaDescarga = _rutaDescargas;
+	QSharedPointer<ModeloEntradas> modelo;
+	QSettings configuracion;
+	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
 
 	switch (listadoDescargas[0].categoria) {
 		case _ListadoCategorias::Programas:
@@ -106,7 +111,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		QSqlRecord registro = modelo->record();
 		registro.remove(0); // Campo 'id'
 		registro.setValue("categoria", nuevaDescarga.categoria);
-		registro.setValue("estado", (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEspera : _ListadoEstados::Pausada));
+		registro.setValue("estado", (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada));
 		registro.setValue("enlace", nuevaDescarga.enlace);
 		registro.setValue("ruta", rutaDescarga);
 		registro.setValue("nombre", nuevaDescarga.nombre);
@@ -141,7 +146,27 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar descarga'
  */
 void VentanaPrincipal::eventoEliminarDescarga() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargando;
+			break;
+		case 0x02:
+			modelo = _modeloCategoriaFinalizadas;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
@@ -156,7 +181,27 @@ void VentanaPrincipal::eventoEliminarDescarga() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Eliminar todas las descargas'
  */
 void VentanaPrincipal::eventoEliminarTodasDescargas() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargando;
+			break;
+		case 0x02:
+			modelo = _modeloCategoriaFinalizadas;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	modelo->removeRows(0, modelo->rowCount());
 	modelo->submitAll();
@@ -166,14 +211,32 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar descarga'
  */
 void VentanaPrincipal::eventoIniciarDescarga() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
 	QModelIndex indice;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+		case 0x02:
+			return;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
 			indice = modelo->index(i.row(), 1);
 			if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
-				modelo->setData(indice, _ListadoEstados::EnEspera);
+				modelo->setData(indice, _ListadoEstados::EnEsperaIniciar);
 			}
 		}
 		modelo->submitAll();
@@ -184,14 +247,34 @@ void VentanaPrincipal::eventoIniciarDescarga() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar descarga'
  */
 void VentanaPrincipal::eventoPausarDescarga() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
 	QModelIndex indice;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargando;
+			break;
+		case 0x02:
+			modelo = _modeloCategoriaFinalizadas;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
 			indice = modelo->index(i.row(), 1);
-			if (modelo->data(indice).toInt() == _ListadoEstados::EnEspera || modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
-				modelo->setData(indice, _ListadoEstados::Pausada);
+			if (modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+				modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
 			}
 		}
 		modelo->submitAll();
@@ -202,13 +285,33 @@ void VentanaPrincipal::eventoPausarDescarga() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar todas las descargas'
  */
 void VentanaPrincipal::eventoIniciarTodasDescargas() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
 	QModelIndex indice;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargando;
+			break;
+		case 0x02:
+			modelo = _modeloCategoriaFinalizadas;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		indice = modelo->index(f, 1);
 		if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
-			modelo->setData(indice, _ListadoEstados::EnEspera);
+			modelo->setData(indice, _ListadoEstados::EnEsperaIniciar);
 		}
 	}
 
@@ -219,21 +322,49 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar todas las descargas'
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
-	ModeloEntradas *modelo = qobject_cast<ModeloEntradas *>(_listadoDescargas->model());
+	QSharedPointer<ModeloEntradas> modelo;
 	QModelIndex indice;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargando;
+			break;
+		case 0x02:
+			modelo = _modeloCategoriaFinalizadas;
+			break;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		indice = modelo->index(f, 1);
-		if (modelo->data(indice).toInt() == _ListadoEstados::EnEspera || modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
-			modelo->setData(indice, _ListadoEstados::Pausada);
+		if (modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+			modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
 		}
 	}
 
 	modelo->submitAll();
 }
 
-void VentanaPrincipal::eventoConfiguracion() {}
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
+ */
+void VentanaPrincipal::eventoConfiguracion() {
+	_ventanaConfiguracion->show();
+}
 
+/**
+ * @brief Evento que se dispara cuando se hace clic en el botón 'Acerca de'
+ */
 void VentanaPrincipal::eventoAcerca() {}
 
 /**
@@ -241,26 +372,31 @@ void VentanaPrincipal::eventoAcerca() {}
  * @param indice Índice del modelo
  */
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
+	QSharedPointer<ModeloEntradas> modeloActivo;
+
 	switch (indice.row()) {
 		case 0:
-			_listadoDescargas->setModel(_modeloCategoriaDescargando);
+			modeloActivo = _modeloCategoriaDescargando;
 			break;
 		case 1:
-			_listadoDescargas->setModel(_modeloCategoriaFinalizadas);
+			modeloActivo = _modeloCategoriaFinalizadas;
 			break;
 		case 2:
-			_listadoDescargas->setModel(_modeloCategoriaProgramas);
+			modeloActivo = _modeloCategoriaProgramas;
 			break;
 		case 3:
-			_listadoDescargas->setModel(_modeloCategoriaMusica);
+			modeloActivo = _modeloCategoriaMusica;
 			break;
 		case 4:
-			_listadoDescargas->setModel(_modeloCategoriaVideos);
+			modeloActivo = _modeloCategoriaVideos;
 			break;
 		case 5:
-			_listadoDescargas->setModel(_modeloCategoriaOtros);
+			modeloActivo = _modeloCategoriaOtros;
 			break;
 	}
+
+	_listadoDescargas->setModel(modeloActivo.get());
+	_categoriaActiva = indice.row() + 1;
 
 	if (indice.row() == 1) {
 		_listadoDescargas->hideColumn(4);
@@ -269,6 +405,8 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 		_listadoDescargas->showColumn(4);
 		_listadoDescargas->showColumn(5);
 	}
+
+	emit categoriaSeleccionada(modeloActivo);
 }
 
 /**
@@ -461,15 +599,15 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
-	_modeloCategoriaDescargando = new ModeloEntradas();
+	_modeloCategoriaDescargando = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaDescargando->setEditStrategy(QSqlTableModel::OnManualSubmit);
-	_modeloCategoriaDescargando->setFilter(QString("estado = %1 OR estado = %2").arg(_ListadoEstados::EnEspera).arg(_ListadoEstados::Iniciada));
+	_modeloCategoriaDescargando->setFilter(QString("estado = %1 OR estado = %2").arg(_ListadoEstados::EnEsperaIniciar).arg(_ListadoEstados::Iniciada));
 	_modeloCategoriaDescargando->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Finalizadas'
 	 */
-	_modeloCategoriaFinalizadas = new ModeloEntradas();
+	_modeloCategoriaFinalizadas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaFinalizadas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaFinalizadas->setFilter(QString("estado = %1").arg(_ListadoEstados::Finalizada));
 	_modeloCategoriaFinalizadas->select();
@@ -477,7 +615,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Programas'
 	 */
-	_modeloCategoriaProgramas = new ModeloEntradas();
+	_modeloCategoriaProgramas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaProgramas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Programas));
 	_modeloCategoriaProgramas->select();
@@ -485,7 +623,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Música'
 	 */
-	_modeloCategoriaMusica = new ModeloEntradas();
+	_modeloCategoriaMusica = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaMusica->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Musica));
 	_modeloCategoriaMusica->select();
@@ -493,7 +631,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Videos'
 	 */
-	_modeloCategoriaVideos = new ModeloEntradas();
+	_modeloCategoriaVideos = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaVideos->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Videos));
 	_modeloCategoriaVideos->select();
@@ -501,7 +639,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Otros'
 	 */
-	_modeloCategoriaOtros = new ModeloEntradas();
+	_modeloCategoriaOtros = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
 	_modeloCategoriaOtros->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Otros));
 	_modeloCategoriaOtros->select();
@@ -510,12 +648,12 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setAlternatingRowColors(true);
 	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoDescargas->setItemsExpandable(false);
-	_listadoDescargas->setModel(_modeloCategoriaDescargando);
+	_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
 	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);
-	_listadoDescargas->setSortingEnabled(true);
+	_listadoDescargas->setSortingEnabled(false);
 	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 
@@ -530,6 +668,8 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado);
 	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso);
 	_listadoDescargas->setItemDelegateForColumn(4, _elementoVelocidad);
+
+	_categoriaActiva = 0x01;
 
 	return _listadoDescargas;
 }
@@ -585,6 +725,12 @@ void VentanaPrincipal::construirIU() {
 	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
 	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
 	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
+
+	/**
+	 * Construye la ventana 'Agregar descargas desde archivo'
+	 */
+	_ventanaConfiguracion = new VentanaConfiguracion(this);
+	_ventanaConfiguracion->setModal(true);
 
 	statusBar()->showMessage("Listo");
 }

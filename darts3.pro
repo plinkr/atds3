@@ -4,22 +4,30 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20
 
 SOURCES += \
+	fuentes/todus.cpp \
+	fuentes/descarga.cpp \
+	fuentes/modelocategorias.cpp \
 	fuentes/modeloentradas.cpp \
 	fuentes/delegacioniconoestado.cpp \
 	fuentes/delegacionbarraprogreso.cpp \
 	fuentes/delegacionvelocidad.cpp \
 	fuentes/ventanaagregardescarga.cpp \
 	fuentes/ventanaagregardescargasdesdearchivo.cpp \
+	fuentes/ventanaconfiguracion.cpp \
 	fuentes/ventanaprincipal.cpp \
 	fuentes/main.cpp
 
 HEADERS += \
+	cabeceras/todus.hpp \
+	cabeceras/descarga.hpp \
+	cabeceras/modelocategorias.hpp \
 	cabeceras/modeloentradas.hpp \
 	cabeceras/delegacioniconoestado.hpp \
 	cabeceras/delegacionbarraprogreso.hpp \
 	cabeceras/delegacionvelocidad.hpp \
 	cabeceras/ventanaagregardescarga.hpp \
 	cabeceras/ventanaagregardescargasdesdearchivos.hpp \
+	cabeceras/ventanaconfiguracion.hpp \
 	cabeceras/ventanaprincipal.hpp \
 	cabeceras/main.hpp
 

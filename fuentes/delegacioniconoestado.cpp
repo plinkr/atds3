@@ -12,10 +12,11 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 	QIcon icono;
 
 	switch (indice.data().toInt()) {
+		case _ListadoEstados::EnEsperaPausar:
 		case _ListadoEstados::Pausada:
 			icono = QIcon(":/iconos/pausar.svg");
 			break;
-		case _ListadoEstados::EnEspera:
+		case _ListadoEstados::EnEsperaIniciar:
 			icono = QIcon(":/iconos/reloj.svg");
 			break;
 		case _ListadoEstados::Iniciada:

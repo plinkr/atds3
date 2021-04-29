@@ -20,5 +20,7 @@
         <file>iconos/cancelar.svg</file>
         <file>iconos/reloj.svg</file>
         <file>iconos/importar.svg</file>
+        <file>iconos/todus.png</file>
+        <file>iconos/seleccionar-directorio.svg</file>
     </qresource>
 </RCC>

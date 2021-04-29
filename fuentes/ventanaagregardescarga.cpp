@@ -10,8 +10,8 @@
 #include <QPushButton>
 
 
-VentanaAgregarDescarga::VentanaAgregarDescarga(QWidget *parent)
-	: QDialog(parent), _tituloVentana("Agregar descarga") {
+VentanaAgregarDescarga::VentanaAgregarDescarga(QWidget *padre)
+	: QDialog(padre), _tituloVentana("Agregar descarga") {
 	construirIU();
 }
 

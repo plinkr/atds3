@@ -3,6 +3,8 @@
 
 
 #include <QString>
+#include <QSharedPointer>
+#include "gestordescargas.hpp"
 
 
 /**
@@ -29,20 +31,21 @@ extern QString _rutaDescargas;
  * @brief Listado de categorías
  */
 enum _ListadoCategorias {
-	Programas = 0x01,
-	Musica = 0x02,
-	Videos = 0x03,
-	Otros = 0x04
+	Programas = 0x03,
+	Musica = 0x04,
+	Videos = 0x05,
+	Otros = 0x06
 };
 
 /**
  * @brief Listado de estados
  */
 enum _ListadoEstados {
-	Pausada = 0x01,
-	EnEspera = 0x02,
-	Iniciada = 0x03,
-	Finalizada = 0x04
+	EnEsperaPausar = 0x01,
+	Pausada = 0x02,
+	EnEsperaIniciar = 0x03,
+	Iniciada = 0x04,
+	Finalizada = 0x05
 };
 
 struct _NuevaDescarga {
@@ -51,7 +54,6 @@ struct _NuevaDescarga {
 	int categoria;
 	bool iniciar;
 };
-
 
 #endif // MAIN_HPP
 

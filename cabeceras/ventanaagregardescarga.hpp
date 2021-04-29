@@ -15,7 +15,7 @@ class VentanaAgregarDescarga : public QDialog
 	Q_OBJECT
 
 	public:
-		VentanaAgregarDescarga(QWidget *parent = nullptr);
+		VentanaAgregarDescarga(QWidget *padre = nullptr);
 
 		/**
 		 * @brief Limpia los campos

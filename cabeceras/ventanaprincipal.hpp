@@ -4,8 +4,8 @@
 #include <QThread>
 #include <QMainWindow>
 #include <QPointer>
+#include <QSharedPointer>
 #include <QStandardItemModel>
-#include <memory>
 
 
 class DelegacionIconoEstado;
@@ -13,28 +13,53 @@ class DelegacionBarraProgreso;
 class DelegacionVelocidad;
 class QStandardItemModel;
 class QListView;
+class ModeloCategorias;
 class ModeloEntradas;
 class QTreeView;
 class VentanaAgregarDescarga;
 class VentanaAgregarDescargasDesdeArchivos;
-
-class ModeloCategorias : public QStandardItemModel {
-	Q_OBJECT
-
-	public:
-		ModeloCategorias(QObject *padre = nullptr) : QStandardItemModel(padre) {}
-		Qt::ItemFlags flags(const QModelIndex &) const override { return Qt::ItemIsEnabled | Qt::ItemIsSelectable; }
-};
+class VentanaConfiguracion;
 
 class VentanaPrincipal : public QMainWindow
 {
 	Q_OBJECT
 
 	public:
+		/**
+		 * Modelo del listado de la categoría 'Programas'
+		 */
+		QSharedPointer<ModeloEntradas> _modeloCategoriaProgramas;
+
+		/**
+		 * Modelo del listado de la categoría 'Música'
+		 */
+		QSharedPointer<ModeloEntradas> _modeloCategoriaMusica;
+
+		/**
+		 * Modelo del listado de la categoría 'Videos'
+		 */
+		QSharedPointer<ModeloEntradas> _modeloCategoriaVideos;
+
+		/**
+		 * Modelo del listado de la categoría 'Otros'
+		 */
+		QSharedPointer<ModeloEntradas> _modeloCategoriaOtros;
+
+		/**
+		 * Ventana 'Configuración'
+		 */
+		QPointer<VentanaConfiguracion> _ventanaConfiguracion;
+
 		VentanaPrincipal(QWidget *parent = nullptr);
 		~VentanaPrincipal();
 
 	signals:
+		/**
+		 * @brief Señal que se dispara cuando se selecciona una categoría
+		 * @param modeloActivo Modelo activo
+		 */
+		void categoriaSeleccionada(QSharedPointer<ModeloEntradas> modeloActivo);
+
 		/**
 		 * @brief Señal que se emite cuando la aplicación va a detener su ejecución
 		 */
@@ -90,7 +115,15 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar todas las descargas'
 		 */
 		void eventoPausarTodasDescargas();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
+		 */
 		void eventoConfiguracion();
+
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Acerca de'
+		 */
 		void eventoAcerca();
 
 		/**
@@ -106,39 +139,19 @@ class VentanaPrincipal : public QMainWindow
 		QPointer<ModeloCategorias> _modeloListadoCategorias;
 
 		/**
-		 * Elemento que muestra el listado de categorías
-		 */
-		QPointer<QListView> _listadoCategorias;
-
-		/**
 		 * Modelo del listado de la categoría 'Descargando'
 		 */
-		QPointer<ModeloEntradas> _modeloCategoriaDescargando;
+		QSharedPointer<ModeloEntradas> _modeloCategoriaDescargando;
 
 		/**
 		 * Modelo del listado de la categoría 'Finalizadas'
 		 */
-		QPointer<ModeloEntradas> _modeloCategoriaFinalizadas;
+		QSharedPointer<ModeloEntradas> _modeloCategoriaFinalizadas;
 
 		/**
-		 * Modelo del listado de la categoría 'Programas'
+		 * Elemento que muestra el listado de categorías
 		 */
-		QPointer<ModeloEntradas> _modeloCategoriaProgramas;
-
-		/**
-		 * Modelo del listado de la categoría 'Música'
-		 */
-		QPointer<ModeloEntradas> _modeloCategoriaMusica;
-
-		/**
-		 * Modelo del listado de la categoría 'Videos'
-		 */
-		QPointer<ModeloEntradas> _modeloCategoriaVideos;
-
-		/**
-		 * Modelo del listado de la categoría 'Otros'
-		 */
-		QPointer<ModeloEntradas> _modeloCategoriaOtros;
+		QPointer<QListView> _listadoCategorias;
 
 		/**
 		 * Elemento que representa un icono en el campo 'Estado' dentro del listado de descargas
@@ -169,6 +182,11 @@ class VentanaPrincipal : public QMainWindow
 		 * Ventana 'Agregar descargas desde archivo'
 		 */
 		QPointer<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
+
+		/**
+		 * @brief Categoría activada por el usuario
+		 */
+		int _categoriaActiva = 0;
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas
