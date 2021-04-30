@@ -226,6 +226,18 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		QListView *construirListadoCategorias();
 
+		QString _configuracionTelefono;
+		QString _configuracionFichaAcceso;
+		QString _configuracionIpServidorAutentificacion;
+		int _configuracionPuertoServidorAutentificacion;
+		QString _configuracionNombreDNSServidorAutentificacion;
+		QString _configuracionIpServidorSesion;
+		int _configuracionPuertoServidorSesion;
+		QString _configuracionNombreDNSServidorSesion;
+		QString _configuracionIpServidorS3;
+		int _configuracionPuertoServidorS3;
+		QString _configuracionNombreDNSServidorS3;
+
 		/**
 		 * @brief Inicializa la base de datos
 		 */

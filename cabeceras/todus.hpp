@@ -33,6 +33,11 @@ class toDus : public QSslSocket {
 		void desconectar();
 
 		/**
+		 * @brief Reconectar
+		 */
+		void reconectar();
+
+		/**
 		 * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
 		 */
 		void iniciarSesion();
@@ -61,6 +66,7 @@ class toDus : public QSslSocket {
 		QString _jID;
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
+		bool _reconexionSolicitada;
 
 		void generarIDSesion();
 		void iniciarSesionConTelefono();

@@ -148,6 +148,46 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
  * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
  */
 void VentanaPrincipal::configuracionCambiada() {
+	QSettings configuracion;
+	bool reconexionRequerida = false;
+
+	if (_configuracionTelefono != configuracion.value("todus/telefono").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionFichaAcceso != configuracion.value("todus/fichaAcceso").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionIpServidorAutentificacion != configuracion.value("todus/ipServidorAutentificacion").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionPuertoServidorAutentificacion != configuracion.value("todus/puertoServidorAutentificacion", 443).toInt()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionNombreDNSServidorAutentificacion != configuracion.value("todus/nombreDNSServidorAutentificacion").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionIpServidorSesion != configuracion.value("todus/ipServidorSesion").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionPuertoServidorSesion != configuracion.value("todus/puertoServidorSesion", 443).toInt()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionNombreDNSServidorSesion != configuracion.value("todus/nombreDNSServidorSesion").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionIpServidorS3 != configuracion.value("todus/ipServidorS3").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionPuertoServidorS3 != configuracion.value("todus/puertoServidorS3", 443).toInt()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionNombreDNSServidorS3 != configuracion.value("todus/nombreDNSServidorS3").toString()) {
+		reconexionRequerida = true;
+	}
+
+	if (reconexionRequerida == true) {
+		_toDus->reconectar();
+	}
 }
 
 /**
@@ -383,6 +423,20 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
  */
 void VentanaPrincipal::eventoConfiguracion() {
+	QSettings configuracion;
+
+	_configuracionTelefono = configuracion.value("todus/telefono").toString();
+	_configuracionFichaAcceso = configuracion.value("todus/fichaAcceso").toString();
+	_configuracionIpServidorAutentificacion = configuracion.value("todus/ipServidorAutentificacion").toString();
+	_configuracionPuertoServidorAutentificacion = configuracion.value("todus/puertoServidorAutentificacion", 443).toInt();
+	_configuracionNombreDNSServidorAutentificacion = configuracion.value("todus/nombreDNSServidorAutentificacion").toString();
+	_configuracionIpServidorSesion = configuracion.value("todus/ipServidorSesion").toString();
+	_configuracionPuertoServidorSesion = configuracion.value("todus/puertoServidorSesion", 443).toInt();
+	_configuracionNombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion").toString();
+	_configuracionIpServidorS3= configuracion.value("todus/ipServidorS3").toString();
+	_configuracionPuertoServidorS3= configuracion.value("todus/puertoServidorS3", 443).toInt();
+	_configuracionNombreDNSServidorS3= configuracion.value("todus/nombreDNSServidorS3").toString();
+
 	_ventanaConfiguracion->show();
 }
 

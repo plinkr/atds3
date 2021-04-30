@@ -68,6 +68,11 @@ class VentanaConfiguracion : public QDialog
 		QPointer<QLineEdit> _ipServidorAutentificacion;
 
 		/**
+		 * @brief Puerto del servidor de autentificación
+		 */
+		QPointer<QSpinBox> _puertoServidorAutentificacion;
+
+		/**
 		 * @brief Nombre DNS del servidor de autentificación
 		 */
 		QPointer<QLineEdit> _nombreDNSServidorAutentificacion;
@@ -78,6 +83,11 @@ class VentanaConfiguracion : public QDialog
 		QPointer<QLineEdit> _ipServidorSesion;
 
 		/**
+		 * @brief Puerto del servidor de sesion
+		 */
+		QPointer<QSpinBox> _puertoServidorSesion;
+
+		/**
 		 * @brief Nombre DNS del servidor de sesion
 		 */
 		QPointer<QLineEdit> _nombreDNSServidorSesion;
@@ -86,6 +96,11 @@ class VentanaConfiguracion : public QDialog
 		 * @brief IP del servidor S3
 		 */
 		QPointer<QLineEdit> _ipServidorS3;
+
+		/**
+		 * @brief Puerto del servidor S3
+		 */
+		QPointer<QSpinBox> _puertoServidorS3;
 
 		/**
 		 * @brief Nombre DNS del servidor S3

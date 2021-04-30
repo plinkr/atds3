@@ -63,6 +63,12 @@ void VentanaConfiguracion::eventoGuardarOpciones() {
 		configuracion.remove("todus/ipServidorAutentificacion");
 	}
 
+	if (_puertoServidorAutentificacion->value() != 443) {
+		configuracion.setValue("todus/puertoServidorAutentificacion", _puertoServidorAutentificacion->value());
+	} else {
+		configuracion.remove("todus/puertoServidorAutentificacion");
+	}
+
 	if (_nombreDNSServidorAutentificacion->text().trimmed().size() > 0) {
 		configuracion.setValue("todus/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
 	} else {
@@ -75,6 +81,12 @@ void VentanaConfiguracion::eventoGuardarOpciones() {
 		configuracion.remove("todus/ipServidorSesion");
 	}
 
+	if (_puertoServidorSesion->value() != 1756) {
+		configuracion.setValue("todus/puertoServidorSesion", _puertoServidorSesion->value());
+	} else {
+		configuracion.remove("todus/puertoServidorSesion");
+	}
+
 	if (_nombreDNSServidorSesion->text().trimmed().size() > 0) {
 		configuracion.setValue("todus/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
 	} else {
@@ -85,6 +97,12 @@ void VentanaConfiguracion::eventoGuardarOpciones() {
 		configuracion.setValue("todus/ipServidorS3", _ipServidorS3->text().trimmed());
 	} else {
 		configuracion.remove("todus/ipServidorS3");
+	}
+
+	if (_puertoServidorS3->value() != 443) {
+		configuracion.setValue("todus/puertoServidorS3", _puertoServidorS3->value());
+	} else {
+		configuracion.remove("todus/puertoServidorS3");
 	}
 
 	if (_nombreDNSServidorS3->text().trimmed().size() > 0) {
@@ -235,35 +253,74 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 	margenes.setLeft(margenes.left() + 20);
 	formularioConexion->setContentsMargins(margenes);
 
+	QHBoxLayout *disenoElementosServidorAutentificacion = new QHBoxLayout();
+
 	_ipServidorAutentificacion = new QLineEdit();
 	_ipServidorAutentificacion->setPlaceholderText("Dirección IP o déjelo en blanco...");
 	_ipServidorAutentificacion->setText(configuracion.value("todus/ipServidorAutentificacion").toString());
+
+	_puertoServidorAutentificacion = new QSpinBox();
+	_puertoServidorAutentificacion->setAlignment(Qt::AlignRight);
+	_puertoServidorAutentificacion->setMinimum(0x01);
+	_puertoServidorAutentificacion->setMaximum(0xFFFF);
+	_puertoServidorAutentificacion->setMinimumWidth(75);
+	_puertoServidorAutentificacion->setValue(configuracion.value("todus/puertoServidorAutentificacion", 443).toInt());
+
+	disenoElementosServidorAutentificacion->addWidget(_ipServidorAutentificacion);
+	disenoElementosServidorAutentificacion->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorAutentificacion->addWidget(_puertoServidorAutentificacion);
 
 	_nombreDNSServidorAutentificacion = new QLineEdit();
 	_nombreDNSServidorAutentificacion->setPlaceholderText("Nombre DNS o déjelo en blanco...");
 	_nombreDNSServidorAutentificacion->setText(configuracion.value("todus/nombreDNSServidorAutentificacion").toString());
 
+	QHBoxLayout *disenoElementosServidorSesion = new QHBoxLayout();
+
 	_ipServidorSesion = new QLineEdit();
 	_ipServidorSesion->setPlaceholderText("Dirección IP o déjelo en blanco...");
 	_ipServidorSesion->setText(configuracion.value("todus/ipServidorSesion").toString());
+
+	_puertoServidorSesion = new QSpinBox();
+	_puertoServidorSesion->setAlignment(Qt::AlignRight);
+	_puertoServidorSesion->setMinimum(0x01);
+	_puertoServidorSesion->setMaximum(0xFFFF);
+	_puertoServidorSesion->setMinimumWidth(75);
+	_puertoServidorSesion->setValue(configuracion.value("todus/puertoServidorSesion", 1756).toInt());
+
+	disenoElementosServidorSesion->addWidget(_ipServidorSesion);
+	disenoElementosServidorSesion->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorSesion->addWidget(_puertoServidorSesion);
 
 	_nombreDNSServidorSesion = new QLineEdit();
 	_nombreDNSServidorSesion->setPlaceholderText("Dirección DNS o déjelo en blanco...");
 	_nombreDNSServidorSesion->setText(configuracion.value("todus/nombreDNSServidorSesion").toString());
 
+	QHBoxLayout *disenoElementosServidorS3 = new QHBoxLayout();
+
 	_ipServidorS3 = new QLineEdit();
 	_ipServidorS3->setPlaceholderText("Dirección IP o déjelo en blanco...");
 	_ipServidorS3->setText(configuracion.value("todus/ipServidorS3").toString());
+
+	_puertoServidorS3 = new QSpinBox();
+	_puertoServidorS3->setAlignment(Qt::AlignRight);
+	_puertoServidorS3->setMinimum(0x01);
+	_puertoServidorS3->setMaximum(0xFFFF);
+	_puertoServidorS3->setMinimumWidth(75);
+	_puertoServidorS3->setValue(configuracion.value("todus/puertoServidorS3", 443).toInt());
+
+	disenoElementosServidorS3->addWidget(_ipServidorS3);
+	disenoElementosServidorS3->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorS3->addWidget(_puertoServidorS3);
 
 	_nombreDNSServidorS3 = new QLineEdit();
 	_nombreDNSServidorS3->setPlaceholderText("Dirección DNS o déjelo en blanco...");
 	_nombreDNSServidorS3->setText(configuracion.value("todus/nombreDNSServidorS3").toString());
 
-	formularioConexion->addRow("IP servidor autentificación:", _ipServidorAutentificacion);
+	formularioConexion->addRow("IP servidor autentificación:", disenoElementosServidorAutentificacion);
 	formularioConexion->addRow("Nombre DNS servidor autentificación:", _nombreDNSServidorAutentificacion);
-	formularioConexion->addRow("IP servidor sesión:", _ipServidorSesion);
+	formularioConexion->addRow("IP servidor sesión:", disenoElementosServidorSesion);
 	formularioConexion->addRow("Nombre DNS servidor sesión:", _nombreDNSServidorSesion);
-	formularioConexion->addRow("IP servidor S3:", _ipServidorS3);
+	formularioConexion->addRow("IP servidor S3:", disenoElementosServidorS3);
 	formularioConexion->addRow("Nombre DNS servidor S3:", _nombreDNSServidorS3);
 
 	diseno->addWidget(construirSubtitulo("toDus"));

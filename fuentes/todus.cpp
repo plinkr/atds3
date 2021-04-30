@@ -9,7 +9,7 @@
 
 
 toDus::toDus(QObject *padre)
-	: QSslSocket(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1) {
+	: QSslSocket(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _reconexionSolicitada(false) {
 	generarIDSesion();
 	setPeerVerifyMode(QSslSocket::VerifyNone);
 	_temporizadorMantenerSesionActiva.setInterval(60000);
@@ -36,6 +36,14 @@ void toDus::desconectar() {
 }
 
 /**
+ * @brief Reconectar
+ */
+void toDus::reconectar() {
+	_reconexionSolicitada = true;
+	disconnectFromHost();
+}
+
+/**
  * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
  */
 void toDus::iniciarSesion() {
@@ -54,6 +62,10 @@ void toDus::eventoCambiarEstado(QAbstractSocket::SocketState estado) {
 	switch (estado) {
 		case QAbstractSocket::UnconnectedState:
 			_estado = Estado::Desconectado;
+			if (_reconexionSolicitada == true) {
+				_reconexionSolicitada = false;
+				iniciarSesion();
+			}
 			break;
 		case QAbstractSocket::HostLookupState:
 			_estado = Estado::ResolviendoNombreDNS;
