@@ -29,6 +29,11 @@ QString _aplicacionVersion;
 QString _rutaDescargas;
 
 /**
+ * @brief Sesión toDus
+ */
+QSharedPointer<toDus> _toDus;
+
+/**
  * @brief Crea las configuraciones de la aplicación por defecto si no existen
  */
 void crearConfiguracionesDefecto();
@@ -64,9 +69,12 @@ int main(int argc, char *argv[])
 
 	VentanaPrincipal ventanaPrincipal;
 	ventanaPrincipal.show();
+
 	QSettings configuracion;
 
-	if (configuracion.value("todus/telefono").toString().size() == 0) {
+	if (configuracion.value("todus/fichaAcceso").toString().size() > 0 || configuracion.value("todus/telefono").toString().size() > 0) {
+		_toDus->iniciarSesion();
+	} else {
 		ventanaPrincipal._ventanaConfiguracion->show();
 	}
 

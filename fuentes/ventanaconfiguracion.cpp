@@ -45,17 +45,67 @@ void VentanaConfiguracion::eventoSeleccionarRutaDescargas() {
 void VentanaConfiguracion::eventoGuardarOpciones() {
 	QSettings configuracion;
 
-	configuracion.setValue("todus/telefono", _telefono->text().trimmed());
-	configuracion.setValue("todus/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
-	configuracion.setValue("todus/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
-	configuracion.setValue("todus/ipServidorSesion", _ipServidorSesion->text().trimmed());
-	configuracion.setValue("todus/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
-	configuracion.setValue("todus/ipServidorS3", _ipServidorS3->text().trimmed());
-	configuracion.setValue("todus/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
-	configuracion.setValue("descargas/ruta", _rutaDescargas->text().trimmed());
-	configuracion.setValue("descargas/descargasParalelas", _totalDescargasParalelas->value());
+	if (_telefono->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/telefono", _telefono->text().trimmed());
+	} else {
+		configuracion.remove("todus/telefono");
+	}
 
-	accept();
+	if (_fichaAcceso->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/fichaAcceso", _fichaAcceso->text().trimmed());
+	} else {
+		configuracion.remove("todus/fichaAcceso");
+	}
+
+	if (_ipServidorAutentificacion->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
+	} else {
+		configuracion.remove("todus/ipServidorAutentificacion");
+	}
+
+	if (_nombreDNSServidorAutentificacion->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
+	} else {
+		configuracion.remove("todus/nombreDNSServidorAutentificacion");
+	}
+
+	if (_ipServidorSesion->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/ipServidorSesion", _ipServidorSesion->text().trimmed());
+	} else {
+		configuracion.remove("todus/ipServidorSesion");
+	}
+
+	if (_nombreDNSServidorSesion->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
+	} else {
+		configuracion.remove("todus/nombreDNSServidorSesion");
+	}
+
+	if (_ipServidorS3->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/ipServidorS3", _ipServidorS3->text().trimmed());
+	} else {
+		configuracion.remove("todus/ipServidorS3");
+	}
+
+	if (_nombreDNSServidorS3->text().trimmed().size() > 0) {
+		configuracion.setValue("todus/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
+	} else {
+		configuracion.remove("todus/nombreDNSServidorS3");
+	}
+
+	if (_rutaDescargas->text().trimmed().size() > 0) {
+		configuracion.setValue("descargas/ruta", _rutaDescargas->text().trimmed());
+	} else {
+		configuracion.remove("descargas/ruta");
+	}
+
+	if (_totalDescargasParalelas->text().trimmed().size() > 0) {
+		configuracion.setValue("descargas/descargasParalelas", _totalDescargasParalelas->text().trimmed());
+	} else {
+		configuracion.remove("descargas/descargasParalelas");
+	}
+
+	emit accept();
 }
 
 /**

@@ -1,6 +1,7 @@
 #ifndef VENTANAPRINCIPAL_HPP
 #define VENTANAPRINCIPAL_HPP
 
+#include "todus.hpp"
 #include <QThread>
 #include <QMainWindow>
 #include <QPointer>
@@ -8,6 +9,7 @@
 #include <QStandardItemModel>
 
 
+class QCloseEvent;
 class DelegacionIconoEstado;
 class DelegacionBarraProgreso;
 class DelegacionVelocidad;
@@ -19,6 +21,7 @@ class QTreeView;
 class VentanaAgregarDescarga;
 class VentanaAgregarDescargasDesdeArchivos;
 class VentanaConfiguracion;
+class QLabel;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -77,6 +80,11 @@ class VentanaPrincipal : public QMainWindow
 		void agregarDescargasDesdeArchivo();
 
 		/**
+		 * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
+		 */
+		void configuracionCambiada();
+
+		/**
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descarga'
 		 */
 		void eventoAgregarDescarga();
@@ -132,6 +140,12 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		void eventoCategoriaSeleccionada(const QModelIndex &indice);
 
+		/**
+		 * @brief Actualiza la etiqueta que refleja el estado de la sesión toDus
+		 * @param Nuevo estado
+		 */
+		void actualizarEstadoTodus(toDus::Estado estado);
+
 	private:
 		/**
 		 * Modelo del listado de categorías
@@ -184,9 +198,21 @@ class VentanaPrincipal : public QMainWindow
 		QPointer<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
 
 		/**
+		 * Etiqueta que representa el estado de la sesión toDus
+		 */
+		QPointer<QLabel> _estadoSesionTodus;
+
+		/**
 		 * @brief Categoría activada por el usuario
 		 */
-		int _categoriaActiva = 0;
+		int _categoriaActiva;
+
+		/**
+		 * @brief Indica si se debe ordenar la reconexión de la sesion toDus
+		 */
+		bool _toDusReconectar;
+
+		void closeEvent(QCloseEvent *evento);
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas

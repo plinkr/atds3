@@ -5,6 +5,7 @@
 #include <QString>
 #include <QSharedPointer>
 #include "gestordescargas.hpp"
+#include "todus.hpp"
 
 
 /**
@@ -26,6 +27,11 @@ extern QString _aplicacionVersion;
  * @brief Ruta en donde almacenar las descargas
  */
 extern QString _rutaDescargas;
+
+/**
+ * @brief Sesión toDus
+ */
+extern QSharedPointer<toDus> _toDus;
 
 /**
  * @brief Listado de categorías

@@ -9,6 +9,8 @@
 #include "ventanaconfiguracion.hpp"
 #include "descarga.hpp"
 #include "main.hpp"
+#include <QCloseEvent>
+#include <QSharedPointer>
 #include <QVBoxLayout>
 #include <QToolBar>
 #include <QDockWidget>
@@ -24,16 +26,32 @@
 #include <QSqlRecord>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QLabel>
+#include <QPixmap>
+#include <QIcon>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
-	: QMainWindow(parent), _categoriaActiva(0) {
+	: QMainWindow(parent), _categoriaActiva(0), _toDusReconectar(false) {
 	Q_INIT_RESOURCE(iconos);
+
 	construirIU();
+
+	_toDus = QSharedPointer<toDus>(new toDus(this));
+	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 }
 VentanaPrincipal::~VentanaPrincipal() {
 	// Emitir la señal de detención de la aplicación para que todos los hilos de descargas cesen su ejecución
 	emit detenerEjecucion();
+}
+
+void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
+	disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+
+	_toDus->desconectar();
+	_toDus.clear();
+
+	evento->accept();
 }
 
 /**
@@ -124,6 +142,12 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	modelo->submitAll();
 
 	_modeloCategoriaDescargando->select();
+}
+
+/**
+ * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
+ */
+void VentanaPrincipal::configuracionCambiada() {
 }
 
 /**
@@ -410,6 +434,40 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 }
 
 /**
+ * @brief Actualiza la etiqueta que refleja el estado de la sesión toDus
+ * @param Nuevo estado
+ */
+void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
+	if (_estadoSesionTodus.isNull() == true) {
+		return;
+	}
+
+	switch (estado) {
+		case toDus::Estado::Desconectado:
+			_estadoSesionTodus->setText("Desconectado.");
+			break;
+		case toDus::Estado::ResolviendoNombreDNS:
+			_estadoSesionTodus->setText("Resolviendo nombres DNS...");
+			break;
+		case toDus::Estado::Conectando:
+			_estadoSesionTodus->setText("Conectando...");
+			break;
+		case toDus::Estado::Conectado:
+			_estadoSesionTodus->setText("Conectado.");
+			break;
+		case toDus::Estado::IniciandoSesion:
+			_estadoSesionTodus->setText("Iniciando sesión...");
+			break;
+		case toDus::Estado::Listo:
+			_estadoSesionTodus->setText("Listo.");
+			break;
+		case toDus::Estado::Desconectando:
+			_estadoSesionTodus->setText("Desconectando...");
+			break;
+	}
+}
+
+/**
  * @brief Construye los botones de la barra de herramientas
  * @param barraHerramientas Puntero al objeto de la barra de herramientas
  */
@@ -683,11 +741,14 @@ void VentanaPrincipal::construirIU() {
 	/**
 	 * Barra de herramientas
 	 */
-	QToolBar *barraHerramientas = new QToolBar();
-	barraHerramientas->setIconSize(QSize(48, 48));
-	barraHerramientas->setMovable(false);
+	QToolBar *barraHerramientasPrincipal = new QToolBar();
+	barraHerramientasPrincipal->setIconSize(QSize(48, 48));
+	barraHerramientasPrincipal->setMovable(false);
 
-	construirBotonesBarraHerramientas(barraHerramientas);
+	construirBotonesBarraHerramientas(barraHerramientasPrincipal);
+
+	_estadoSesionTodus = new QLabel();
+	barraHerramientasPrincipal->addWidget(_estadoSesionTodus);
 
 	/**
 	 * Listado de categorías
@@ -731,6 +792,7 @@ void VentanaPrincipal::construirIU() {
 	 */
 	_ventanaConfiguracion = new VentanaConfiguracion(this);
 	_ventanaConfiguracion->setModal(true);
+	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::configuracionCambiada);
 
 	statusBar()->showMessage("Listo");
 }
