@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	_aplicacionVersion = "0.1";
 
 	app.setOrganizationName(_aplicacionNombreCorto);
-	app.setApplicationName(_aplicacionTitulo);
+	app.setApplicationDisplayName(_aplicacionTitulo);
 	app.setApplicationName(_aplicacionNombreCorto);
 	app.setApplicationVersion(_aplicacionVersion);
 
@@ -87,17 +87,17 @@ int main(int argc, char *argv[])
 void crearConfiguracionesDefecto() {
 	QSettings configuracion;
 
-	if (configuracion.value("todus/agenteDescarga").toString().size() == 0) {
-		configuracion.setValue("todus/agenteDescarga", "ToDus 0.37.29 HTTP-Download");
+	if (configuracion.value("todus/agenteDescarga", "").toString().size() == 0) {
+		configuracion.setValue("todus/agenteDescarga", "ToDus 0.39.3 HTTP-Download");
 	}
-	if (configuracion.value("todus/agenteSubida").toString().size() == 0) {
-		configuracion.setValue("todus/agenteSubida", "ToDus 0.37.29 HTTP-Upload");
+	if (configuracion.value("todus/agenteSubida", "").toString().size() == 0) {
+		configuracion.setValue("todus/agenteSubida", "ToDus 0.39.3 HTTP-Upload");
 	}
-	if (configuracion.value("descargas/ruta").toString().size() == 0) {
+	if (configuracion.value("descargas/ruta", "").toString().size() == 0) {
 		configuracion.setValue("descargas/ruta", obtenerRutaDescargas());
 	}
-	if (configuracion.value("descargas/descargasParalelas").toInt() == 0) {
-		configuracion.setValue("descargas/descargasParalelas", 4);
+	if (configuracion.value("descargas/descargasParalelas", 0).toInt() == 0) {
+		configuracion.setValue("descargas/descargasParalelas", 2);
 	}
 }
 

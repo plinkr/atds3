@@ -22,6 +22,7 @@ class VentanaAgregarDescarga;
 class VentanaAgregarDescargasDesdeArchivos;
 class VentanaConfiguracion;
 class QLabel;
+class GestorDescargas;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -29,27 +30,27 @@ class VentanaPrincipal : public QMainWindow
 
 	public:
 		/**
-		 * Modelo del listado de la categoría 'Programas'
+		 * @brief Modelo del listado de la categoría 'Programas'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaProgramas;
 
 		/**
-		 * Modelo del listado de la categoría 'Música'
+		 * @brief Modelo del listado de la categoría 'Música'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaMusica;
 
 		/**
-		 * Modelo del listado de la categoría 'Videos'
+		 * @brief Modelo del listado de la categoría 'Videos'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaVideos;
 
 		/**
-		 * Modelo del listado de la categoría 'Otros'
+		 * @brief Modelo del listado de la categoría 'Otros'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaOtros;
 
 		/**
-		 * Ventana 'Configuración'
+		 * @brief Ventana 'Configuración'
 		 */
 		QPointer<VentanaConfiguracion> _ventanaConfiguracion;
 
@@ -70,19 +71,19 @@ class VentanaPrincipal : public QMainWindow
 
 	private slots:
 		/**
-		 * Agrega la descarga especificada por el usuario en la ventana 'Agrega descarga'
+		 * @brief Agrega la descarga especificada por el usuario en la ventana 'Agrega descarga'
 		 */
 		void agregarDescarga();
 
 		/**
-		 * Agrega las descargas procesadas desde el archivo seleccionado por el usuario en la ventana 'Agrega descargas desde archivo'
+		 * @brief Agrega las descargas procesadas desde el archivo seleccionado por el usuario en la ventana 'Agrega descargas desde archivo'
 		 */
 		void agregarDescargasDesdeArchivo();
 
 		/**
 		 * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
 		 */
-		void configuracionCambiada();
+		void procesarCambiosConfiguracion();
 
 		/**
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descarga'
@@ -148,57 +149,57 @@ class VentanaPrincipal : public QMainWindow
 
 	private:
 		/**
-		 * Modelo del listado de categorías
+		 * @brief Modelo del listado de categorías
 		 */
 		QPointer<ModeloCategorias> _modeloListadoCategorias;
 
 		/**
-		 * Modelo del listado de la categoría 'Descargando'
+		 * @brief Modelo del listado de la categoría 'Descargando'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaDescargando;
 
 		/**
-		 * Modelo del listado de la categoría 'Finalizadas'
+		 * @brief Modelo del listado de la categoría 'Finalizadas'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaFinalizadas;
 
 		/**
-		 * Elemento que muestra el listado de categorías
+		 * @brief Elemento que muestra el listado de categorías
 		 */
 		QPointer<QListView> _listadoCategorias;
 
 		/**
-		 * Elemento que representa un icono en el campo 'Estado' dentro del listado de descargas
+		 * @brief Elemento que representa un icono en el campo 'Estado' dentro del listado de descargas
 		 */
 		QPointer<DelegacionIconoEstado> _elementoIconoEstado;
 
 		/**
-		 * Elemento que representa una barra de progreso en el campo 'Completado' dentro del listado de descargas
+		 * @brief Elemento que representa una barra de progreso en el campo 'Completado' dentro del listado de descargas
 		 */
 		QPointer<DelegacionBarraProgreso> _elementoBarraProgreso;
 
 		/**
-		 * Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
+		 * @brief Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
 		 */
 		QPointer<DelegacionVelocidad> _elementoVelocidad;
 
 		/**
-		 * Listado de descargas
+		 * @brief Listado de descargas
 		 */
 		QPointer<QTreeView> _listadoDescargas;
 
 		/**
-		 * Ventana 'Agregar descarga'
+		 * @brief Ventana 'Agregar descarga'
 		 */
 		QPointer<VentanaAgregarDescarga> _ventanaAgregarDescarga;
 
 		/**
-		 * Ventana 'Agregar descargas desde archivo'
+		 * @brief Ventana 'Agregar descargas desde archivo'
 		 */
 		QPointer<VentanaAgregarDescargasDesdeArchivos> _ventanaAgregarDescargasDesdeArchivo;
 
 		/**
-		 * Etiqueta que representa el estado de la sesión toDus
+		 * @brief Etiqueta que representa el estado de la sesión toDus
 		 */
 		QPointer<QLabel> _estadoSesionTodus;
 
@@ -208,10 +209,69 @@ class VentanaPrincipal : public QMainWindow
 		int _categoriaActiva;
 
 		/**
-		 * @brief Indica si se debe ordenar la reconexión de la sesion toDus
+		 * @brief Configuracion: Telefono
 		 */
-		bool _toDusReconectar;
+		QString _configuracionTelefono;
 
+		/**
+		 * @brief Configuracion: Ficha de acceso
+		 */
+		QString _configuracionFichaAcceso;
+
+		/**
+		 * @brief Configuracion: IP del servidor de autentificación
+		 */
+		QString _configuracionIpServidorAutentificacion;
+
+		/**
+		 * @brief Configuracion: Puerto del servidor de autentificación
+		 */
+		int _configuracionPuertoServidorAutentificacion;
+
+		/**
+		 * @brief Configuracion: Nombre DNS del servidor de autentificación
+		 */
+		QString _configuracionNombreDNSServidorAutentificacion;
+
+		/**
+		 * @brief Configuracion: IP del servidor de sesión
+		 */
+		QString _configuracionIpServidorSesion;
+
+		/**
+		 * @brief Configuracion: Puerto del servidor de sesión
+		 */
+		int _configuracionPuertoServidorSesion;
+
+		/**
+		 * @brief Configuracion: Nombre DNS del servidor de sesión
+		 */
+		QString _configuracionNombreDNSServidorSesion;
+
+		/**
+		 * @brief Configuracion: IP del servidor de S3
+		 */
+		QString _configuracionIpServidorS3;
+
+		/**
+		 * @brief Configuracion: Puerto del servidor de S3
+		 */
+		int _configuracionPuertoServidorS3;
+
+		/**
+		 * @brief Configuracion: Nombre DNS del servidor de S3
+		 */
+		QString _configuracionNombreDNSServidorS3;
+
+		/**
+		 * @brief Gestor de las descargas
+		 */
+		QPointer<GestorDescargas> _gestorDescargas;
+
+		/**
+		 * @brief Evento que se produce cuando el usuario cierra la ventana principal
+		 * @param evento Evento
+		 */
 		void closeEvent(QCloseEvent *evento);
 
 		/**
@@ -225,18 +285,6 @@ class VentanaPrincipal : public QMainWindow
 		 * @returns Puntero al elemento del listado de categorías
 		 */
 		QListView *construirListadoCategorias();
-
-		QString _configuracionTelefono;
-		QString _configuracionFichaAcceso;
-		QString _configuracionIpServidorAutentificacion;
-		int _configuracionPuertoServidorAutentificacion;
-		QString _configuracionNombreDNSServidorAutentificacion;
-		QString _configuracionIpServidorSesion;
-		int _configuracionPuertoServidorSesion;
-		QString _configuracionNombreDNSServidorSesion;
-		QString _configuracionIpServidorS3;
-		int _configuracionPuertoServidorS3;
-		QString _configuracionNombreDNSServidorS3;
 
 		/**
 		 * @brief Inicializa la base de datos

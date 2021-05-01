@@ -5,9 +5,10 @@ CONFIG += c++20
 
 SOURCES += \
 	fuentes/todus.cpp \
-	fuentes/descarga.cpp \
 	fuentes/modelocategorias.cpp \
 	fuentes/modeloentradas.cpp \
+	fuentes/descarga.cpp \
+	fuentes/gestordescargas.cpp \
 	fuentes/delegacioniconoestado.cpp \
 	fuentes/delegacionbarraprogreso.cpp \
 	fuentes/delegacionvelocidad.cpp \
@@ -19,9 +20,10 @@ SOURCES += \
 
 HEADERS += \
 	cabeceras/todus.hpp \
-	cabeceras/descarga.hpp \
 	cabeceras/modelocategorias.hpp \
 	cabeceras/modeloentradas.hpp \
+	cabeceras/descarga.hpp \
+	cabeceras/gestordescargas.hpp \
 	cabeceras/delegacioniconoestado.hpp \
 	cabeceras/delegacionbarraprogreso.hpp \
 	cabeceras/delegacionvelocidad.hpp \

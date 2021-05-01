@@ -9,11 +9,17 @@ void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &op
 	QVector<QString> listadoUnidadesVelocidad {"B/s", "KiB/s", "MiB/s", "GiB/s"};
 	int unidadVelocidad = 0;
 	double velocidad = indice.data().toDouble();
-	QString velocidadTexto = QString("%1 %2").arg(velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad++]);
+	QString velocidadTexto;
 
 	while (velocidad > 1000) {
 		velocidad /= 1000;
-		velocidadTexto = QString("%1 %2").arg(velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad++]);
+		unidadVelocidad++;
+	}
+
+	if (unidadVelocidad < 2) {
+		velocidadTexto = QString("%1 %2").arg((unsigned int)velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad]);
+	} else {
+		velocidadTexto = QString("%1 %2").arg(velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad]);
 	}
 
 	drawBackground(pintor, opcion, indice);

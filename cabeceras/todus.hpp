@@ -42,8 +42,15 @@ class toDus : public QSslSocket {
 		 */
 		void iniciarSesion();
 
+		/**
+		 * @brief Solicita a toDus el enlace firmado para obtener un archivo
+		 * @param enlace Enlace no firmado
+		 */
+		void solicitarEnlaceFirmado(const QString &enlace);
+
 	signals:
 		void estadoCambiado(Estado estado);
+		void enlaceFirmadoObtenido(const QString &noFirmado, const QString &firmado);
 
 	private slots:
 		void eventoCambiarEstado(QAbstractSocket::SocketState estado);
@@ -67,6 +74,7 @@ class toDus : public QSslSocket {
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
 		bool _reconexionSolicitada;
+		QMap<QString, QString> _listadoEnlacesFirmados;
 
 		void generarIDSesion();
 		void iniciarSesionConTelefono();
@@ -74,7 +82,8 @@ class toDus : public QSslSocket {
 		void xmppSaludar();
 		void xmppIniciarSesion();
 		void xmppEstablecerSesion();
-		void mantenerSesionActiva();
+		void xmppMantenerSesionActiva();
+		void xmppSolicitarEnlaceDescarga(const QString &enlace);
 };
 
 #endif // TODUS_HPP

@@ -17,7 +17,7 @@ toDus::toDus(QObject *padre)
 	connect(this, &QSslSocket::stateChanged, this, &toDus::eventoCambiarEstado);
 	connect(this, &QSslSocket::encrypted, this, &toDus::eventoConexionLista);
 	connect(this, &QSslSocket::readyRead, this, &toDus::eventoDatosRecibidos);
-	connect(&_temporizadorMantenerSesionActiva, &QTimer::timeout, this, &toDus::mantenerSesionActiva);
+	connect(&_temporizadorMantenerSesionActiva, &QTimer::timeout, this, &toDus::xmppMantenerSesionActiva);
 }
 
 /**
@@ -55,6 +55,16 @@ void toDus::iniciarSesion() {
 		iniciarSesionConFicha();
 	} else if (telefono.size() > 0) {
 		iniciarSesionConTelefono();
+	}
+}
+
+/**
+ * @brief Solicita a toDus el enlace firmado para obtener un archivo
+ * @param enlace Enlace no firmado
+ */
+void toDus::solicitarEnlaceFirmado(const QString &enlace) {
+	if (_progresoInicioSesion == ProgresoInicioSesion::SesionIniciada) {
+		xmppSolicitarEnlaceDescarga(enlace);
 	}
 }
 
@@ -101,50 +111,56 @@ void toDus::eventoDatosRecibidos() {
 	while (bytesAvailable() > 0) {
 		bufer = readAll();
 
-		// Respuesta al saludo
-		re = QRegExp("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
-		if (_progresoInicioSesion == ProgresoInicioSesion::Saludo && re.indexIn(bufer) != -1) {
-			_progresoInicioSesion = ProgresoInicioSesion::MecanismosAutentificacion;
-			xmppIniciarSesion();
-			continue;
+		switch (_progresoInicioSesion) {
+			case ProgresoInicioSesion::Saludo: // Respuesta al saludo
+				re = QRegExp("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
+				if (re.indexIn(bufer) != -1) {
+					_progresoInicioSesion = ProgresoInicioSesion::MecanismosAutentificacion;
+					xmppIniciarSesion();
+				}
+				break;
+			case ProgresoInicioSesion::MecanismosAutentificacion: // Respuesta al intento de autentificación
+				re = QRegExp("<ok xmlns='x2'/>");
+				if (re.indexIn(bufer) != -1) {
+					_progresoInicioSesion = ProgresoInicioSesion::Autenficicacion;
+					xmppSaludar();
+					xmppEstablecerSesion();
+				} else {
+					re = QRegExp("<failure xmlns='x2'><not-authorized/>.+</failure>");
+					if (re.indexIn(bufer) != -1) {
+						_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
+						desconectar();
+					}
+				}
+				break;
+			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
+				re = QRegExp("<iq t='result' i='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos - 1)) + "'>.+<jid>(.+)</jid>.+</iq>");
+				if (re.indexIn(bufer) != -1) {
+					_progresoInicioSesion = ProgresoInicioSesion::SesionIniciada;
+					_jID = re.cap(1);
+					_temporizadorMantenerSesionActiva.start();
+					_estado = Estado::Listo;
+					emit estadoCambiado(_estado);
+				}
+				break;
+			case ProgresoInicioSesion::SesionIniciada: // Respuesta a algún comando
+				// La respuesta está dirigida a esta sesión?
+				re = QRegExp("<iq.+o='" + _jID + "'.+t='result'.+>.+</iq>");
+				if (re.indexIn(bufer) != -1) {
+					// Comando: GURL
+					re = QRegExp("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.+)' status='200'/></iq>");
+					if (re.indexIn(bufer) != -1) {
+						QString idSesion = re.cap(1);
+						QString enlaceNoFirmado = _listadoEnlacesFirmados[idSesion];
+						_listadoEnlacesFirmados.remove(idSesion);
+						emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
+					}
+				}
+				break;
+			default:
+//				std::cout << bufer.toStdString() << std::endl;
+				break;
 		}
-
-		// Respuesta fallida al intento de autentificación
-		re = QRegExp("<failure xmlns='x2'><not-authorized/>.+</failure>");
-		if (_progresoInicioSesion == ProgresoInicioSesion::MecanismosAutentificacion && re.indexIn(bufer) != -1) {
-			_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
-			desconectar();
-			continue;
-		}
-
-		// Respuesta satisfactoria al intento de autentificación
-		re = QRegExp("<ok xmlns='x2'/>");
-		if (_progresoInicioSesion == ProgresoInicioSesion::MecanismosAutentificacion && re.indexIn(bufer) != -1) {
-			_progresoInicioSesion = ProgresoInicioSesion::Autenficicacion;
-			xmppSaludar();
-			xmppEstablecerSesion();
-			continue;
-		}
-
-		// Respuesta satisfactoria al intento de autentificación
-		re = QRegExp("<iq t='result' i='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos - 1)) + "'>.+<jid>(.+)</jid>.+</iq>");
-		if (_progresoInicioSesion == ProgresoInicioSesion::Autenficicacion && re.indexIn(bufer) != -1) {
-			_progresoInicioSesion = ProgresoInicioSesion::SesionIniciada;
-			_estado = Estado::Listo;
-			emit estadoCambiado(_estado);
-			_jID = re.cap(1);
-			re = QRegExp("^.+@(.+)/.+$");
-			if (re.indexIn(_jID) != -1) {
-				_dominioJID = re.cap(1);
-				_temporizadorMantenerSesionActiva.start();
-			}
-
-			continue;
-		}
-
-		/*if (_progresoInicioSesion == ProgresoInicioSesion::SesionIniciada) {
-			std::cout << bufer.toStdString() << std::endl;
-		}*/
 	}
 }
 
@@ -182,6 +198,7 @@ void toDus::iniciarSesionConFicha() {
 	QString nombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion", "im.todus.cu").toString();
 	int puertoServidorSesion = configuracion.value("todus/puertoServidorSesion", 1756).toInt();
 
+	_dominioJID = nombreDNSServidorSesion;
 	if (ipServidorSesion.size() > 0) {
 		nombreDNSServidorSesion = ipServidorSesion;
 	}
@@ -216,8 +233,17 @@ void toDus::xmppEstablecerSesion() {
 	write(buferAEnviar);
 }
 
-void toDus::mantenerSesionActiva() {
+void toDus::xmppMantenerSesionActiva() {
 	QString buferAEnviar = "<iq from='" + _jID + "' to='" + _dominioJID + "' id='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++)) + "' type='get'><ping xmlns='urn:xmpp:ping'/></iq>\n";
+
+	write(buferAEnviar.toLocal8Bit());
+}
+
+void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace) {
+	QString idSesion = _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++));
+	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:gurl' url='" + enlace + "'></query></iq>\n";
+
+	_listadoEnlacesFirmados[idSesion] = enlace;
 
 	write(buferAEnviar.toLocal8Bit());
 }

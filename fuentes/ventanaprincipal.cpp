@@ -4,10 +4,11 @@
 #include "delegacionvelocidad.hpp"
 #include "modelocategorias.hpp"
 #include "modeloentradas.hpp"
+#include "descarga.hpp"
+#include "gestordescargas.hpp"
 #include "ventanaagregardescarga.hpp"
 #include "ventanaagregardescargasdesdearchivos.hpp"
 #include "ventanaconfiguracion.hpp"
-#include "descarga.hpp"
 #include "main.hpp"
 #include <QCloseEvent>
 #include <QSharedPointer>
@@ -29,16 +30,31 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QIcon>
+#include <iostream>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
-	: QMainWindow(parent), _categoriaActiva(0), _toDusReconectar(false) {
+	: QMainWindow(parent), _categoriaActiva(0) {
 	Q_INIT_RESOURCE(iconos);
 
 	construirIU();
 
 	_toDus = QSharedPointer<toDus>(new toDus(this));
 	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+
+	_gestorDescargas = new GestorDescargas(this);
+	_gestorDescargas->start();
+
+	QList<QSharedPointer<ModeloEntradas>> modelos {_modeloCategoriaProgramas, _modeloCategoriaMusica, _modeloCategoriaVideos, _modeloCategoriaOtros};
+	int estado = 0;
+	for (auto modelo : modelos) {
+		for (int f = 0; f < modelo->rowCount(); f++) {
+			estado = modelo->data(modelo->index(f, 1)).toInt();
+			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
+				_gestorDescargas->agregarDescarga(modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+			}
+		}
+	}
 }
 VentanaPrincipal::~VentanaPrincipal() {
 	// Emitir la señal de detención de la aplicación para que todos los hilos de descargas cesen su ejecución
@@ -46,7 +62,17 @@ VentanaPrincipal::~VentanaPrincipal() {
 }
 
 void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
+	hide();
+
+	_modeloCategoriaProgramas->submitAll();
+	_modeloCategoriaMusica->submitAll();
+	_modeloCategoriaVideos->submitAll();
+	_modeloCategoriaOtros->submitAll();
+
 	disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+
+	_gestorDescargas->requestInterruption();
+	_gestorDescargas->wait();
 
 	_toDus->desconectar();
 	_toDus.clear();
@@ -85,7 +111,7 @@ void VentanaPrincipal::agregarDescarga() {
 	QSqlRecord registro = modelo->record();
 	registro.remove(0); // Campo 'id'
 	registro.setValue("categoria", datos.categoria);
-	registro.setValue("estado", (datos.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada));
+	registro.setValue("estado", _ListadoEstados::Pausada);
 	registro.setValue("enlace", datos.enlace);
 	registro.setValue("ruta", rutaDescarga);
 	registro.setValue("nombre", datos.nombre);
@@ -94,6 +120,10 @@ void VentanaPrincipal::agregarDescarga() {
 
 	modelo->insertRecord(-1, registro);
 	modelo->submitAll();
+
+	if (datos.iniciar == true) {
+		_gestorDescargas->agregarDescarga(modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+	}
 
 	_modeloCategoriaDescargando->select();
 }
@@ -129,7 +159,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		QSqlRecord registro = modelo->record();
 		registro.remove(0); // Campo 'id'
 		registro.setValue("categoria", nuevaDescarga.categoria);
-		registro.setValue("estado", (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada));
+		registro.setValue("estado", _ListadoEstados::Pausada);
 		registro.setValue("enlace", nuevaDescarga.enlace);
 		registro.setValue("ruta", rutaDescarga);
 		registro.setValue("nombre", nuevaDescarga.nombre);
@@ -137,9 +167,13 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		registro.setValue("velocidad", 0);
 
 		modelo->insertRecord(-1, registro);
+		modelo->submitAll();
+
+		if (nuevaDescarga.iniciar == true) {
+			_gestorDescargas->agregarDescarga(modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+		}
 	}
 
-	modelo->submitAll();
 
 	_modeloCategoriaDescargando->select();
 }
@@ -147,7 +181,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 /**
  * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
  */
-void VentanaPrincipal::configuracionCambiada() {
+void VentanaPrincipal::procesarCambiosConfiguracion() {
 	QSettings configuracion;
 	bool reconexionRequerida = false;
 
@@ -232,11 +266,10 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
-		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
+	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
 			modelo->removeRow(i.row());
 		}
-		_listadoDescargas->selectionModel()->selectedIndexes().clear();
 		modelo->submitAll();
 	}
 }
@@ -276,7 +309,6 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
  */
 void VentanaPrincipal::eventoIniciarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
-	QModelIndex indice;
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -296,14 +328,12 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
-		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
-			indice = modelo->index(i.row(), 1);
-			if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
-				modelo->setData(indice, _ListadoEstados::EnEsperaIniciar);
+	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
+			if (modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::Pausada) {
+				_gestorDescargas->agregarDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt(), modelo, _modeloCategoriaDescargando);
 			}
 		}
-		modelo->submitAll();
 	}
 }
 
@@ -334,10 +364,10 @@ void VentanaPrincipal::eventoPausarDescarga() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	if (_listadoDescargas->selectionModel()->selectedIndexes().isEmpty() == false) {
-		for (const auto &i : _listadoDescargas->selectionModel()->selectedIndexes()) {
+	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
+		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
 			indice = modelo->index(i.row(), 1);
-			if (modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+			if (modelo->data(indice).toInt() != _ListadoEstados::Pausada) {
 				modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
 			}
 		}
@@ -350,7 +380,6 @@ void VentanaPrincipal::eventoPausarDescarga() {
  */
 void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
-	QModelIndex indice;
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -373,13 +402,10 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	}
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
-		indice = modelo->index(f, 1);
-		if (modelo->data(indice).toInt() == _ListadoEstados::Pausada) {
-			modelo->setData(indice, _ListadoEstados::EnEsperaIniciar);
+		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
+			_gestorDescargas->agregarDescarga(modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
 		}
 	}
-
-	modelo->submitAll();
 }
 
 /**
@@ -411,7 +437,7 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		indice = modelo->index(f, 1);
-		if (modelo->data(indice).toInt() == _ListadoEstados::Iniciada) {
+		if (modelo->data(indice).toInt() != _ListadoEstados::Pausada) {
 			modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
 		}
 	}
@@ -457,6 +483,7 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 			modeloActivo = _modeloCategoriaDescargando;
 			break;
 		case 1:
+			_modeloCategoriaFinalizadas->select();
 			modeloActivo = _modeloCategoriaFinalizadas;
 			break;
 		case 2:
@@ -478,10 +505,8 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 
 	if (indice.row() == 1) {
 		_listadoDescargas->hideColumn(4);
-		_listadoDescargas->hideColumn(5);
 	} else {
 		_listadoDescargas->showColumn(4);
-		_listadoDescargas->showColumn(5);
 	}
 
 	emit categoriaSeleccionada(modeloActivo);
@@ -766,7 +791,8 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_listadoDescargas->setSortingEnabled(false);
-	_listadoDescargas->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+	_listadoDescargas->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+	_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 
 	_listadoDescargas->hideColumn(0);
@@ -846,7 +872,7 @@ void VentanaPrincipal::construirIU() {
 	 */
 	_ventanaConfiguracion = new VentanaConfiguracion(this);
 	_ventanaConfiguracion->setModal(true);
-	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::configuracionCambiada);
+	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::procesarCambiosConfiguracion);
 
 	statusBar()->showMessage("Listo");
 }
