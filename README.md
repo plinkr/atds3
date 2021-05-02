@@ -16,7 +16,7 @@
 
 * **Multiplataforma**: `ATDS3` puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
 * **Fácil de usar**: `ATDS3` es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
-* **Configurable**: `ATDS3` ofrece a diversas opciones configurables que definen el comportamiento de diversas secciones.
+* **Configurable**: `ATDS3` ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.
 * **Completamente asincrónico**: `ATDS3` es totalmente asincrónico, por lo que podrá realizar varias operaciones de descargas y subidas al mismo tiempo.
 * **Ajustado al protocolo de red de toDus**: `ATDS3` Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.
 
