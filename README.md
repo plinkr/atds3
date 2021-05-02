@@ -88,4 +88,4 @@ make -j2
 
 <a name="licencia"></a>
 ## Licencia
-`ATDS3` está licenciado bajo la licencia BSD versión 3. Vea [LICENCE.txt](blob/main/LICENSE.txt) para más información.
+`ATDS3` está licenciado bajo la licencia BSD versión 3. Vea [LICENCE.txt](LICENSE.txt) para más información.
