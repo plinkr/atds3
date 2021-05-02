@@ -5,8 +5,8 @@
 ## Tabla de contenidos
 - [Características](#caracteristicas)
 - [Dependencias](#dependencias)
-- [Construcción](#construccion)
 - [Instalando dependencias](#instalando-dependencias)
+- [Construcción](#construccion)
 - [Licencia](#licencia)
 
 <a name="caracteristicas"></a>
