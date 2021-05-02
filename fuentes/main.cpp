@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	_aplicacionTitulo = "Descargador de Archivos de la Red Todus (S3)";
-	_aplicacionNombreCorto = "darts3";
+	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
+	_aplicacionNombreCorto = "atds3";
 	_aplicacionVersion = "0.1";
 
 	app.setOrganizationName(_aplicacionNombreCorto);
@@ -87,12 +87,6 @@ int main(int argc, char *argv[])
 void crearConfiguracionesDefecto() {
 	QSettings configuracion;
 
-	if (configuracion.value("todus/agenteDescarga", "").toString().size() == 0) {
-		configuracion.setValue("todus/agenteDescarga", "ToDus 0.39.3 HTTP-Download");
-	}
-	if (configuracion.value("todus/agenteSubida", "").toString().size() == 0) {
-		configuracion.setValue("todus/agenteSubida", "ToDus 0.39.3 HTTP-Upload");
-	}
 	if (configuracion.value("descargas/ruta", "").toString().size() == 0) {
 		configuracion.setValue("descargas/ruta", obtenerRutaDescargas());
 	}

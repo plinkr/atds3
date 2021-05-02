@@ -1,6 +1,6 @@
-# Descargador de Archivos de la Red Todus (S3)
+# Administrador de Transferencias para toDus (S3)
 
-`DARTS3` es una aplicación para escritorio que automatiza el proceso de descarga de archivos desde los servidores de la red Todus (S3).
+`ATDS3` es una aplicación para escritorio que automatizar el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
 
 ## Tabla de contenidos
 - [Características](#caracteristicas)
@@ -12,50 +12,53 @@
 <a name="caracteristicas"></a>
 ## Características
 
-`DARTS3` posee las siguientes características::
+`ATDS3` posee las siguientes características::
 
-* **Multiplataforma**: `DARTS3` puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
-* **Fácil de usar**: `DARTS3` es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
-* **Completamente asincrónico**: `DARTS3` es totalmente asincrónico, por lo que no se bloqueará debido a que realice varias operaciones al mismo tiempo dentro del programa, tales como descargar y agregar un nuevo listado a la descarga.
+* **Multiplataforma**: `ATDS3` puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
+* **Fácil de usar**: `ATDS3` es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
+* **Configurable**: `ATDS3` ofrece a diversas opciones configurables que definen el comportamiento de diversas secciones.
+* **Completamente asincrónico**: `ATDS3` es totalmente asincrónico, por lo que podrá realizar varias operaciones de descargas y subidas al mismo tiempo.
+* **Ajustado al protocolo de red de toDus**: `ATDS3` Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.
 
 <a name="dependencias"></a>
 ## Dependencias
-`DARTS3` depende de:
+`ATDS3` depende de:
 
 * Compilador C++ compatible con el estándar C++20 (Clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio 2015+), Intel C++ Compiler 17+)
+* qmake
 * Qt
-
-<a name="construccion"></a>
-## Construcción
-
-La forma mas simple de construir `DARTS3`:
-
-```
-mkdir _construccion
-cd _construccion
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --target all
-```
+  * Qt 5 Core
+  * Qt 5 GUI
+  * Qt 5 SQL (SQLite3)
+  * Qt 5 Network
+  * Qt 5 Widgets
+* Google Protocol Buffers
 
 <a name="instalando-dependencias"></a>
 ### Instalando dependencias
 
+<a name="freebsd"></a>
+#### FreeBSD
+* Instalar las herramientas y librerías:
+```
+pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
+```
+
 <a name="macos"></a>
 #### macOS
-* Install the latest Xcode command line tools, for example, via `xcode-select --install`.
-* Install other [dependencies](#dependencies), for example, using [Homebrew](https://brew.sh):
+* Instalar las herramientas de línea de comandos de Xcode vía `xcode-select --install`.
+* Instalar las dependencias utilizando [Homebrew](https://brew.sh):
 ```
-brew install gperf cmake openssl
+brew install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
 ```
-* Build `TDLib` with CMake as explained in [building](#building). You will likely need to manually specify path to the installed OpenSSL to CMake, e.g.,
-```
-cmake -DCMAKE_BUILD_TYPE=Release -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl/ ..
-```
+
+<a name="linux"></a>
+#### Linux
+* Install all [dependencies](#dependencies) using your package manager.
 
 <a name="windows"></a>
 #### Windows
 * Download and install Microsoft Visual Studio 2015 or later.
-* Download and install [gperf](https://sourceforge.net/projects/gnuwin32/files/gperf/3.0.1/). Add the path to gperf.exe to the PATH environment variable.
 * Install [vcpkg](https://github.com/Microsoft/vcpkg#quick-start).
 * Run the following commands to install `TDLib` dependencies using vcpkg:
 ```
@@ -71,36 +74,18 @@ cmake -DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake ..
 To build 32-bit/64-bit `TDLib` using MSVC, you will need to additionally specify parameter `-A Win32`/`-A x64` to CMake.
 To build `TDLib` in Release mode using MSVC, you will need to additionally specify parameter `--config Release` to the `cmake --build .` command.
 
-<a name="linux"></a>
-#### Linux
-* Install all [dependencies](#dependencies) using your package manager.
+<a name="construccion"></a>
+## Construcción
 
-<a name="using-cxx"></a>
-## Using in CMake C++ projects
-For C++ projects that use CMake, the best approach is to build `TDLib` as part of your project or to install it system-wide.
+La forma mas simple de construir `ATDS3`:
 
-There are several libraries that you could use in your CMake project:
-
-* Td::TdJson, Td::TdJsonStatic — dynamic and static version of a JSON interface. This has a simple C interface, so it can be easily used with any programming language that is able to execute C functions.
-  See [td_json_client](https://core.telegram.org/tdlib/docs/td__json__client_8h.html) and [td_log](https://core.telegram.org/tdlib/docs/td__log_8h.html) documentation for more information.
-* Td::TdStatic — static library with C++ interface for general usage.
-  See [Client](https://core.telegram.org/tdlib/docs/classtd_1_1_client.html) and [Log](https://core.telegram.org/tdlib/docs/classtd_1_1_log.html) documentation for more information.
-* Td::TdCoreStatic — static library with low-level C++ interface intended mostly for internal usage.
-  See [ClientActor](https://core.telegram.org/tdlib/docs/classtd_1_1_client_actor.html) and [Log](https://core.telegram.org/tdlib/docs/classtd_1_1_log.html) documentation for more information.
-
-For example, part of your CMakeLists.txt may look like this:
 ```
-add_subdirectory(td)
-target_link_libraries(YourTarget PRIVATE Td::TdStatic)
+mkdir _construccion
+cd _construccion
+qmake ../atds3.pro CONFIG+=release
+make -j2
 ```
-
-Or you could install `TDLib` and then reference it in your CMakeLists.txt like this:
-```
-find_package(Td 1.7.0 REQUIRED)
-target_link_libraries(YourTarget PRIVATE Td::TdStatic)
-```
-See [example/cpp/CMakeLists.txt](https://github.com/tdlib/td/tree/master/example/cpp/CMakeLists.txt).
 
 <a name="licencia"></a>
 ## Licencia
-`DARTS3` está licenciado bajo la licencia BSD. Vea [LICENCIABSD3.txt](https://opensource.org/licenses/BSD-3-Clause) para más información.
+`ATDS3` está licenciado bajo la licencia BSD versión 3. Vea [LICENCE.txt](blob/main/LICENSE.txt) para más información.

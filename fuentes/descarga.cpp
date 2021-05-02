@@ -4,6 +4,8 @@
 #include "main.hpp"
 #include <QSettings>
 #include <QRegExp>
+#include <QFileInfo>
+
 #include <iostream>
 
 
@@ -56,6 +58,17 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 
 		_ultimoTiempoRecepcion = tiempoRecepcion;
 		_ultimoTamanoRecibido = recibidos;
+	}
+}
+
+void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
+	switch (codigo) {
+		case QNetworkReply::TimeoutError:
+			iniciarDescarga();
+			break;
+		default:
+			std::cout << "Descargar Error: " << codigo << std::endl;
+			break;
 	}
 }
 
@@ -114,11 +127,11 @@ void Descarga::iniciarDescarga() {
 	QString ipServidorS3 = configuracion.value("todus/ipServidorS3", "").toString();
 	QString nombreDNSServidorS3 = configuracion.value("todus/nombreDNSServidorS3", "s3.todus.cu").toString();
 	int puertoServidorS3 = configuracion.value("todus/puertoServidorS3", 443).toInt();
-	//QRegExp re("^https://" + nombreDNSServidorS3 + "/(.+)");
 	QUrl url = QUrl(_enlaceFirmado);
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	QString autorizacion = "Bearer " + configuracion.value("todus/fichaAcceso").toString();
+	qint64 tamanoArchivoDestino;
 
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
@@ -126,6 +139,10 @@ void Descarga::iniciarDescarga() {
 	}
 
 	QString rutaArchivo = _modelo->data(_modelo->index(_filaModelo, 5)).toString() + "/" + _modelo->data(_modelo->index(_filaModelo, 2)).toString();
+	QFileInfo informacionArchivoDestino(rutaArchivo);
+	if (informacionArchivoDestino.exists() == true) {
+		tamanoArchivoDestino = informacionArchivoDestino.size();
+	}
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
@@ -138,7 +155,7 @@ void Descarga::iniciarDescarga() {
 	url.setPort(puertoServidorS3);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agenteDescarga").toString());
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " HTTP-Download");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
 	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
 	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());
@@ -152,6 +169,7 @@ void Descarga::iniciarDescarga() {
 	connect(_respuesta, &QNetworkReply::encrypted, this, &Descarga::descargaIniciada);
 	connect(_respuesta, &QIODevice::readyRead, this, &Descarga::eventoRecepcionDatos);
 	connect(_respuesta, &QNetworkReply::downloadProgress, this, &Descarga::progresoDescarga);
+	connect(_respuesta, &QNetworkReply::errorOccurred, this, &Descarga::eventoError);
 	connect(_respuesta, &QNetworkReply::finished, this, &Descarga::descargaTerminada);
 }
 

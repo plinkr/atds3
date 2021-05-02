@@ -1,11 +1,15 @@
 #ifndef TODUS_HPP
 #define TODUS_HPP
 
+#include <QObject>
+#include <QPointer>
 #include <QSslSocket>
 #include <QTimer>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 
 
-class toDus : public QSslSocket {
+class toDus : public QObject {
 	Q_OBJECT
 
 	public:
@@ -20,6 +24,7 @@ class toDus : public QSslSocket {
 		};
 
 		toDus(QObject *padre = nullptr);
+		~toDus();
 
 		/**
 		 * @brief Obtiene el estado de la sesión toDus
@@ -53,6 +58,12 @@ class toDus : public QSslSocket {
 		void enlaceFirmadoObtenido(const QString &noFirmado, const QString &firmado);
 
 	private slots:
+		void eventoFinalizadaCodigoSMS();
+		void eventoRecepcionDatosFichaSolicitud();
+		void eventoFinalizadaFichaSolicitud();
+		void eventoRecepcionDatosFichaAcceso();
+		void eventoFinalizadaFichaAcceso();
+		void eventoError(QNetworkReply::NetworkError codigo);
 		void eventoCambiarEstado(QAbstractSocket::SocketState estado);
 		void eventoConexionLista();
 		void eventoDatosRecibidos();
@@ -66,6 +77,8 @@ class toDus : public QSslSocket {
 			SesionIniciada = 0x04
 		};
 
+		QPointer<QSslSocket> _socaloSSL;
+		QPointer<QNetworkAccessManager> _administradorAccesoRed;
 		Estado _estado;
 		ProgresoInicioSesion _progresoInicioSesion;
 		QString _idSesion;
@@ -74,11 +87,17 @@ class toDus : public QSslSocket {
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
 		bool _reconexionSolicitada;
+		bool _fichaAccesoRenovada;
 		QMap<QString, QString> _listadoEnlacesFirmados;
+		QNetworkReply *_respuestaCodigoSMS;
+		QNetworkReply *_respuestaFichaSolicitud;
+		QNetworkReply *_respuestaFichaAcceso;
 
-		void generarIDSesion();
-		void iniciarSesionConTelefono();
-		void iniciarSesionConFicha();
+		QString generarIDSesion(unsigned int totalCaracteres);
+		void solicitarCodigoSMS(const QString &telefono);
+		void solicitarFichaSolicitud(const QString &codigo);
+		void solicitarFichaAcceso();
+		void iniciarSesionConFichaAcceso();
 		void xmppSaludar();
 		void xmppIniciarSesion();
 		void xmppEstablecerSesion();

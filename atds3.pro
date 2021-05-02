@@ -4,6 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20
 
 SOURCES += \
+	fuentes/todus.pb.cpp \
 	fuentes/todus.cpp \
 	fuentes/modelocategorias.cpp \
 	fuentes/modeloentradas.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 	fuentes/main.cpp
 
 HEADERS += \
+	cabeceras/todus.pb.hpp \
 	cabeceras/todus.hpp \
 	cabeceras/modelocategorias.hpp \
 	cabeceras/modeloentradas.hpp \
@@ -38,7 +40,11 @@ RESOURCES += \
 
 DISTFILES += README.md LICENSE.txt
 
-INCLUDEPATH += cabeceras
+INCLUDEPATH += \
+	/usr/local/include \
+	cabeceras
+
+LIBS += -lprotobuf
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

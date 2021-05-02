@@ -27,6 +27,7 @@ class Descarga : public QNetworkAccessManager {
 		void descargaIniciada();
 		void eventoRecepcionDatos();
 		void progresoDescarga(qint64 recibidos, qint64 total);
+		void eventoError(QNetworkReply::NetworkError codigo);
 		void descargaTerminada();
 		void procesarRespuestaDesdeTodus(const QString &noFirmado, const QString &firmado);
 		void iniciarDescarga();

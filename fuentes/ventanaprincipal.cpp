@@ -39,7 +39,7 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 
 	construirIU();
 
-	_toDus = QSharedPointer<toDus>(new toDus(this));
+	_toDus = QSharedPointer<toDus>(new toDus());
 	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 
 	_gestorDescargas = new GestorDescargas(this);
@@ -716,7 +716,7 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
  */
 void VentanaPrincipal::inicializarBaseDatos() {
 	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-	QString archivoBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/darts3.db";
+	QString archivoBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/" + _aplicacionNombreCorto + ".db";
 
 	db.setDatabaseName(archivoBaseDatos);
 	db.open();

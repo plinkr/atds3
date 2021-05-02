@@ -1,0 +1,85 @@
+#include "ventanaconfiguracion.hpp"
+#include <QIcon>
+#include <QVBoxLayout>
+
+VentanaConfiguracion::VentanaConfiguracion(QWidget *padre)
+	: QDialog(padre), _tituloVentana("Configuración") {
+	construirIU();
+}
+
+/**
+ * @brief Construye la interfaz de usuario
+ */
+void VentanaConfiguracion::construirIU() {
+	QIcon iconoAgregar = QIcon(":/iconos/configurar.svg");
+
+	setWindowIcon(iconoAgregar);
+	setWindowTitle(_tituloVentana);
+	setWindowFlags(Qt::Dialog | Qt::Popup);
+	setStyleSheet("QPushButton, QComboBox { qproperty-iconSize: 24px 24px; } ");
+
+	QVBoxLayout *diseno = new QVBoxLayout();
+
+	setLayout(diseno);
+}
+
+/**
+ * @brief Construye el listado de opciones
+ * @return Puntero al elemento del listado de categorías
+ */
+QListView *VentanaPrincipal::construirListadoCategorias() {
+
+	_modeloListadoCategorias = new ModeloCategorias();
+
+	QStandardItem *categoriaDescargando = new QStandardItem();
+	categoriaDescargando->setIcon(QIcon(":/iconos/descarga.svg"));
+	categoriaDescargando->setText("Descargando");
+	categoriaDescargando->setToolTip("Descargas activas");
+	_modeloListadoCategorias->appendRow(categoriaDescargando);
+
+	QStandardItem *categoriaFinalizadas = new QStandardItem();
+	categoriaFinalizadas->setIcon(QIcon(":/iconos/finalizado.svg"));
+	categoriaFinalizadas->setText("Finalizadas");
+	categoriaFinalizadas->setToolTip("Descargas finalizadas");
+	_modeloListadoCategorias->appendRow(categoriaFinalizadas);
+
+	QStandardItem *categoriaProgramas = new QStandardItem();
+	categoriaProgramas->setIcon(QIcon(":/iconos/categoria-programas.svg"));
+	categoriaProgramas->setText("Programas");
+	categoriaProgramas->setToolTip("Categoría 'Programas'");
+	_modeloListadoCategorias->appendRow(categoriaProgramas);
+
+	QStandardItem *categoriaMusica = new QStandardItem();
+	categoriaMusica->setIcon(QIcon(":/iconos/categoria-musica.svg"));
+	categoriaMusica->setText("Música");
+	categoriaMusica->setToolTip("Categoría 'Música'");
+	_modeloListadoCategorias->appendRow(categoriaMusica);
+
+	QStandardItem *categoriaVideo = new QStandardItem();
+	categoriaVideo->setIcon(QIcon(":/iconos/categoria-videos.svg"));
+	categoriaVideo->setText("Videos");
+	categoriaVideo->setToolTip("Categoría 'Videos'");
+	_modeloListadoCategorias->appendRow(categoriaVideo);
+
+	QStandardItem *categoriaOtros = new QStandardItem();
+	categoriaOtros->setIcon(QIcon(":/iconos/categoria-otros.svg"));
+	categoriaOtros->setText("Otros");
+	categoriaOtros->setToolTip("Categoría 'Otros'");
+	_modeloListadoCategorias->appendRow(categoriaOtros);
+
+	_listadoCategorias = new QListView();
+	_listadoCategorias->setAcceptDrops(false);
+	_listadoCategorias->setDefaultDropAction(Qt::IgnoreAction);
+	_listadoCategorias->setDragDropMode(QAbstractItemView::NoDragDrop);
+	_listadoCategorias->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	_listadoCategorias->setFlow(QListView::TopToBottom);
+	_listadoCategorias->setModel(_modeloListadoCategorias);
+	_listadoCategorias->setUniformItemSizes(true);
+	_listadoCategorias->setStyleSheet("QListView::item { width: 120px; }");
+	_listadoCategorias->setWrapping(true);
+	_listadoCategorias->setViewMode(QListView::IconMode);
+	_listadoCategorias->setCurrentIndex(_modeloListadoCategorias->indexFromItem(categoriaDescargando));
+	connect(_listadoCategorias, &QListView::activated, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
+
+	return _listadoCategorias;
+}

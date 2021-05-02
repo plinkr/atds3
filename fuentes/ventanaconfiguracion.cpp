@@ -215,7 +215,7 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 	_telefono->setPlaceholderText("Número en formato internacional...");
 	_telefono->setText(configuracion.value("todus/telefono").toString());
 
-	QLabel *telefonoExplicacion = new QLabel("Este campo es uno de los más importantes de la configuración de DARTS3. Aquí se define el número de teléfono para el inicio de sesión en toDus.");
+	QLabel *telefonoExplicacion = new QLabel("Este campo es uno de los más importantes de la configuración de ATDS3. Aquí se define el número de teléfono para el inicio de sesión en toDus.");
 	telefonoExplicacion->setAlignment(Qt::AlignTop);
 	margenes = telefonoExplicacion->contentsMargins();
 	margenes.setTop(0);
