@@ -131,7 +131,6 @@ void Descarga::iniciarDescarga() {
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	QString autorizacion = "Bearer " + configuracion.value("todus/fichaAcceso").toString();
-	qint64 tamanoArchivoDestino;
 
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
@@ -139,10 +138,6 @@ void Descarga::iniciarDescarga() {
 	}
 
 	QString rutaArchivo = _modelo->data(_modelo->index(_filaModelo, 5)).toString() + "/" + _modelo->data(_modelo->index(_filaModelo, 2)).toString();
-	QFileInfo informacionArchivoDestino(rutaArchivo);
-	if (informacionArchivoDestino.exists() == true) {
-		tamanoArchivoDestino = informacionArchivoDestino.size();
-	}
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);

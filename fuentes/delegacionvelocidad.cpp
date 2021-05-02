@@ -17,9 +17,9 @@ void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &op
 	}
 
 	if (unidadVelocidad < 2) {
-		velocidadTexto = QString("%1 %2").arg((unsigned int)velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad]);
+		velocidadTexto = QString("%1 %2").arg(QString::number((unsigned int)velocidad), listadoUnidadesVelocidad[unidadVelocidad]);
 	} else {
-		velocidadTexto = QString("%1 %2").arg(velocidad).arg(listadoUnidadesVelocidad[unidadVelocidad]);
+		velocidadTexto = QString("%1 %2").arg(QString::number(velocidad, 'g', 3), listadoUnidadesVelocidad[unidadVelocidad]);
 	}
 
 	drawBackground(pintor, opcion, indice);
