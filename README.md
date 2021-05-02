@@ -1,6 +1,6 @@
 # Administrador de Transferencias para toDus (S3)
 
-`ATDS3` es una aplicación para escritorio que automatizar el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
+`ATDS3` es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
 
 ## Tabla de contenidos
 - [Características](#caracteristicas)
