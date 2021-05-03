@@ -155,6 +155,8 @@ void Descarga::iniciarDescarga() {
 	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
 	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());
 
+	std::cout << "curl --verbose --continue-at - --user-agent 'ToDus 0.38.35 HTTP-Download' --header 'Authorization: "<< solicitud.rawHeader("Authorization").toStdString() << "' --output 'Resident Evil II [2004] Majaflix S3.part14.rar' '" << _enlaceFirmado.toStdString() << "'" << std::endl;
+
 	_archivo.setFileName(rutaArchivo);
 	_archivo.open(QIODevice::WriteOnly);
 

@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <QStandardItemModel>
+#include <QFile>
 
 
 class QCloseEvent;
@@ -142,6 +143,16 @@ class VentanaPrincipal : public QMainWindow
 		void eventoCategoriaSeleccionada(const QModelIndex &indice);
 
 		/**
+		 * @brief Evento que se dispara cuando se recibe algún dato de la descarga del avatar
+		 */
+		void eventoRecepcionDatosAvatarTodus();
+
+		/**
+		 * @brief Evento que se dispara cuando se finaliza la descarga del avatar
+		 */
+		void eventoDescargaTerminadaAvatarTodus();
+
+		/**
 		 * @brief Actualiza la etiqueta que refleja el estado de la sesión toDus
 		 * @param Nuevo estado
 		 */
@@ -202,6 +213,15 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Etiqueta que representa el estado de la sesión toDus
 		 */
 		QPointer<QLabel> _estadoSesionTodus;
+
+		/**
+		 * @brief Avatar del usuario en la red toDus
+		 */
+		QPointer<QLabel> _avatarTodus;
+		QString _rutaAvatarTodus;
+		QFile _archivoAvatarTodus;
+		QPointer<QNetworkAccessManager> _administradorAccesoRedAvatarTodus;
+		QNetworkReply *_respuestaAvatarTodus;
 
 		/**
 		 * @brief Categoría activada por el usuario
@@ -301,6 +321,11 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Construye la interfaz de usuario
 		 */
 		void construirIU();
+
+		/**
+		 * @brief Descarga el avatar del usuario desde la red toDus y lo muestra en la barra de herramientas
+		 */
+		void actualizarAvatar();
 };
 
 #endif // VENTANAPRINCIPAL_HPP

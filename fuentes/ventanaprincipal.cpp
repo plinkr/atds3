@@ -39,6 +39,8 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 
 	construirIU();
 
+	_administradorAccesoRedAvatarTodus = new QNetworkAccessManager(this);
+
 	_toDus = QSharedPointer<toDus>(new toDus());
 	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 
@@ -513,6 +515,24 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 }
 
 /**
+ * @brief Evento que se dispara cuando se recibe algún dato de la descarga del avatar
+ */
+void VentanaPrincipal::eventoRecepcionDatosAvatarTodus() {
+	_archivoAvatarTodus.write(_respuestaAvatarTodus->readAll());
+}
+
+/**
+ * @brief Evento que se dispara cuando se finaliza la descarga del avatar
+ */
+void VentanaPrincipal::eventoDescargaTerminadaAvatarTodus() {
+	_archivoAvatarTodus.close();
+
+	if (_respuestaAvatarTodus->error() == QNetworkReply::NetworkError::NoError) {
+		_avatarTodus->setPixmap(QIcon(_rutaAvatarTodus).pixmap(QSize(48, 48)));
+	}
+}
+
+/**
  * @brief Actualiza la etiqueta que refleja el estado de la sesión toDus
  * @param Nuevo estado
  */
@@ -539,6 +559,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			break;
 		case toDus::Estado::Listo:
 			_estadoSesionTodus->setText("Listo.");
+			actualizarAvatar();
 			break;
 		case toDus::Estado::Desconectando:
 			_estadoSesionTodus->setText("Desconectando...");
@@ -821,14 +842,32 @@ void VentanaPrincipal::construirIU() {
 	/**
 	 * Barra de herramientas
 	 */
-	QToolBar *barraHerramientasPrincipal = new QToolBar();
+	QToolBar *barraHerramientasPrincipal = new QToolBar("Principal");
 	barraHerramientasPrincipal->setIconSize(QSize(48, 48));
 	barraHerramientasPrincipal->setMovable(false);
 
 	construirBotonesBarraHerramientas(barraHerramientasPrincipal);
 
+	QToolBar *barraHerramientasTodus = new QToolBar("toDus");
+	barraHerramientasTodus->setIconSize(QSize(48, 48));
+	barraHerramientasTodus->setMovable(false);
+
+	QWidget* elementoEspaciador = new QWidget();
+	elementoEspaciador->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
 	_estadoSesionTodus = new QLabel();
-	barraHerramientasPrincipal->addWidget(_estadoSesionTodus);
+	QMargins margenes = _estadoSesionTodus->contentsMargins();
+	margenes.setRight(margenes.right() + 10);
+	_estadoSesionTodus->setContentsMargins(margenes);
+
+	_avatarTodus = new QLabel();
+	_avatarTodus->setPixmap(QIcon(":/iconos/usuario.svg").pixmap(QSize(48, 48)));
+
+	barraHerramientasTodus->addWidget(elementoEspaciador);
+	barraHerramientasTodus->addWidget(_estadoSesionTodus);
+	barraHerramientasTodus->addWidget(_avatarTodus);
+
+	addToolBar(barraHerramientasTodus);
 
 	/**
 	 * Listado de categorías
@@ -875,4 +914,49 @@ void VentanaPrincipal::construirIU() {
 	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::procesarCambiosConfiguracion);
 
 	statusBar()->showMessage("Listo");
+}
+
+/**
+ * @brief Descarga el avatar del usuario desde la red toDus y lo muestra en la barra de herramientas
+ */
+void VentanaPrincipal::actualizarAvatar() {
+	QSettings configuracion;
+	QString enlaceAvatar = configuracion.value("todus/enlaceAvatar").toString();
+
+	if (enlaceAvatar.size() == 0) {
+		return;
+	}
+
+	QString ipServidorS3 = configuracion.value("todus/ipServidorS3", "").toString();
+	QString nombreDNSServidorS3 = configuracion.value("todus/nombreDNSServidorS3", "s3.todus.cu").toString();
+	int puertoServidorS3 = configuracion.value("todus/puertoServidorS3", 443).toInt();
+	QUrl url = QUrl(enlaceAvatar);
+	QNetworkRequest solicitud;
+	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
+	QString autorizacion = "Bearer " + configuracion.value("todus/fichaAcceso").toString();
+
+	_rutaAvatarTodus = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/" + _aplicacionNombreCorto + "_avatar.jpg";
+
+	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
+	solicitud.setSslConfiguration(configuracionSSL);
+
+	if (ipServidorS3.size() > 0) {
+		url.setHost(ipServidorS3);
+	} else {
+		url.setHost(nombreDNSServidorS3);
+	}
+	url.setPort(puertoServidorS3);
+
+	solicitud.setUrl(url);
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " HTTP-Download");
+	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
+	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
+	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());
+
+	_archivoAvatarTodus.setFileName(_rutaAvatarTodus);
+	_archivoAvatarTodus.open(QIODevice::WriteOnly);
+
+	_respuestaAvatarTodus = _administradorAccesoRedAvatarTodus->get(solicitud);
+	connect(_respuestaAvatarTodus, &QIODevice::readyRead, this, &VentanaPrincipal::eventoRecepcionDatosAvatarTodus);
+	connect(_respuestaAvatarTodus, &QNetworkReply::finished, this, &VentanaPrincipal::eventoDescargaTerminadaAvatarTodus);
 }
