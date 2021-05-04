@@ -10,8 +10,10 @@
 
 
 Descarga::Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, QObject *padre)
-	:  QNetworkAccessManager(padre), _iniciado(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0) {
+	:  QNetworkAccessManager(padre), _iniciado(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
 	connect(this, &Descarga::finished, this, &Descarga::deleteLater);
+
+	setProxy(obtenerConfiguracionProxy());
 
 	_filaModelo = encontrarFilaDesdeId(_modelo);
 	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::EnEsperaIniciar);
@@ -46,6 +48,9 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
 		}
 
+		recibidos += _tamanoPrevio;
+		total += _tamanoPrevio;
+
 		_modelo->setData(_modelo->index(_filaModelo, 3), (recibidos * 100) / total);
 		_modelo->setData(_modelo->index(_filaModelo, 4), recibidos - _ultimoTamanoRecibido);
 		_modelo->setData(_modelo->index(_filaModelo, 8), total);
@@ -67,7 +72,7 @@ void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
 			iniciarDescarga();
 			break;
 		default:
-			std::cout << "Descargar Error: " << codigo << std::endl;
+			//std::cout << "Descargar Error: " << codigo << std::endl;
 			break;
 	}
 }
@@ -80,17 +85,27 @@ void Descarga::descargaTerminada() {
 		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
 	}
 
-	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Finalizada);
-	_modelo->setData(_modelo->index(_filaModelo, 3), 100);
+	if (_respuesta->error() == QNetworkReply::NoError) {
+		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Finalizada);
+		_modelo->setData(_modelo->index(_filaModelo, 3), 100);
+		_modelo->setData(_modelo->index(_filaModelo, 9), _modelo->index(_filaModelo, 8));
+	}
+	if (_respuesta->error() == QNetworkReply::OperationCanceledError) {
+		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
+	}
+
 	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
-	_modelo->setData(_modelo->index(_filaModelo, 9), _modelo->index(_filaModelo, 8));
 	_modelo->submitAll();
 
 	_modeloDescargando->select();
 
 	_iniciado = false;
 
-	emit terminada(_id);
+	if (_respuesta->error() == QNetworkReply::NoError) {
+		emit terminada(_id);
+	}
+
+	_respuesta->deleteLater();
 }
 
 bool Descarga::iniciado() {
@@ -110,6 +125,31 @@ void Descarga::iniciar() {
 	_toDus->solicitarEnlaceFirmado(_enlaceNoFirmado);
 }
 
+void Descarga::detener() {
+	if (_iniciado == true) {
+		_respuesta->abort();
+	} else {
+		if (modelosValido() == false) {
+			_filaModelo = encontrarFilaDesdeId(_modelo);
+			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+		}
+
+		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
+		_modelo->setData(_modelo->index(_filaModelo, 4), 0);
+		_modelo->submitAll();
+
+		_modeloDescargando->select();
+	}
+}
+
+int Descarga::fila() {
+	return _filaModelo;
+}
+
+QSharedPointer<ModeloEntradas> Descarga::modelo() {
+	return _modelo;
+}
+
 void Descarga::procesarRespuestaDesdeTodus(const QString &noFirmado, const QString &firmado) {
 	if (noFirmado == _enlaceNoFirmado) {
 		QString enlaceProcesado = firmado;
@@ -124,13 +164,16 @@ void Descarga::procesarRespuestaDesdeTodus(const QString &noFirmado, const QStri
 
 void Descarga::iniciarDescarga() {
 	QSettings configuracion;
-	QString ipServidorS3 = configuracion.value("todus/ipServidorS3", "").toString();
-	QString nombreDNSServidorS3 = configuracion.value("todus/nombreDNSServidorS3", "s3.todus.cu").toString();
-	int puertoServidorS3 = configuracion.value("todus/puertoServidorS3", 443).toInt();
+	QString ipServidorS3 = configuracion.value("avanzadas/ipServidorS3", "").toString();
+	QString nombreDNSServidorS3 = configuracion.value("avanzadas/nombreDNSServidorS3", "s3.todus.cu").toString();
+	int puertoServidorS3 = configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
 	QUrl url = QUrl(_enlaceFirmado);
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	QString autorizacion = "Bearer " + configuracion.value("todus/fichaAcceso").toString();
+	QFileInfo informacionArchivo;
+
+	_tamanoPrevio = 0;
 
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
@@ -138,6 +181,11 @@ void Descarga::iniciarDescarga() {
 	}
 
 	QString rutaArchivo = _modelo->data(_modelo->index(_filaModelo, 5)).toString() + "/" + _modelo->data(_modelo->index(_filaModelo, 2)).toString();
+
+	informacionArchivo.setFile(rutaArchivo);
+	if (informacionArchivo.exists() == true) {
+		_tamanoPrevio = informacionArchivo.size();
+	}
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
@@ -150,15 +198,17 @@ void Descarga::iniciarDescarga() {
 	url.setPort(puertoServidorS3);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " HTTP-Download");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
 	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
 	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());
 
-	std::cout << "curl --verbose --continue-at - --user-agent 'ToDus 0.38.35 HTTP-Download' --header 'Authorization: "<< solicitud.rawHeader("Authorization").toStdString() << "' --output 'Resident Evil II [2004] Majaflix S3.part14.rar' '" << _enlaceFirmado.toStdString() << "'" << std::endl;
+	if (_tamanoPrevio > 0) {
+		solicitud.setRawHeader("Range", "bytes=" + QString::number(_tamanoPrevio).toLocal8Bit() + "-");
+	}
 
 	_archivo.setFileName(rutaArchivo);
-	_archivo.open(QIODevice::WriteOnly);
+	_archivo.open(QIODevice::Append);
 
 	_ultimoTiempoRecepcion = std::time(nullptr);
 

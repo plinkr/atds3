@@ -1,5 +1,6 @@
 #include "ventanaconfiguracion.hpp"
 #include "modelocategorias.hpp"
+#include "main.hpp"
 #include <QSettings>
 #include <QIcon>
 #include <QVBoxLayout>
@@ -11,8 +12,12 @@
 #include <QLabel>
 #include <QFormLayout>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QSpinBox>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QFileDialog>
+#include <iostream>
 
 
 VentanaConfiguracion::VentanaConfiguracion(QWidget *padre)
@@ -39,10 +44,14 @@ void VentanaConfiguracion::eventoSeleccionarRutaDescargas() {
 	}
 }
 
+void VentanaConfiguracion::eventoSeleccionarRuta7Zip() {
+
+}
+
 /**
  * @brief Evento que se dispara cuando se hace clic en el botón 'Guardar'
  */
-void VentanaConfiguracion::eventoGuardarOpciones() {
+void VentanaConfiguracion::guardarOpciones() {
 	QSettings configuracion;
 
 	if (_telefono->text().trimmed().size() > 0) {
@@ -51,64 +60,10 @@ void VentanaConfiguracion::eventoGuardarOpciones() {
 		configuracion.remove("todus/telefono");
 	}
 
-	if (_fichaAcceso->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/fichaAcceso", _fichaAcceso->text().trimmed());
+	if (_fichaAcceso->toPlainText().trimmed().size() > 0) {
+		configuracion.setValue("todus/fichaAcceso", _fichaAcceso->toPlainText().trimmed());
 	} else {
 		configuracion.remove("todus/fichaAcceso");
-	}
-
-	if (_ipServidorAutentificacion->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
-	} else {
-		configuracion.remove("todus/ipServidorAutentificacion");
-	}
-
-	if (_puertoServidorAutentificacion->value() != 443) {
-		configuracion.setValue("todus/puertoServidorAutentificacion", _puertoServidorAutentificacion->value());
-	} else {
-		configuracion.remove("todus/puertoServidorAutentificacion");
-	}
-
-	if (_nombreDNSServidorAutentificacion->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
-	} else {
-		configuracion.remove("todus/nombreDNSServidorAutentificacion");
-	}
-
-	if (_ipServidorSesion->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/ipServidorSesion", _ipServidorSesion->text().trimmed());
-	} else {
-		configuracion.remove("todus/ipServidorSesion");
-	}
-
-	if (_puertoServidorSesion->value() != 1756) {
-		configuracion.setValue("todus/puertoServidorSesion", _puertoServidorSesion->value());
-	} else {
-		configuracion.remove("todus/puertoServidorSesion");
-	}
-
-	if (_nombreDNSServidorSesion->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
-	} else {
-		configuracion.remove("todus/nombreDNSServidorSesion");
-	}
-
-	if (_ipServidorS3->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/ipServidorS3", _ipServidorS3->text().trimmed());
-	} else {
-		configuracion.remove("todus/ipServidorS3");
-	}
-
-	if (_puertoServidorS3->value() != 443) {
-		configuracion.setValue("todus/puertoServidorS3", _puertoServidorS3->value());
-	} else {
-		configuracion.remove("todus/puertoServidorS3");
-	}
-
-	if (_nombreDNSServidorS3->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
-	} else {
-		configuracion.remove("todus/nombreDNSServidorS3");
 	}
 
 	if (_rutaDescargas->text().trimmed().size() > 0) {
@@ -121,6 +76,114 @@ void VentanaConfiguracion::eventoGuardarOpciones() {
 		configuracion.setValue("descargas/descargasParalelas", _totalDescargasParalelas->text().trimmed());
 	} else {
 		configuracion.remove("descargas/descargasParalelas");
+	}
+
+	//configuracion.setValue("descargas/descomprimirAlFinalizar", _descomprimirAlFinalizarDescarga->isChecked());
+
+	configuracion.setValue("descargas/eliminarAlFinalizar", _eliminarAlFinalizarDescarga->isChecked());
+/*
+	if (_totalSubidasParalelas->text().trimmed().size() > 0) {
+		configuracion.setValue("subidas/subidasParalelas", _totalSubidasParalelas->text().trimmed());
+	} else {
+		configuracion.remove("subidas/subidasParalelas");
+	}
+
+	configuracion.setValue("subidas/comprimirArchivosAntesSubir", _comprimirArchivosAntesSubir->isChecked());
+
+	configuracion.setValue("subidas/dividirArchivosAntesSubir", _dividirArchivosAntesSubir->isChecked());
+
+	configuracion.setValue("subidas/tamanoDivisionArchivos", _tamanoDivisionArchivos->value());
+
+	configuracion.setValue("subidas/eliminarAlFinalizar", _eliminarAlFinalizarSubida->isChecked());
+
+	if (_ruta7Zip->text().trimmed().size() > 0) {
+		configuracion.setValue("herramientas/ruta7Zip", _ruta7Zip->text().trimmed());
+	} else {
+		configuracion.remove("herramientas/ruta7Zip");
+	}
+*/
+	configuracion.setValue("proxy/tipo", _tipoServidorProxy->currentIndex());
+
+	if (_tipoServidorProxy->currentIndex() > 0) {
+		if (_servidorProxy->text().trimmed().size() > 0) {
+			configuracion.setValue("proxy/servidor", _servidorProxy->text().trimmed());
+		} else {
+			configuracion.remove("proxy/servidor");
+		}
+
+		configuracion.setValue("proxy/puerto", _puertoServidorProxy->value());
+
+		if (_usuarioServidorProxy->text().trimmed().size() > 0) {
+			configuracion.setValue("proxy/usuario", _usuarioServidorProxy->text().trimmed());
+		} else {
+			configuracion.remove("proxy/usuario");
+		}
+
+		if (_contrasenaServidorProxy->text().trimmed().size() > 0) {
+			configuracion.setValue("proxy/contrasena", cifrarTexto(_contrasenaServidorProxy->text().trimmed().toLocal8Bit(), _usuarioServidorProxy->text().trimmed() + "@" + _servidorProxy->text().trimmed() + ":" + QString::number(_puertoServidorProxy->value())).toBase64());
+		} else {
+			configuracion.remove("proxy/contrasena");
+		}
+	}
+
+	if (_ipServidorAutentificacion->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/ipServidorAutentificacion");
+	}
+
+	if (_puertoServidorAutentificacion->value() != 443) {
+		configuracion.setValue("avanzadas/puertoServidorAutentificacion", _puertoServidorAutentificacion->value());
+	} else {
+		configuracion.remove("avanzadas/puertoServidorAutentificacion");
+	}
+
+	if (_nombreDNSServidorAutentificacion->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/nombreDNSServidorAutentificacion");
+	}
+
+	if (_ipServidorSesion->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/ipServidorSesion", _ipServidorSesion->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/ipServidorSesion");
+	}
+
+	if (_puertoServidorSesion->value() != 1756) {
+		configuracion.setValue("avanzadas/puertoServidorSesion", _puertoServidorSesion->value());
+	} else {
+		configuracion.remove("avanzadas/puertoServidorSesion");
+	}
+
+	if (_nombreDNSServidorSesion->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/nombreDNSServidorSesion");
+	}
+
+	if (_ipServidorS3->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/ipServidorS3", _ipServidorS3->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/ipServidorS3");
+	}
+
+	if (_puertoServidorS3->value() != 443) {
+		configuracion.setValue("avanzadas/puertoServidorS3", _puertoServidorS3->value());
+	} else {
+		configuracion.remove("avanzadas/puertoServidorS3");
+	}
+
+	if (_nombreDNSServidorS3->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/nombreDNSServidorS3");
+	}
+
+	if (_agenteUsuario->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/agenteUsuario", _agenteUsuario->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/agenteUsuario");
 	}
 
 	emit accept();
@@ -143,6 +206,30 @@ QListView *VentanaConfiguracion::construirListadoOpciones() {
 	opcionDescargas->setText("Descargas");
 	opcionDescargas->setToolTip("Configuraciones relacionadas con las descargas");
 	_modeloListadoOpciones->appendRow(opcionDescargas);
+/*
+	QStandardItem *opcionSubidas = new QStandardItem();
+	opcionSubidas->setIcon(QIcon(":/iconos/subida.svg"));
+	opcionSubidas->setText("Subidas");
+	opcionSubidas->setToolTip("Configuraciones relacionadas con las subidas");
+	_modeloListadoOpciones->appendRow(opcionSubidas);
+
+	QStandardItem *opcionHerramientas = new QStandardItem();
+	opcionHerramientas->setIcon(QIcon(":/iconos/herramientas.svg"));
+	opcionHerramientas->setText("Herramientas");
+	opcionHerramientas->setToolTip("Configuraciones relacionadas con las herramientas");
+	_modeloListadoOpciones->appendRow(opcionHerramientas);
+*/
+	QStandardItem *opcionProxy = new QStandardItem();
+	opcionProxy->setIcon(QPixmap(":/iconos/proxy.svg"));
+	opcionProxy->setText("Proxy");
+	opcionProxy->setToolTip("Configuraciones relacionadas con el proxy");
+	_modeloListadoOpciones->appendRow(opcionProxy);
+
+	QStandardItem *opcionAvanzadas = new QStandardItem();
+	opcionAvanzadas->setIcon(QPixmap(":/iconos/configurar.svg"));
+	opcionAvanzadas->setText("Avanzadas");
+	opcionAvanzadas->setToolTip("Configuraciones avanzadas");
+	_modeloListadoOpciones->appendRow(opcionAvanzadas);
 
 	QListView *listadoOpciones = new QListView();
 	listadoOpciones->setAcceptDrops(false);
@@ -163,17 +250,18 @@ QListView *VentanaConfiguracion::construirListadoOpciones() {
 }
 
 /**
- * @brief Construye los elementos para representar un subtítulo
+ * @brief Construye los elementos para representar un título
  */
-QWidget *VentanaConfiguracion::construirSubtitulo(const QString &subtitulo) {
+QWidget *VentanaConfiguracion::construirTitulo(const QString &titulo) {
 	QWidget *elementos = new QWidget();
 
 	QVBoxLayout *diseno = new QVBoxLayout();
 	QMargins margenes = diseno->contentsMargins();
 	margenes.setTop(0);
+	margenes.setBottom(margenes.bottom() + 10);
 	diseno->setContentsMargins(margenes);
 
-	QLabel *subtituloEtiqueta = new QLabel(subtitulo);
+	QLabel *subtituloEtiqueta = new QLabel(titulo);
 	QFont fuente = subtituloEtiqueta->font();
 	fuente.setPointSize(fuente.pointSize() + 4);
 	fuente.setBold(true);
@@ -189,6 +277,28 @@ QWidget *VentanaConfiguracion::construirSubtitulo(const QString &subtitulo) {
 	elementos->setLayout(diseno);
 
 	return elementos;
+}
+
+/**
+ * @brief Construye los elementos para representar un subtítulo
+ */
+QLabel *VentanaConfiguracion::construirSubtitulo(const QString &subtitulo) {
+	QLabel *elemento = new QLabel(subtitulo);
+
+	QMargins margenes = elemento->contentsMargins();
+	margenes.setBottom(margenes.bottom() + 10);
+
+	elemento->setAlignment(Qt::AlignTop);
+	elemento->setContentsMargins(margenes);
+	elemento->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+	elemento->setWordWrap(true);
+
+	QFont fuente = elemento->font();
+	fuente.setPointSize(fuente.pointSize() - 1);
+	fuente.setItalic(true);
+	elemento->setFont(fuente);
+
+	return elemento;
 }
 
 /**
@@ -215,118 +325,18 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 	_telefono->setPlaceholderText("Número en formato internacional...");
 	_telefono->setText(configuracion.value("todus/telefono").toString());
 
-	QLabel *telefonoExplicacion = new QLabel("Este campo es uno de los más importantes de la configuración de ATDS3. Aquí se define el número de teléfono para el inicio de sesión en toDus.");
-	telefonoExplicacion->setAlignment(Qt::AlignTop);
-	margenes = telefonoExplicacion->contentsMargins();
-	margenes.setTop(0);
-	telefonoExplicacion->setContentsMargins(margenes);
-	telefonoExplicacion->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-	telefonoExplicacion->setWordWrap(true);
-	QFont fuente = telefonoExplicacion->font();
-	fuente.setPointSize(fuente.pointSize() - 1);
-	fuente.setItalic(true);
-	telefonoExplicacion->setFont(fuente);
-
-	_fichaAcceso = new QLineEdit();
+	_fichaAcceso = new QPlainTextEdit();
+	_fichaAcceso->setMaximumHeight(100);
 	_fichaAcceso->setPlaceholderText("Ficha de acceso o déjelo en blanco...");
-	_fichaAcceso->setText(configuracion.value("todus/fichaAcceso").toString());
-
-	QLabel *fichaAccesoExplicacion = new QLabel("Este campo es opcional, dicho valor se obtiene del proceso de inicio de sesión. Solo debe ser configurado si el inicio de sesión se rompe debido a un cambio en toDus.");
-	fichaAccesoExplicacion->setAlignment(Qt::AlignTop);
-	margenes = fichaAccesoExplicacion->contentsMargins();
-	margenes.setTop(0);
-	fichaAccesoExplicacion->setContentsMargins(margenes);
-	fichaAccesoExplicacion->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-	fichaAccesoExplicacion->setWordWrap(true);
-	fuente = fichaAccesoExplicacion->font();
-	fuente.setPointSize(fuente.pointSize() - 1);
-	fuente.setItalic(true);
-	fichaAccesoExplicacion->setFont(fuente);
+	_fichaAcceso->setPlainText(configuracion.value("todus/fichaAcceso").toString());
 
 	formularioTodus->addRow("Teléfono:", _telefono);
-	formularioTodus->addRow("", telefonoExplicacion);
+	formularioTodus->addRow("", construirSubtitulo("Este campo es uno de los más importantes de la configuración de ATDS3. Aquí se define el número de teléfono para el inicio de sesión en toDus."));
 	formularioTodus->addRow("Ficha de acceso:", _fichaAcceso);
-	formularioTodus->addRow("", fichaAccesoExplicacion);
+	formularioTodus->addRow("", construirSubtitulo("Este campo es opcional, dicho valor se obtiene del proceso de inicio de sesión. Solo debe ser configurado si el inicio de sesión se rompe debido a un cambio en toDus."));
 
-	QFormLayout *formularioConexion = new QFormLayout();
-	margenes = formularioConexion->contentsMargins();
-	margenes.setLeft(margenes.left() + 20);
-	formularioConexion->setContentsMargins(margenes);
-
-	QHBoxLayout *disenoElementosServidorAutentificacion = new QHBoxLayout();
-
-	_ipServidorAutentificacion = new QLineEdit();
-	_ipServidorAutentificacion->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorAutentificacion->setText(configuracion.value("todus/ipServidorAutentificacion").toString());
-
-	_puertoServidorAutentificacion = new QSpinBox();
-	_puertoServidorAutentificacion->setAlignment(Qt::AlignRight);
-	_puertoServidorAutentificacion->setMinimum(0x01);
-	_puertoServidorAutentificacion->setMaximum(0xFFFF);
-	_puertoServidorAutentificacion->setMinimumWidth(75);
-	_puertoServidorAutentificacion->setValue(configuracion.value("todus/puertoServidorAutentificacion", 443).toInt());
-
-	disenoElementosServidorAutentificacion->addWidget(_ipServidorAutentificacion);
-	disenoElementosServidorAutentificacion->addWidget(new QLabel("Puerto:"));
-	disenoElementosServidorAutentificacion->addWidget(_puertoServidorAutentificacion);
-
-	_nombreDNSServidorAutentificacion = new QLineEdit();
-	_nombreDNSServidorAutentificacion->setPlaceholderText("Nombre DNS o déjelo en blanco...");
-	_nombreDNSServidorAutentificacion->setText(configuracion.value("todus/nombreDNSServidorAutentificacion").toString());
-
-	QHBoxLayout *disenoElementosServidorSesion = new QHBoxLayout();
-
-	_ipServidorSesion = new QLineEdit();
-	_ipServidorSesion->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorSesion->setText(configuracion.value("todus/ipServidorSesion").toString());
-
-	_puertoServidorSesion = new QSpinBox();
-	_puertoServidorSesion->setAlignment(Qt::AlignRight);
-	_puertoServidorSesion->setMinimum(0x01);
-	_puertoServidorSesion->setMaximum(0xFFFF);
-	_puertoServidorSesion->setMinimumWidth(75);
-	_puertoServidorSesion->setValue(configuracion.value("todus/puertoServidorSesion", 1756).toInt());
-
-	disenoElementosServidorSesion->addWidget(_ipServidorSesion);
-	disenoElementosServidorSesion->addWidget(new QLabel("Puerto:"));
-	disenoElementosServidorSesion->addWidget(_puertoServidorSesion);
-
-	_nombreDNSServidorSesion = new QLineEdit();
-	_nombreDNSServidorSesion->setPlaceholderText("Dirección DNS o déjelo en blanco...");
-	_nombreDNSServidorSesion->setText(configuracion.value("todus/nombreDNSServidorSesion").toString());
-
-	QHBoxLayout *disenoElementosServidorS3 = new QHBoxLayout();
-
-	_ipServidorS3 = new QLineEdit();
-	_ipServidorS3->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorS3->setText(configuracion.value("todus/ipServidorS3").toString());
-
-	_puertoServidorS3 = new QSpinBox();
-	_puertoServidorS3->setAlignment(Qt::AlignRight);
-	_puertoServidorS3->setMinimum(0x01);
-	_puertoServidorS3->setMaximum(0xFFFF);
-	_puertoServidorS3->setMinimumWidth(75);
-	_puertoServidorS3->setValue(configuracion.value("todus/puertoServidorS3", 443).toInt());
-
-	disenoElementosServidorS3->addWidget(_ipServidorS3);
-	disenoElementosServidorS3->addWidget(new QLabel("Puerto:"));
-	disenoElementosServidorS3->addWidget(_puertoServidorS3);
-
-	_nombreDNSServidorS3 = new QLineEdit();
-	_nombreDNSServidorS3->setPlaceholderText("Dirección DNS o déjelo en blanco...");
-	_nombreDNSServidorS3->setText(configuracion.value("todus/nombreDNSServidorS3").toString());
-
-	formularioConexion->addRow("IP servidor autentificación:", disenoElementosServidorAutentificacion);
-	formularioConexion->addRow("Nombre DNS servidor autentificación:", _nombreDNSServidorAutentificacion);
-	formularioConexion->addRow("IP servidor sesión:", disenoElementosServidorSesion);
-	formularioConexion->addRow("Nombre DNS servidor sesión:", _nombreDNSServidorSesion);
-	formularioConexion->addRow("IP servidor S3:", disenoElementosServidorS3);
-	formularioConexion->addRow("Nombre DNS servidor S3:", _nombreDNSServidorS3);
-
-	diseno->addWidget(construirSubtitulo("toDus"));
+	diseno->addWidget(construirTitulo("toDus"));
 	diseno->addLayout(formularioTodus);
-	diseno->addWidget(construirSubtitulo("Conexión"));
-	diseno->addLayout(formularioConexion);
 	diseno->addStretch(1);
 
 	elementos->setLayout(diseno);
@@ -371,35 +381,352 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 	filaElementosRutaDescargas->addWidget(_rutaDescargas, 1);
 	filaElementosRutaDescargas->addWidget(botonSeleccionarRutaDescargas);
 
-	QLabel *rutaDescargasExplicacion = new QLabel("Seleccione la ruta en donde se guardarán las nuevas descargas. Dentro de esta ruta se crearán las carpetas de las categorías y se almacenará la base de datos de la aplicación.");
-	rutaDescargasExplicacion->setAlignment(Qt::AlignTop);
-	margenes = rutaDescargasExplicacion->contentsMargins();
-	margenes.setBottom(margenes.bottom() + 10);
-	rutaDescargasExplicacion->setContentsMargins(margenes);
-	rutaDescargasExplicacion->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-	rutaDescargasExplicacion->setWordWrap(true);
-	QFont fuente = rutaDescargasExplicacion->font();
-	fuente.setPointSize(fuente.pointSize() - 1);
-	fuente.setItalic(true);
-	rutaDescargasExplicacion->setFont(fuente);
-
 	_totalDescargasParalelas = new QSpinBox();
 	_totalDescargasParalelas->setAlignment(Qt::AlignRight);
 	_totalDescargasParalelas->setMinimumWidth(60);
 	_totalDescargasParalelas->setValue(configuracion.value("descargas/descargasParalelas").toInt());
 
 	formularioDescargas->addRow(rutaDescargasEtiqueta, filaElementosRutaDescargas);
-	formularioDescargas->addRow("", rutaDescargasExplicacion);
+	formularioDescargas->addRow("", construirSubtitulo("Define la ruta en donde se guardarán las nuevas descargas. Dentro de esta ruta se crearán las carpetas de las categorías y se almacenará la base de datos de la aplicación."));
 	formularioDescargas->addRow("Total de descargas paralelas:", _totalDescargasParalelas);
+	formularioDescargas->addRow("", construirSubtitulo("Define el total de tareas de descargas que pueden estar activas de forma simultánea."));
 
-	diseno->addWidget(construirSubtitulo("Descargas"));
+	QFormLayout *formularioAccionAlFinalizarDescarga = new QFormLayout();
+	margenes = formularioAccionAlFinalizarDescarga->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioAccionAlFinalizarDescarga->setContentsMargins(margenes);
+
+	_descomprimirAlFinalizarDescarga = new QCheckBox();
+	_descomprimirAlFinalizarDescarga->setChecked(configuracion.value("descargas/descomprimirAlFinalizar").toBool());
+
+	_eliminarAlFinalizarDescarga = new QCheckBox();
+	_eliminarAlFinalizarDescarga->setChecked(configuracion.value("descargas/eliminarAlFinalizar").toBool());
+
+	//formularioAccionAlFinalizarDescarga->addRow("Descomprimir?", _descomprimirAlFinalizarDescarga);
+	//formularioAccionAlFinalizarDescarga->addRow("", construirSubtitulo("Define si se debe intentar descomprimir el archivo o las partes del achivo comprimido tras finalizar la descarga. Al finalizar la descompresión se eliminarán los archivos comprimidos."));
+	formularioAccionAlFinalizarDescarga->addRow("Eliminar del listado?", _eliminarAlFinalizarDescarga);
+	formularioAccionAlFinalizarDescarga->addRow("", construirSubtitulo("Define si se debe eliminar del listado la descarga tras finalizar."));
+
+	diseno->addWidget(construirTitulo("Descargas"));
 	diseno->addLayout(formularioDescargas);
+	diseno->addWidget(construirTitulo("Acción al finalizar una descarga"));
+	diseno->addLayout(formularioAccionAlFinalizarDescarga);
 	diseno->addStretch(1);
 
 	elementos->setLayout(diseno);
 
 	return elementos;
 }
+
+/**
+ * @brief Construye los elementos de configuracion para la opción 'Subidas'
+ */
+QWidget *VentanaConfiguracion::construirOpcionSubidas() {
+	QSettings configuracion;
+	QWidget *elementos = new QWidget();
+	QMargins margenes = elementos->contentsMargins();
+	margenes.setLeft(margenes.left() + 5);
+	elementos->setContentsMargins(margenes);
+
+	QVBoxLayout *diseno = new QVBoxLayout();
+	margenes = diseno->contentsMargins();
+	margenes.setTop(0);
+	diseno->setContentsMargins(margenes);
+
+	QFormLayout *formularioSubidas = new QFormLayout();
+	margenes = formularioSubidas->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioSubidas->setContentsMargins(margenes);
+
+	_totalSubidasParalelas = new QSpinBox();
+	_totalSubidasParalelas->setAlignment(Qt::AlignRight);
+	_totalSubidasParalelas->setMinimumWidth(60);
+	_totalSubidasParalelas->setValue(configuracion.value("subidas/subidasParalelas").toInt());
+
+	formularioSubidas->addRow("Total de subidas paralelas:", _totalSubidasParalelas);
+	formularioSubidas->addRow("", construirSubtitulo("Define el total de tareas de subidas que pueden estar activas de forma simultánea."));
+
+	QFormLayout *formularioAccionAntesSubir = new QFormLayout();
+	margenes = formularioAccionAntesSubir->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioAccionAntesSubir->setContentsMargins(margenes);
+
+	_comprimirArchivosAntesSubir = new QCheckBox();
+	_comprimirArchivosAntesSubir->setChecked(configuracion.value("subidas/comprimirArchivosAntesSubir").toBool());
+
+	_dividirArchivosAntesSubir = new QCheckBox();
+	_dividirArchivosAntesSubir->setChecked(configuracion.value("subidas/dividirArchivosAntesSubir").toBool());
+
+	QHBoxLayout *filaElementosTamanoDivisionArchivos= new QHBoxLayout();
+	filaElementosTamanoDivisionArchivos->setContentsMargins(0, 0, 0, 0);
+
+	_tamanoDivisionArchivos = new QSpinBox();
+	_tamanoDivisionArchivos->setAlignment(Qt::AlignRight);
+	_tamanoDivisionArchivos->setMinimumWidth(60);
+	_tamanoDivisionArchivos->setValue(configuracion.value("subidas/tamanoDivisionArchivos").toInt());
+
+	filaElementosTamanoDivisionArchivos->addWidget(_tamanoDivisionArchivos);
+	filaElementosTamanoDivisionArchivos->addWidget(new QLabel("MiB"));
+
+	formularioAccionAntesSubir->addRow("Comprimir?", _comprimirArchivosAntesSubir);
+	formularioAccionAntesSubir->addRow("", construirSubtitulo("Define si se deben comprimir o no los archivos antes de subirlos."));
+	formularioAccionAntesSubir->addRow("Dividir?", _dividirArchivosAntesSubir);
+	formularioAccionAntesSubir->addRow("", construirSubtitulo("Define si se deben dividir o no los archivos antes de subirlos."));
+	formularioAccionAntesSubir->addRow("Tamaño de la división de los archivos:", filaElementosTamanoDivisionArchivos);
+	formularioAccionAntesSubir->addRow("", construirSubtitulo("Define el tamaño a utilizar para dividir los archivos antes de subirlos."));
+
+	QFormLayout *formularioAccionAlFinalizar = new QFormLayout();
+	margenes = formularioAccionAlFinalizar->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioAccionAlFinalizar->setContentsMargins(margenes);
+
+	_eliminarAlFinalizarSubida = new QCheckBox();
+	_eliminarAlFinalizarSubida->setChecked(configuracion.value("subidas/eliminarAlFinalizar").toBool());
+
+	formularioAccionAlFinalizar->addRow("Eliminar del listado?", _eliminarAlFinalizarSubida);
+	formularioAccionAlFinalizar->addRow("", construirSubtitulo("Define si se debe eliminar del listado la subida tras finalizar."));
+
+	diseno->addWidget(construirTitulo("Subidas"));
+	diseno->addLayout(formularioSubidas);
+	diseno->addWidget(construirTitulo("Acción antes de subir un archivo"));
+	diseno->addLayout(formularioAccionAntesSubir);
+	diseno->addWidget(construirTitulo("Acción al finalizar una subida"));
+	diseno->addLayout(formularioAccionAlFinalizar);
+	diseno->addStretch(1);
+
+	elementos->setLayout(diseno);
+
+	return elementos;
+}
+
+/**
+ * @brief Construye los elementos de configuracion para la opción 'Herramientas'
+ */
+QWidget *VentanaConfiguracion::construirOpcionHerramientas() {
+	QSettings configuracion;
+	QWidget *elementos = new QWidget();
+	QMargins margenes = elementos->contentsMargins();
+	margenes.setLeft(margenes.left() + 5);
+	elementos->setContentsMargins(margenes);
+
+	QVBoxLayout *diseno = new QVBoxLayout();
+	margenes = diseno->contentsMargins();
+	margenes.setTop(0);
+	diseno->setContentsMargins(margenes);
+
+	QFormLayout *formularioHerramientas = new QFormLayout();
+	margenes = formularioHerramientas->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioHerramientas->setContentsMargins(margenes);
+
+	QHBoxLayout *filaElementosRuta7Zip = new QHBoxLayout();
+	filaElementosRuta7Zip->setContentsMargins(0, 0, 0, 0);
+
+	QLabel *ruta7ZipEtiqueta = new QLabel();
+	ruta7ZipEtiqueta->setText("Ruta de 7-Zip:");
+	ruta7ZipEtiqueta->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding));
+	_ruta7Zip = new QLineEdit();
+	_ruta7Zip->setReadOnly(true);
+	_ruta7Zip->setText(configuracion.value("herramientas/ruta7Zip").toString());
+	QPushButton *botonSeleccionarRuta7Zip = new QPushButton();
+	botonSeleccionarRuta7Zip->setIcon(QIcon(":/iconos/seleccionar-directorio.svg"));
+	botonSeleccionarRuta7Zip->setText("Seleccionar");
+	connect(botonSeleccionarRuta7Zip, &QPushButton::clicked, this, &VentanaConfiguracion::eventoSeleccionarRuta7Zip);
+
+	filaElementosRuta7Zip->addWidget(_ruta7Zip, 1);
+	filaElementosRuta7Zip->addWidget(botonSeleccionarRuta7Zip);
+
+	formularioHerramientas->addRow(ruta7ZipEtiqueta, filaElementosRuta7Zip);
+	formularioHerramientas->addRow("", construirSubtitulo("Define la ruta en donde reside el archivo ejecutable del programa 7-Zip. Este programa se utilizará para descomprimir los archivos descargados y los archivos que se van a subir. Esta opción no surtirá efecto si no se puede ejecutar el programa. Extensiones soportadas: arj, bz2, bzip2, gz, gzip, tgz, tpz, lzh, lha, lzma, lzma86, rar, tar, taz, tbz2, tbz, xz, txz, z, zip."));
+
+	diseno->addWidget(construirTitulo("Herramientas"));
+	diseno->addLayout(formularioHerramientas);
+	diseno->addStretch(1);
+
+	elementos->setLayout(diseno);
+
+	return elementos;
+}
+
+/**
+ * @brief Construye los elementos de configuracion para la opción 'Proxy'
+ */
+QWidget *VentanaConfiguracion::construirOpcionProxy() {
+	QSettings configuracion;
+	QWidget *elementos = new QWidget();
+	QMargins margenes = elementos->contentsMargins();
+	margenes.setLeft(margenes.left() + 5);
+	elementos->setContentsMargins(margenes);
+
+	QVBoxLayout *diseno = new QVBoxLayout();
+	margenes = diseno->contentsMargins();
+	margenes.setTop(0);
+	diseno->setContentsMargins(margenes);
+
+	QFormLayout *formularioProxy = new QFormLayout();
+	margenes = formularioProxy->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioProxy->setContentsMargins(margenes);
+
+	QHBoxLayout *disenoElementosServidorProxy = new QHBoxLayout();
+
+	_tipoServidorProxy = new QComboBox();
+	_tipoServidorProxy->addItems(QStringList({"Sin proxy", "HTTP(S)", "SOCKS 4/5"}));
+	_tipoServidorProxy->setCurrentIndex(configuracion.value("proxy/tipo").toInt());
+
+	_servidorProxy = new QLineEdit();
+	_servidorProxy->setPlaceholderText("Dirección IP o nombre DNS del servidor proxy...");
+	_servidorProxy->setText(configuracion.value("proxy/servidor").toString());
+
+	_puertoServidorProxy = new QSpinBox();
+	_puertoServidorProxy->setAlignment(Qt::AlignRight);
+	_puertoServidorProxy->setMinimum(0x01);
+	_puertoServidorProxy->setMaximum(0xFFFF);
+	_puertoServidorProxy->setMinimumWidth(75);
+	_puertoServidorProxy->setValue(configuracion.value("proxy/puerto", 3128).toInt());
+
+	disenoElementosServidorProxy->addWidget(_servidorProxy);
+	disenoElementosServidorProxy->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorProxy->addWidget(_puertoServidorProxy);
+
+	_usuarioServidorProxy = new QLineEdit();
+	_usuarioServidorProxy->setPlaceholderText("Nombre de usuario o déjelo en blanco...");
+	_usuarioServidorProxy->setText(configuracion.value("proxy/usuario").toString());
+
+	_contrasenaServidorProxy = new QLineEdit();
+	_contrasenaServidorProxy->setPlaceholderText("Contraseña o déjelo en blanco...");
+	_contrasenaServidorProxy->setEchoMode(QLineEdit::Password);
+	if (configuracion.contains("proxy/contrasena") == true) {
+		_contrasenaServidorProxy->setText("********");
+	}
+
+	formularioProxy->addRow("Tipo:", _tipoServidorProxy);
+	formularioProxy->addRow("Servidor:", disenoElementosServidorProxy);
+	formularioProxy->addRow("Usuario:", _usuarioServidorProxy);
+	formularioProxy->addRow("Contraseña:", _contrasenaServidorProxy);
+
+	diseno->addWidget(construirTitulo("Proxy"));
+	diseno->addLayout(formularioProxy);
+	diseno->addStretch(1);
+
+	elementos->setLayout(diseno);
+
+	return elementos;
+
+}
+
+/**
+ * @brief Construye los elementos de configuracion para la opción 'Avanzadas'
+ */
+QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
+	QSettings configuracion;
+	QWidget *elementos = new QWidget();
+	QMargins margenes = elementos->contentsMargins();
+	margenes.setLeft(margenes.left() + 5);
+	elementos->setContentsMargins(margenes);
+
+	QVBoxLayout *diseno = new QVBoxLayout();
+	margenes = diseno->contentsMargins();
+	margenes.setTop(0);
+	diseno->setContentsMargins(margenes);
+
+	QFormLayout *formularioConexion = new QFormLayout();
+	margenes = formularioConexion->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioConexion->setContentsMargins(margenes);
+
+	QHBoxLayout *disenoElementosServidorAutentificacion = new QHBoxLayout();
+
+	_ipServidorAutentificacion = new QLineEdit();
+	_ipServidorAutentificacion->setPlaceholderText("Dirección IP o déjelo en blanco...");
+	_ipServidorAutentificacion->setText(configuracion.value("avanzadas/ipServidorAutentificacion").toString());
+
+	_puertoServidorAutentificacion = new QSpinBox();
+	_puertoServidorAutentificacion->setAlignment(Qt::AlignRight);
+	_puertoServidorAutentificacion->setMinimum(0x01);
+	_puertoServidorAutentificacion->setMaximum(0xFFFF);
+	_puertoServidorAutentificacion->setMinimumWidth(75);
+	_puertoServidorAutentificacion->setValue(configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt());
+
+	disenoElementosServidorAutentificacion->addWidget(_ipServidorAutentificacion);
+	disenoElementosServidorAutentificacion->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorAutentificacion->addWidget(_puertoServidorAutentificacion);
+
+	_nombreDNSServidorAutentificacion = new QLineEdit();
+	_nombreDNSServidorAutentificacion->setPlaceholderText("Nombre DNS o déjelo en blanco...");
+	_nombreDNSServidorAutentificacion->setText(configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString());
+
+	QHBoxLayout *disenoElementosServidorSesion = new QHBoxLayout();
+
+	_ipServidorSesion = new QLineEdit();
+	_ipServidorSesion->setPlaceholderText("Dirección IP o déjelo en blanco...");
+	_ipServidorSesion->setText(configuracion.value("avanzadas/ipServidorSesion").toString());
+
+	_puertoServidorSesion = new QSpinBox();
+	_puertoServidorSesion->setAlignment(Qt::AlignRight);
+	_puertoServidorSesion->setMinimum(0x01);
+	_puertoServidorSesion->setMaximum(0xFFFF);
+	_puertoServidorSesion->setMinimumWidth(75);
+	_puertoServidorSesion->setValue(configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt());
+
+	disenoElementosServidorSesion->addWidget(_ipServidorSesion);
+	disenoElementosServidorSesion->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorSesion->addWidget(_puertoServidorSesion);
+
+	_nombreDNSServidorSesion = new QLineEdit();
+	_nombreDNSServidorSesion->setPlaceholderText("Dirección DNS o déjelo en blanco...");
+	_nombreDNSServidorSesion->setText(configuracion.value("avanzadas/nombreDNSServidorSesion").toString());
+
+	QHBoxLayout *disenoElementosServidorS3 = new QHBoxLayout();
+
+	_ipServidorS3 = new QLineEdit();
+	_ipServidorS3->setPlaceholderText("Dirección IP o déjelo en blanco...");
+	_ipServidorS3->setText(configuracion.value("avanzadas/ipServidorS3").toString());
+
+	_puertoServidorS3 = new QSpinBox();
+	_puertoServidorS3->setAlignment(Qt::AlignRight);
+	_puertoServidorS3->setMinimum(0x01);
+	_puertoServidorS3->setMaximum(0xFFFF);
+	_puertoServidorS3->setMinimumWidth(75);
+	_puertoServidorS3->setValue(configuracion.value("avanzadas/puertoServidorS3", 443).toInt());
+
+	disenoElementosServidorS3->addWidget(_ipServidorS3);
+	disenoElementosServidorS3->addWidget(new QLabel("Puerto:"));
+	disenoElementosServidorS3->addWidget(_puertoServidorS3);
+
+	_nombreDNSServidorS3 = new QLineEdit();
+	_nombreDNSServidorS3->setPlaceholderText("Dirección DNS o déjelo en blanco...");
+	_nombreDNSServidorS3->setText(configuracion.value("avanzadas/nombreDNSServidorS3").toString());
+
+	formularioConexion->addRow("IP servidor autentificación:", disenoElementosServidorAutentificacion);
+	formularioConexion->addRow("Nombre DNS servidor autentificación:", _nombreDNSServidorAutentificacion);
+	formularioConexion->addRow("IP servidor sesión:", disenoElementosServidorSesion);
+	formularioConexion->addRow("Nombre DNS servidor sesión:", _nombreDNSServidorSesion);
+	formularioConexion->addRow("IP servidor S3:", disenoElementosServidorS3);
+	formularioConexion->addRow("Nombre DNS servidor S3:", _nombreDNSServidorS3);
+
+	QFormLayout *formularioAgenteHTTP = new QFormLayout();
+	margenes = formularioAgenteHTTP->contentsMargins();
+	margenes.setLeft(margenes.left() + 20);
+	formularioAgenteHTTP->setContentsMargins(margenes);
+
+	_agenteUsuario = new QLineEdit();
+	_agenteUsuario->setPlaceholderText("Agente de usuario o déjelo en blanco...");
+	_agenteUsuario->setText(configuracion.value("avanzadas/agenteUsuario").toString());
+
+	formularioAgenteHTTP->addRow("Agente usuario de toDus:", _agenteUsuario);
+
+	diseno->addWidget(construirTitulo("Conexión"));
+	diseno->addLayout(formularioConexion);
+	diseno->addWidget(construirTitulo("Agente HTTP"));
+	diseno->addLayout(formularioAgenteHTTP);
+	diseno->addStretch(1);
+
+	elementos->setLayout(diseno);
+
+	return elementos;
+}
+
 /**
  * @brief Construye la interfaz de usuario
  */
@@ -416,9 +743,13 @@ void VentanaConfiguracion::construirIU() {
 	QHBoxLayout *filaContenido = new QHBoxLayout();
 
 	_elementosApilados = new QStackedWidget();
-	_elementosApilados->setMinimumSize(QSize(600, 530));
+	_elementosApilados->setMinimumSize(QSize(650, 500));
 	_elementosApilados->addWidget(construirOpcionTodus());
 	_elementosApilados->addWidget(construirOpcionDescargas());
+	//_elementosApilados->addWidget(construirOpcionSubidas());
+	//_elementosApilados->addWidget(construirOpcionHerramientas());
+	_elementosApilados->addWidget(construirOpcionProxy());
+	_elementosApilados->addWidget(construirOpcionAvanzadas());
 
 	filaContenido->addWidget(construirListadoOpciones());
 	filaContenido->addWidget(_elementosApilados, 1);
@@ -428,7 +759,7 @@ void VentanaConfiguracion::construirIU() {
 	QPushButton *botonCerrar = new QPushButton();
 	botonCerrar->setIcon(QIcon(":/iconos/finalizado.svg"));
 	botonCerrar->setText("&Guardar");
-	connect(botonCerrar, &QPushButton::clicked, this, &VentanaConfiguracion::eventoGuardarOpciones);
+	connect(botonCerrar, &QPushButton::clicked, this, &VentanaConfiguracion::guardarOpciones);
 
 	filaBotones->addStretch(1);
 	filaBotones->addWidget(botonCerrar);

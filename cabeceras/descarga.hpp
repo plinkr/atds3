@@ -20,6 +20,11 @@ class Descarga : public QNetworkAccessManager {
 		bool iniciado();
 		void iniciar();
 
+		void detener();
+
+		int fila();
+		QSharedPointer<ModeloEntradas> modelo();
+
 	signals:
 		void terminada(unsigned int id);
 
@@ -45,6 +50,7 @@ class Descarga : public QNetworkAccessManager {
 		QNetworkReply *_respuesta;
 		std::time_t _ultimoTiempoRecepcion;
 		quint32 _ultimoTamanoRecibido;
+		quint64 _tamanoPrevio;
 
 		bool modelosValido();
 		unsigned int encontrarFilaDesdeId(QSharedPointer<ModeloEntradas> modelo);

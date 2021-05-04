@@ -40,6 +40,7 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	construirIU();
 
 	_administradorAccesoRedAvatarTodus = new QNetworkAccessManager(this);
+	_administradorAccesoRedAvatarTodus->setProxy(obtenerConfiguracionProxy());
 
 	_toDus = QSharedPointer<toDus>(new toDus());
 	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
@@ -193,35 +194,51 @@ void VentanaPrincipal::procesarCambiosConfiguracion() {
 	if (_configuracionFichaAcceso != configuracion.value("todus/fichaAcceso").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorAutentificacion != configuracion.value("todus/ipServidorAutentificacion").toString()) {
+	if (_configuracionIpServidorAutentificacion != configuracion.value("avanzadas/ipServidorAutentificacion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorAutentificacion != configuracion.value("todus/puertoServidorAutentificacion", 443).toInt()) {
+	if (_configuracionPuertoServidorAutentificacion != configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorAutentificacion != configuracion.value("todus/nombreDNSServidorAutentificacion").toString()) {
+	if (_configuracionNombreDNSServidorAutentificacion != configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorSesion != configuracion.value("todus/ipServidorSesion").toString()) {
+	if (_configuracionIpServidorSesion != configuracion.value("avanzadas/ipServidorSesion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorSesion != configuracion.value("todus/puertoServidorSesion", 443).toInt()) {
+	if (_configuracionPuertoServidorSesion != configuracion.value("avanzadas/puertoServidorSesion", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorSesion != configuracion.value("todus/nombreDNSServidorSesion").toString()) {
+	if (_configuracionNombreDNSServidorSesion != configuracion.value("avanzadas/nombreDNSServidorSesion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorS3 != configuracion.value("todus/ipServidorS3").toString()) {
+	if (_configuracionIpServidorS3 != configuracion.value("avanzadas/ipServidorS3").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorS3 != configuracion.value("todus/puertoServidorS3", 443).toInt()) {
+	if (_configuracionPuertoServidorS3 != configuracion.value("avanzadas/puertoServidorS3", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorS3 != configuracion.value("todus/nombreDNSServidorS3").toString()) {
+	if (_configuracionNombreDNSServidorS3 != configuracion.value("avanzadas/nombreDNSServidorS3").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionTipoProxy != configuracion.value("proxy/tipo").toInt()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionServidorProxy != configuracion.value("proxy/servidor", "").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionPuertoServidorProxy != configuracion.value("proxy/puerto").toInt()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionUsuarioServidorProxy != configuracion.value("proxy/usuario", "").toString()) {
+		reconexionRequerida = true;
+	}
+	if (_configuracionContrasenaServidorProxy != configuracion.value("proxy/contrasena", "").toString()) {
 		reconexionRequerida = true;
 	}
 
 	if (reconexionRequerida == true) {
+		_administradorAccesoRedAvatarTodus->setProxy(obtenerConfiguracionProxy());
 		_toDus->reconectar();
 	}
 }
@@ -344,7 +361,6 @@ void VentanaPrincipal::eventoIniciarDescarga() {
  */
 void VentanaPrincipal::eventoPausarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
-	QModelIndex indice;
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -368,10 +384,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
-			indice = modelo->index(i.row(), 1);
-			if (modelo->data(indice).toInt() != _ListadoEstados::Pausada) {
-				modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
-			}
+			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt());
 		}
 		modelo->submitAll();
 	}
@@ -415,7 +428,6 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
-	QModelIndex indice;
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -438,9 +450,8 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 	}
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
-		indice = modelo->index(f, 1);
-		if (modelo->data(indice).toInt() != _ListadoEstados::Pausada) {
-			modelo->setData(indice, _ListadoEstados::EnEsperaPausar);
+		if (modelo->data(modelo->index(f, 1)).toInt() != _ListadoEstados::Pausada) {
+			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
 		}
 	}
 
@@ -455,15 +466,20 @@ void VentanaPrincipal::eventoConfiguracion() {
 
 	_configuracionTelefono = configuracion.value("todus/telefono").toString();
 	_configuracionFichaAcceso = configuracion.value("todus/fichaAcceso").toString();
-	_configuracionIpServidorAutentificacion = configuracion.value("todus/ipServidorAutentificacion").toString();
-	_configuracionPuertoServidorAutentificacion = configuracion.value("todus/puertoServidorAutentificacion", 443).toInt();
-	_configuracionNombreDNSServidorAutentificacion = configuracion.value("todus/nombreDNSServidorAutentificacion").toString();
-	_configuracionIpServidorSesion = configuracion.value("todus/ipServidorSesion").toString();
-	_configuracionPuertoServidorSesion = configuracion.value("todus/puertoServidorSesion", 443).toInt();
-	_configuracionNombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion").toString();
-	_configuracionIpServidorS3= configuracion.value("todus/ipServidorS3").toString();
-	_configuracionPuertoServidorS3= configuracion.value("todus/puertoServidorS3", 443).toInt();
-	_configuracionNombreDNSServidorS3= configuracion.value("todus/nombreDNSServidorS3").toString();
+	_configuracionIpServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion").toString();
+	_configuracionPuertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
+	_configuracionNombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString();
+	_configuracionIpServidorSesion = configuracion.value("avanzadas/ipServidorSesion").toString();
+	_configuracionPuertoServidorSesion = configuracion.value("avanzadas/puertoServidorSesion", 443).toInt();
+	_configuracionNombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion").toString();
+	_configuracionIpServidorS3 = configuracion.value("avanzadas/ipServidorS3").toString();
+	_configuracionPuertoServidorS3 = configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
+	_configuracionNombreDNSServidorS3 = configuracion.value("avanzadas/nombreDNSServidorS3").toString();
+	_configuracionTipoProxy = configuracion.value("proxy/tipo").toInt();
+	_configuracionServidorProxy = configuracion.value("proxy/servidor").toString();
+	_configuracionPuertoServidorProxy = configuracion.value("proxy/puerto").toInt();
+	_configuracionUsuarioServidorProxy = configuracion.value("proxy/usuario").toString();
+	_configuracionContrasenaServidorProxy = configuracion.value("proxy/contrasena").toString();
 
 	_ventanaConfiguracion->show();
 }
@@ -546,7 +562,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Desconectado.");
 			break;
 		case toDus::Estado::ResolviendoNombreDNS:
-			_estadoSesionTodus->setText("Resolviendo nombres DNS...");
+			_estadoSesionTodus->setText("Resolviendo nombre DNS...");
 			break;
 		case toDus::Estado::Conectando:
 			_estadoSesionTodus->setText("Conectando...");
@@ -558,7 +574,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Iniciando sesión...");
 			break;
 		case toDus::Estado::Listo:
-			_estadoSesionTodus->setText("Listo.");
+			_estadoSesionTodus->setText("Listo para usar.");
 			actualizarAvatar();
 			break;
 		case toDus::Estado::Desconectando:
@@ -572,7 +588,6 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
  * @param barraHerramientas Puntero al objeto de la barra de herramientas
  */
 void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramientas) {
-
 	QAction *accionAgregarDescarga = new QAction();
 	accionAgregarDescarga->setIcon(QIcon(":/iconos/agregar.svg"));
 	accionAgregarDescarga->setText("Agregar");
@@ -667,6 +682,21 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionAcerca->setStatusTip("Muestra información del creador");
 	connect(accionAcerca, SIGNAL(triggered(bool)), this, SLOT(eventoAcerca()));
 	barraHerramientas->addAction(accionAcerca);
+
+	QWidget* elementoEspaciador = new QWidget();
+	elementoEspaciador->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+	_estadoSesionTodus = new QLabel();
+	QMargins margenes = _estadoSesionTodus->contentsMargins();
+	margenes.setRight(margenes.right() + 10);
+	_estadoSesionTodus->setContentsMargins(margenes);
+
+	_avatarTodus = new QLabel();
+	_avatarTodus->setPixmap(QIcon(":/iconos/usuario.svg").pixmap(QSize(48, 48)));
+
+	barraHerramientas->addWidget(elementoEspaciador);
+	barraHerramientas->addWidget(_estadoSesionTodus);
+	barraHerramientas->addWidget(_avatarTodus);
 
 	addToolBar(barraHerramientas);
 }
@@ -837,7 +867,8 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaPrincipal::construirIU() {
-	setWindowIcon(QPixmap(":/iconos/descarga.svg"));
+	setWindowIcon(QIcon(":/iconos/descarga.svg"));
+	setMinimumSize(QSize(1050, 600));
 
 	/**
 	 * Barra de herramientas
@@ -847,27 +878,6 @@ void VentanaPrincipal::construirIU() {
 	barraHerramientasPrincipal->setMovable(false);
 
 	construirBotonesBarraHerramientas(barraHerramientasPrincipal);
-
-	QToolBar *barraHerramientasTodus = new QToolBar("toDus");
-	barraHerramientasTodus->setIconSize(QSize(48, 48));
-	barraHerramientasTodus->setMovable(false);
-
-	QWidget* elementoEspaciador = new QWidget();
-	elementoEspaciador->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-	_estadoSesionTodus = new QLabel();
-	QMargins margenes = _estadoSesionTodus->contentsMargins();
-	margenes.setRight(margenes.right() + 10);
-	_estadoSesionTodus->setContentsMargins(margenes);
-
-	_avatarTodus = new QLabel();
-	_avatarTodus->setPixmap(QIcon(":/iconos/usuario.svg").pixmap(QSize(48, 48)));
-
-	barraHerramientasTodus->addWidget(elementoEspaciador);
-	barraHerramientasTodus->addWidget(_estadoSesionTodus);
-	barraHerramientasTodus->addWidget(_avatarTodus);
-
-	addToolBar(barraHerramientasTodus);
 
 	/**
 	 * Listado de categorías
@@ -927,9 +937,9 @@ void VentanaPrincipal::actualizarAvatar() {
 		return;
 	}
 
-	QString ipServidorS3 = configuracion.value("todus/ipServidorS3", "").toString();
-	QString nombreDNSServidorS3 = configuracion.value("todus/nombreDNSServidorS3", "s3.todus.cu").toString();
-	int puertoServidorS3 = configuracion.value("todus/puertoServidorS3", 443).toInt();
+	QString ipServidorS3 = configuracion.value("avanzadas/ipServidorS3", "").toString();
+	QString nombreDNSServidorS3 = configuracion.value("avanzadas/nombreDNSServidorS3", "s3.todus.cu").toString();
+	int puertoServidorS3 = configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
 	QUrl url = QUrl(enlaceAvatar);
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
@@ -948,7 +958,7 @@ void VentanaPrincipal::actualizarAvatar() {
 	url.setPort(puertoServidorS3);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " HTTP-Download");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
 	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
 	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());

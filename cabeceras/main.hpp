@@ -4,6 +4,7 @@
 
 #include <QString>
 #include <QSharedPointer>
+#include <QNetworkProxy>
 #include "gestordescargas.hpp"
 #include "todus.hpp"
 
@@ -27,6 +28,11 @@ extern QString _aplicacionVersion;
  * @brief Ruta en donde almacenar las descargas
  */
 extern QString _rutaDescargas;
+
+/**
+ * @brief Agente de usuario de toDus
+ */
+extern QString _agenteUsuarioTodus;
 
 /**
  * @brief Sesión toDus
@@ -60,6 +66,21 @@ struct _NuevaDescarga {
 	int categoria;
 	bool iniciar;
 };
+
+/**
+ * @brief Cifra un texto
+ */
+extern QByteArray cifrarTexto(const QString &datos, const QString &contrasena);
+
+/**
+ * @brief Descifra un texto
+ */
+extern QString descifrarTexto(const QByteArray &datos, const QString &contrasena);
+
+/**
+ * @brief Actualiza la configuración del proxy a nivel de aplicación
+ */
+extern QNetworkProxy obtenerConfiguracionProxy();
 
 #endif // MAIN_HPP
 

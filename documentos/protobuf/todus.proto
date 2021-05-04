@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package toDusPB;
+
+message SolicitudSMS {
+	required string telefono = 1;
+	required string id = 2;
+}
+
+message SolicitudFichaSolicitud {
+	required string telefono = 1;
+	required string id = 2;
+	required string codigo = 3;	
+}
+
+message RecepcionFichaSolicitud {
+	required string fichaSolicitud = 1;
+	message DatosUsuario {
+		required string telefono = 1;
+		optional string nombre = 2;
+		optional string enlaceFoto = 3;
+		optional string reservado1 = 4;
+		optional string reservado2 = 5;
+	}
+	required DatosUsuario usuario = 2;
+}
+
+message SolicitudFichaAcceso {
+	required string telefono = 1;
+	required string fichaSolicitud = 2;
+	required string numeroVersion = 3;
+}
+
+message RecepcionFichaAcceso {
+	required int32 reservado1 = 1;
+	required string fichaAcceso = 2;
+	required int32 tiempoExpiracion = 3;
+}

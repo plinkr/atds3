@@ -15,6 +15,7 @@ class GestorDescargas : public QThread {
 		void run() override;
 
 		void agregarDescarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
+		void detenerDescarga(unsigned int id);
 
 	private slots:
 		void procesarTerminacionDescarga(unsigned int id);

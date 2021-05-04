@@ -10,7 +10,11 @@ class QListView;
 class QStackedWidget;
 class QGroupBox;
 class QLineEdit;
+class QPlainTextEdit;
 class QSpinBox;
+class QLabel;
+class QCheckBox;
+class QComboBox;
 
 class VentanaConfiguracion : public QDialog
 {
@@ -32,9 +36,14 @@ class VentanaConfiguracion : public QDialog
 		void eventoSeleccionarRutaDescargas();
 
 		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar la ruta del programa 7Zip
+		 */
+		void eventoSeleccionarRuta7Zip();
+
+		/**
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Guardar'
 		 */
-		void eventoGuardarOpciones();
+		void guardarOpciones();
 
 	private:
 		/**
@@ -60,7 +69,82 @@ class VentanaConfiguracion : public QDialog
 		/**
 		 * @brief Ficha de acceso
 		 */
-		QPointer<QLineEdit> _fichaAcceso;
+		QPointer<QPlainTextEdit> _fichaAcceso;
+
+		/**
+		 * @brief Ruta de guardado de las descargas
+		 */
+		QPointer<QLineEdit> _rutaDescargas;
+
+		/**
+		 * @brief Total de descargas paralelas
+		 */
+		QPointer<QSpinBox> _totalDescargasParalelas;
+
+		/**
+		 * @brief Descomprimir al finalizarla descarga
+		 */
+		QPointer<QCheckBox> _descomprimirAlFinalizarDescarga;
+
+		/**
+		 * @brief Eliminar del listado al finalizar la descarga
+		 */
+		QPointer<QCheckBox> _eliminarAlFinalizarDescarga;
+
+		/**
+		 * @brief Total de subidas paralelas
+		 */
+		QPointer<QSpinBox> _totalSubidasParalelas;
+
+		/**
+		 * @brief Ruta de guardado de las descargas
+		 */
+		QPointer<QCheckBox> _comprimirArchivosAntesSubir;
+
+		/**
+		 * @brief Dividir los archivos antes de subir?
+		 */
+		QPointer<QCheckBox> _dividirArchivosAntesSubir;
+
+		/**
+		 * @brief Tamaño de la división de los archivos
+		 */
+		QPointer<QSpinBox> _tamanoDivisionArchivos;
+
+		/**
+		 * @brief Eliminar del listado al finalizar la subida
+		 */
+		QPointer<QCheckBox> _eliminarAlFinalizarSubida;
+
+		/**
+		 * @brief Ruta del programa 7Zip
+		 */
+		QPointer<QLineEdit> _ruta7Zip;
+
+		/**
+		 * @brief Tipo de servidor proxy
+		 */
+		QPointer<QComboBox> _tipoServidorProxy;
+
+		/**
+		 * @brief IP o Nombre DNS del servidor proxy
+		 */
+		QPointer<QLineEdit> _servidorProxy;
+
+		/**
+		 * @brief Puerto del servidor proxy
+		 */
+		QPointer<QSpinBox> _puertoServidorProxy;
+
+		/**
+		 * @brief Usuario del servidor proxy
+		 */
+		QPointer<QLineEdit> _usuarioServidorProxy;
+
+		/**
+		 * @brief Contraseña del usuario del servidor proxy
+		 */
+		QPointer<QLineEdit> _contrasenaServidorProxy;
 
 		/**
 		 * @brief IP del servidor de autentificación
@@ -108,19 +192,19 @@ class VentanaConfiguracion : public QDialog
 		QPointer<QLineEdit> _nombreDNSServidorS3;
 
 		/**
-		 * @brief Ruta de guardado de las descargas
+		 * @brief Agente de usuario de toDus
 		 */
-		QPointer<QLineEdit> _rutaDescargas;
-
-		/**
-		 * @brief Total de descargas paralelas
-		 */
-		QPointer<QSpinBox> _totalDescargasParalelas;
+		QPointer<QLineEdit> _agenteUsuario;
 
 		/**
 		 * @brief Construye los elementos para representar un subtítulo
 		 */
-		QWidget *construirSubtitulo(const QString &subtitulo);
+		QWidget *construirTitulo(const QString &titulo);
+
+		/**
+		 * @brief Construye los elementos para representar un subtítulo
+		 */
+		QLabel *construirSubtitulo(const QString &subtitulo);
 
 		/**
 		 * @brief Construye el listado de opciones
@@ -136,6 +220,26 @@ class VentanaConfiguracion : public QDialog
 		 * @brief Construye los elementos de configuracion para la opción 'Descargas'
 		 */
 		QWidget *construirOpcionDescargas();
+
+		/**
+		 * @brief Construye los elementos de configuracion para la opción 'Subidas'
+		 */
+		QWidget *construirOpcionSubidas();
+
+		/**
+		 * @brief Construye los elementos de configuracion para la opción 'Herramientas'
+		 */
+		QWidget *construirOpcionHerramientas();
+
+		/**
+		 * @brief Construye los elementos de configuracion para la opción 'Proxy'
+		 */
+		QWidget *construirOpcionProxy();
+
+		/**
+		 * @brief Construye los elementos de configuracion para la opción 'Avanzadas'
+		 */
+		QWidget *construirOpcionAvanzadas();
 
 		/**
 		 * @brief Construye la interfaz de usuario

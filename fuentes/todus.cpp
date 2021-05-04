@@ -1,5 +1,6 @@
 #include "todus.hpp"
 #include "todus.pb.hpp"
+#include "main.hpp"
 #include <QSettings>
 #include <QRegExp>
 #include <QJsonDocument>
@@ -50,8 +51,12 @@ void toDus::desconectar() {
  * @brief Reconectar
  */
 void toDus::reconectar() {
-	_reconexionSolicitada = true;
-	_socaloSSL->disconnectFromHost();
+	if (_socaloSSL->state() != QAbstractSocket::UnconnectedState) {
+		_reconexionSolicitada = true;
+		_socaloSSL->disconnectFromHost();
+	} else {
+		iniciarSesion();
+	}
 }
 
 /**
@@ -63,6 +68,9 @@ void toDus::iniciarSesion() {
 	QString fichaAcceso = configuracion.value("todus/fichaAcceso").toString();
 	qint32 fichaAccesoTiempoExpiracion = configuracion.value("todus/fichaAccesoTiempoExpiracion").toInt();
 	std::time_t tiempoActual = std::time(nullptr);
+
+	_administradorAccesoRed->setProxy(obtenerConfiguracionProxy());
+	_socaloSSL->setProxy(obtenerConfiguracionProxy());
 
 	_fichaAccesoRenovada = false;
 
@@ -297,9 +305,9 @@ QString toDus::generarIDSesion(unsigned int totalCaracteres) {
 
 void toDus::solicitarCodigoSMS(const QString &telefono) {
 	QSettings configuracion;
-	QString ipServidorAutentificacion = configuracion.value("todus/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("todus/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("todus/puertoServidorAutentificacion", 443).toInt();
+	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.reserve");
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
@@ -319,7 +327,7 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	url.setPort(puertoServidorAutentificacion);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " Auth");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
 	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
@@ -332,9 +340,9 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	QSettings configuracion;
 	QString telefono = configuracion.value("todus/telefono").toString();
-	QString ipServidorAutentificacion = configuracion.value("todus/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("todus/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("todus/puertoServidorAutentificacion", 443).toInt();
+	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.register");
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
@@ -356,7 +364,7 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	url.setPort(puertoServidorAutentificacion);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " Auth");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
 	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
@@ -377,9 +385,9 @@ void toDus::solicitarFichaAcceso() {
 	QString telefono = configuracion.value("todus/telefono").toString();
 	QString fichaSolicitud = configuracion.value("todus/fichaSolicitud").toString();
 	QString numeroVersion = configuracion.value("todus/numeroVersion", "21806").toString();
-	QString ipServidorAutentificacion = configuracion.value("todus/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("todus/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("todus/puertoServidorAutentificacion", 443).toInt();
+	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/token");
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
@@ -401,7 +409,7 @@ void toDus::solicitarFichaAcceso() {
 	url.setPort(puertoServidorAutentificacion);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("todus/agente", "ToDus 0.38.35").toString() + " Auth");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
 	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
@@ -417,9 +425,9 @@ void toDus::solicitarFichaAcceso() {
 
 void toDus::iniciarSesionConFichaAcceso() {
 	QSettings configuracion;
-	QString ipServidorSesion = configuracion.value("todus/ipServidorSesion", "").toString();
-	QString nombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion", "im.todus.cu").toString();
-	int puertoServidorSesion = configuracion.value("todus/puertoServidorSesion", 1756).toInt();
+	QString ipServidorSesion = configuracion.value("avanzadas/ipServidorSesion", "").toString();
+	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
+	int puertoServidorSesion = configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt();
 
 	_dominioJID = nombreDNSServidorSesion;
 	if (ipServidorSesion.size() > 0) {
@@ -431,7 +439,7 @@ void toDus::iniciarSesionConFichaAcceso() {
 
 void toDus::xmppSaludar() {
 	QSettings configuracion;
-	QString nombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion", "im.todus.cu").toString();
+	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
 	QByteArray buferAEnviar = "<stream:stream xmlns='jc' o='" + nombreDNSServidorSesion.toLocal8Bit() + "' xmlns:stream='x1' v='1.0'>\n";
 
 	_socaloSSL->write(buferAEnviar);
@@ -439,7 +447,7 @@ void toDus::xmppSaludar() {
 
 void toDus::xmppIniciarSesion() {
 	QSettings configuracion;
-	QString nombreDNSServidorSesion = configuracion.value("todus/nombreDNSServidorSesion", "im.todus.cu").toString();
+	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
 	QString fichaAcceso = configuracion.value("todus/fichaAcceso").toString();
 	QString b64Telefono = QByteArray::fromBase64(fichaAcceso.split(".")[1].toLocal8Bit());
 	QJsonDocument json = QJsonDocument::fromJson(b64Telefono.toLocal8Bit());

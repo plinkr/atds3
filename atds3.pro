@@ -44,7 +44,7 @@ INCLUDEPATH += \
 	/usr/local/include \
 	cabeceras
 
-LIBS += -lprotobuf
+LIBS += -lssl -lcrypto -lprotobuf
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

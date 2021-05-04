@@ -1,7 +1,9 @@
 #include "gestordescargas.hpp"
+#include "modeloentradas.hpp"
 #include "ventanaprincipal.hpp"
 #include "main.hpp"
 #include <QSettings>
+#include <QSharedPointer>
 
 
 GestorDescargas::GestorDescargas(QObject *padre)
@@ -30,8 +32,44 @@ void GestorDescargas::agregarDescarga(unsigned int id, QSharedPointer<ModeloEntr
 	}
 }
 
-void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
+void GestorDescargas::detenerDescarga(unsigned int id) {
 	if (_descargasActivas.find(id) != _descargasActivas.end()) {
+		bool iniciado = _descargasActivas[id]->iniciado();
+
+		_descargasActivas[id]->detener();
+
+		if (iniciado == true) {
+			_totalDescargasActivas--;
+		}
+
+		_descargasActivas.remove(id);
+	}
+}
+
+void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
+	QSettings configuracion;
+
+	if (_descargasActivas.find(id) != _descargasActivas.end()) {
+		/*if (configuracion.value("descargas/descomprimirAlFinalizar").toBool() == true) {
+			QString nombreArchivoOriginal = _descargasActivas[id]->modelo()->data(_descargasActivas[id]->modelo()->index(_descargasActivas[id]->fila(), 2)).toString();
+
+			if (nombreArchivoOriginal.indexOf(".rar") == true) {
+				if (nombreArchivoOriginal.indexOf(".part") == true) {
+					nombreArchivoOriginal.remove(nombreArchivoOriginal.lastIndexOf("."));
+				}
+			} else {
+
+			}
+
+			for (int f = 0; f < _descargasActivas[id]->modelo()->rowCount(); f++) {
+				if ()
+			}
+		}*/
+		if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
+			_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
+			_descargasActivas[id]->modelo()->submitAll();
+		}
+
 		_totalDescargasActivas--;
 		_descargasActivas.remove(id);
 

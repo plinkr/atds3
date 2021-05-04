@@ -284,6 +284,31 @@ class VentanaPrincipal : public QMainWindow
 		QString _configuracionNombreDNSServidorS3;
 
 		/**
+		 * @brief Configuracion: Tipo de proxy
+		 */
+		int _configuracionTipoProxy;
+
+		/**
+		 * @brief Configuracion: Servidor proxy
+		 */
+		QString _configuracionServidorProxy;
+
+		/**
+		 * @brief Configuracion: Puerto del servidor proxy
+		 */
+		int _configuracionPuertoServidorProxy;
+
+		/**
+		 * @brief Configuracion: Usuario del servidor proxy
+		 */
+		QString _configuracionUsuarioServidorProxy;
+
+		/**
+		 * @brief Configuracion: Contraseña del usuario del servidor proxy
+		 */
+		QString _configuracionContrasenaServidorProxy;
+
+		/**
 		 * @brief Gestor de las descargas
 		 */
 		QPointer<GestorDescargas> _gestorDescargas;

@@ -1,0 +1,3 @@
+1- <iq i='ab12C-2' t='get'><query xmlns='todus:purl' type='0' persistent='false' size='41943040' room=''></query></iq>
+2- te dan un url firmado, valido por 2 minutos
+3- se sube con PUT

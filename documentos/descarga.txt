@@ -1,0 +1,35 @@
+curl --header 'Authorization: Bearer ficha' -o 'nombreArchivo' $(java -jar s3_sign.jar numero ficha enlace)
+
+Para empezar vamos a necesitar:
+Telefono						//Con el código de pais
+Token							//El token de toda la vida
+url							//Lo que vas a descargar claro
+
+Calculamos la autenticación del im.todus.cu
+	base64(chr(0) + telefono + chr(0) + token)	//chr(0) es el caracter 0, no el número 0
+
+Generamos un ID de sesion
+	//Son 5 caracteres aleatorios, admite mayúsculas/minúsculas/numeros, se puede reutilizar
+
+1- Nos conectamos a im.todus.cu:1756			//Solo sockets ssl
+
+2- ENVIAMOS "<stream:stream xmlns='jc' o='im.todus.cu' xmlns:stream='x1' v='1.0'>"	//Una especie de EHLO
+
+3- RECIBIMOS "<stream:features><es xmlns='x2'><e>PLAIN</e><e>X-OAUTH2</e></es><register xmlns='http://jabber.org/features/iq-register'/></stream:features>"
+
+4- ENVIAMOS "<ah xmlns='ah:ns' e='PLAIN'>LA AUTENTICACION QUE CALCULAMOS ANTES VA AQUI</ah>"	//AUTH
+
+5- RECIBIMOS "<ok xmlns='x2'/>"				//Autenticacion correcta
+	5.1- RECIBIMOS Un string largo pero que contiene "<not-authorized/>"	//Error de autenticación
+
+6- ENVIAMOS "<stream:stream xmlns='jc' o='im.todus.cu' xmlns:stream='x1' v='1.0'>" //El EHLO de nuevo
+
+7- RECIBIMOS Un string largo pero que contiene "<stream:features><b1 xmlns='x4'/>" //Nada importante, los features
+
+8- ENVIAMOS "<iq i='EL_ID_DE_SESION_QUE_GENERAMOS-1' t='set'><b1 xmlns='x4'></b1></iq>" //Estableccemosuna sesión
+
+9- RECIBIMOS Un string que largo que contiene "t='result' i='EL_MISMO_ID_DE_SESION-1'>" //Aceptan la sesión
+
+10- ENVIAMOS "<iq i='EL_MISMO_ID_DE_SESION-2' t='get'><query xmlns='todus:gurl' url='EL URL SIN FIRMAR DEL TXT'></query></iq>" //Nota que al lado del ID de sesion dice -2, ese numero es incremental con cada mensaje hay que sumarle 1 (para descargar de momento esto no es importante) 
+
+11- Y PAN ya, nos mandan un string largo que tiene el enlace firmado, puede tener &amp; en algunas partes, reemplaza todos los &amp; por &
