@@ -672,7 +672,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionConfiguracion->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
 	connect(accionConfiguracion, SIGNAL(triggered(bool)), this, SLOT(eventoConfiguracion()));
 	barraHerramientas->addAction(accionConfiguracion);
-
+/*
 	barraHerramientas->addSeparator();
 
 	QAction *accionAcerca = new QAction();
@@ -682,7 +682,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionAcerca->setStatusTip("Muestra información del creador");
 	connect(accionAcerca, SIGNAL(triggered(bool)), this, SLOT(eventoAcerca()));
 	barraHerramientas->addAction(accionAcerca);
-
+*/
 	QWidget* elementoEspaciador = new QWidget();
 	elementoEspaciador->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 

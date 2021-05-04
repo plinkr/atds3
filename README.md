@@ -39,7 +39,7 @@
 
 <a name="freebsd"></a>
 #### FreeBSD
-* Instalar las herramientas y librerías:
+* Instalar las [dependencias](#dependencias) utilizando el administrador de paquetes binarios:
 ```
 pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
 ```
@@ -47,14 +47,14 @@ pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-networ
 <a name="macos"></a>
 #### macOS
 * Instalar las herramientas de línea de comandos de Xcode vía `xcode-select --install`.
-* Instalar las dependencias utilizando [Homebrew](https://brew.sh):
+* Instalar las [dependencias](#dependencias) utilizando [Homebrew](https://brew.sh):
 ```
 brew install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
 ```
 
 <a name="linux"></a>
 #### Linux
-* Install all [dependencies](#dependencies) using your package manager.
+* Instalal las [dependencias](#dependencias) utilizando el gestor de paquetes.
 
 <a name="windows"></a>
 #### Windows
