@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20
 
 SOURCES += \
-	fuentes/todus.pb.cpp \
+#	fuentes/todus.pb.cc \
 	fuentes/todus.cpp \
 	fuentes/modelocategorias.cpp \
 	fuentes/modeloentradas.cpp \
@@ -20,7 +20,7 @@ SOURCES += \
 	fuentes/main.cpp
 
 HEADERS += \
-	cabeceras/todus.pb.hpp \
+#	cabeceras/todus.pb.h \
 	cabeceras/todus.hpp \
 	cabeceras/modelocategorias.hpp \
 	cabeceras/modeloentradas.hpp \
@@ -38,7 +38,7 @@ HEADERS += \
 RESOURCES += \
 	recursos/iconos.qrc
 
-DISTFILES += README.md LICENSE.txt
+DISTFILES += README.md LICENSE.txt generar_todus_pb.sh
 
 INCLUDEPATH += \
 	/usr/local/include \
@@ -46,7 +46,17 @@ INCLUDEPATH += \
 
 LIBS += -lssl -lcrypto -lprotobuf
 
+PHONY_DEPS = .
+GenerarTodusPB.input = PHONY_DEPS
+GenerarTodusPB.output = todus.pb.o
+unix: GenerarTodusPB.commands = $$PWD/generar_todus_pb.sh "$$PWD" "$$OUT_PWD" "$$QMAKE_CXX"
+windows: GenerarTodusPB.commands = $$PWD/generar_todus_pb.bat "$$PWD" "$$OUT_PWD" "$$QMAKE_CXX"
+GenerarTodusPB.SOURCES += fuentes/todus.pb.cc
+GenerarTodusPB.HEADERS += cabeceras/todus.pb.h
+GenerarTodusPB.CONFIG += target_predeps
+QMAKE_EXTRA_COMPILERS += GenerarTodusPB
+
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
+unix: target.path = /usr/local/bin
+unix:linux: target.path = /usr/bin
 !isEmpty(target.path): INSTALLS += target

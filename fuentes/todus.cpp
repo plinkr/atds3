@@ -1,5 +1,5 @@
 #include "todus.hpp"
-#include "todus.pb.hpp"
+#include "todus.pb.h"
 #include "main.hpp"
 #include <QSettings>
 #include <QRegExp>
@@ -333,7 +333,11 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
 
 	_respuestaCodigoSMS = _administradorAccesoRed->post(solicitud, datos.c_str());
+#if QT_VERSION < 0x050d00
+	connect(_respuestaCodigoSMS, SIGNAL(error), this, SLOT(eventoError));
+#else
 	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#endif
 	connect(_respuestaCodigoSMS, &QNetworkReply::finished, this, &toDus::eventoFinalizadaCodigoSMS);
 }
 
@@ -376,7 +380,11 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 
 	_respuestaFichaSolicitud = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaSolicitud, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaSolicitud);
+#if QT_VERSION < 0x050d00
+	connect(_respuestaFichaSolicitud, SIGNAL(error), this, SLOT(eventoError));
+#else
 	connect(_respuestaFichaSolicitud, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#endif
 	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::solicitarFichaAcceso);
 }
 
@@ -419,7 +427,11 @@ void toDus::solicitarFichaAcceso() {
 
 	_respuestaFichaAcceso = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaAcceso, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaAcceso);
+#if QT_VERSION < 0x050d00
+	connect(_respuestaFichaAcceso, SIGNAL(error), this, SLOT(eventoError));
+#else
 	connect(_respuestaFichaAcceso, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#endif
 	connect(_respuestaFichaAcceso, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaAcceso);
 }
 

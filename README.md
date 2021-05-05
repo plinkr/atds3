@@ -32,6 +32,7 @@
   * Qt 5 SQL (SQLite3)
   * Qt 5 Network
   * Qt 5 Widgets
+* OpenSSL
 * Google Protocol Buffers
 
 <a name="instalando-dependencias"></a>
@@ -54,7 +55,10 @@ brew install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-netwo
 
 <a name="linux"></a>
 #### Linux
-* Instalal las [dependencias](#dependencias) utilizando el gestor de paquetes.
+* Instalar las [dependencias](#dependencias) utilizando el gestor de paquetes.
+```
+apt install g++ make qtbase5-dev qt5-default libssl-dev libprotobuf-dev protobuf-compiler
+```
 
 <a name="windows"></a>
 #### Windows

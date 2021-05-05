@@ -216,7 +216,11 @@ void Descarga::iniciarDescarga() {
 	connect(_respuesta, &QNetworkReply::encrypted, this, &Descarga::descargaIniciada);
 	connect(_respuesta, &QIODevice::readyRead, this, &Descarga::eventoRecepcionDatos);
 	connect(_respuesta, &QNetworkReply::downloadProgress, this, &Descarga::progresoDescarga);
+#if QT_VERSION < 0x050d00
+	connect(_respuesta, SIGNAL(error), this, SLOT(eventoError));
+#else
 	connect(_respuesta, &QNetworkReply::errorOccurred, this, &Descarga::eventoError);
+#endif
 	connect(_respuesta, &QNetworkReply::finished, this, &Descarga::descargaTerminada);
 }
 
