@@ -4,7 +4,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++20
 
 SOURCES += \
-#	fuentes/todus.pb.cc \
 	fuentes/todus.cpp \
 	fuentes/modelocategorias.cpp \
 	fuentes/modeloentradas.cpp \
@@ -20,7 +19,6 @@ SOURCES += \
 	fuentes/main.cpp
 
 HEADERS += \
-#	cabeceras/todus.pb.h \
 	cabeceras/todus.hpp \
 	cabeceras/modelocategorias.hpp \
 	cabeceras/modeloentradas.hpp \
