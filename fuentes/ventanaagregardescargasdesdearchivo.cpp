@@ -113,7 +113,7 @@ void VentanaAgregarDescargasDesdeArchivos::procesarArchivo(const QString &archiv
  * @brief Construye la interfaz de usuario
  */
 void VentanaAgregarDescargasDesdeArchivos::construirIU() {
-	QIcon iconoAgregar = QIcon(":/iconos/agregar-desde-archivo.svg");
+	QIcon iconoAgregar = QIcon(obtenerRutaIcono() + "agregar-desde-archivo.svg");
 
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
@@ -129,7 +129,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	QFormLayout *disenoFormulario = new QFormLayout();
 
 	_botonSeleccionarArchivos = new QPushButton();
-	_botonSeleccionarArchivos->setIcon(QIcon(":/iconos/importar.svg"));
+	_botonSeleccionarArchivos->setIcon(QIcon(obtenerRutaIcono() + "importar.svg"));
 	_botonSeleccionarArchivos->setText("Seleccionar los archivos y procesarlos");
 	connect(_botonSeleccionarArchivos, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar);
 
@@ -144,10 +144,10 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	elementosProcesados->header()->setStretchLastSection(true);
 
 	_categoria = new QComboBox();
-	_categoria->addItem(QIcon(":/iconos/categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
-	_categoria->addItem(QIcon(":/iconos/categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
-	_categoria->addItem(QIcon(":/iconos/categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
-	_categoria->addItem(QIcon(":/iconos/categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
 
 	_iniciar = new QCheckBox();
 	_iniciar->setChecked(true);
@@ -165,7 +165,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	botonAgregar->setDefault(true);
 	connect(botonAgregar, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::eventoAgregarDescargas);
 
-	QPushButton *botonCancelar = new QPushButton(QIcon(":/iconos/cancelar.svg"), "Cancelar");
+	QPushButton *botonCancelar = new QPushButton(QIcon(obtenerRutaIcono() + "cancelar.svg"), "Cancelar");
 	connect(botonCancelar, &QPushButton::clicked, this, &VentanaAgregarDescargasDesdeArchivos::reject);
 
 	filaBotones->addStretch(1);

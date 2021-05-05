@@ -7,15 +7,17 @@
 
 
 GestorDescargas::GestorDescargas(QObject *padre)
-	: QThread(padre), _configuracionTotalDescargasParalelas(0), _totalDescargasActivas(0) {
+	: QThread(padre), _configuracionTotalDescargasParalelas(0), _totalDescargasActivas(0), _deteniendoDescargas(false) {
 }
 
 void GestorDescargas::run() {
 	QSettings configuracion;
 
 	while (isInterruptionRequested() == false) {
-		_configuracionTotalDescargasParalelas = configuracion.value("descargas/descargasParalelas").toInt();
-		iniciarProximaDescargaDisponible();
+		if (_deteniendoDescargas == false) {
+			_configuracionTotalDescargasParalelas = configuracion.value("descargas/descargasParalelas").toInt();
+			iniciarProximaDescargaDisponible();
+		}
 		sleep(1);
 	}
 }
@@ -44,6 +46,25 @@ void GestorDescargas::detenerDescarga(unsigned int id) {
 
 		_descargasActivas.remove(id);
 	}
+}
+
+void GestorDescargas::detenerDescargas() {
+	bool iniciado = false;
+
+	_deteniendoDescargas = true;
+
+	for (unsigned int id : _descargasActivas.keys()) {
+		iniciado = _descargasActivas[id]->iniciado();
+		_descargasActivas[id]->detener();
+
+		if (iniciado == true) {
+			_totalDescargasActivas--;
+		}
+
+		_descargasActivas.remove(id);
+	}
+
+	_deteniendoDescargas = false;
 }
 
 void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {

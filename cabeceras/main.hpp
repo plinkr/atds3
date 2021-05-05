@@ -68,6 +68,12 @@ struct _NuevaDescarga {
 };
 
 /**
+ * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo
+ * @return Ruta del icono
+ */
+extern QString obtenerRutaIcono();
+
+/**
  * @brief Cifra un texto
  */
 extern QByteArray cifrarTexto(const QString &datos, const QString &contrasena);

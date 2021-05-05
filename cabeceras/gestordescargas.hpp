@@ -16,6 +16,7 @@ class GestorDescargas : public QThread {
 
 		void agregarDescarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
 		void detenerDescarga(unsigned int id);
+		void detenerDescargas();
 
 	private slots:
 		void procesarTerminacionDescarga(unsigned int id);
@@ -35,6 +36,11 @@ class GestorDescargas : public QThread {
 		 * @brief Descargas activas
 		 */
 		QMap<unsigned int, QPointer<Descarga>> _descargasActivas;
+
+		/**
+		 * @brief Inidica si se están deteniendo todas las descargas
+		 */
+		bool _deteniendoDescargas;
 
 		void iniciarProximaDescargaDisponible();
 

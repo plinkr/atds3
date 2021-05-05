@@ -58,7 +58,7 @@ _NuevaDescarga VentanaAgregarDescarga::obtenerDatosDescarga() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaAgregarDescarga::construirIU() {
-	QIcon iconoAgregar = QIcon(":/iconos/agregar.svg");
+	QIcon iconoAgregar = QIcon(obtenerRutaIcono() + "agregar.svg");
 
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
@@ -75,10 +75,10 @@ void VentanaAgregarDescarga::construirIU() {
 	_enlace = new QLineEdit();
 	_nombre = new QLineEdit();
 	_categoria = new QComboBox();
-	_categoria->addItem(QIcon(":/iconos/categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
-	_categoria->addItem(QIcon(":/iconos/categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
-	_categoria->addItem(QIcon(":/iconos/categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
-	_categoria->addItem(QIcon(":/iconos/categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-programas.svg"), "Programas", _ListadoCategorias::Programas);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-musica.svg"), "Musica", _ListadoCategorias::Musica);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
+	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
 	_iniciar = new QCheckBox();
 	_iniciar->setChecked(true);
 
@@ -95,7 +95,7 @@ void VentanaAgregarDescarga::construirIU() {
 	botonAgregar->setDefault(true);
 	connect(botonAgregar, &QPushButton::clicked, this, &VentanaAgregarDescarga::eventoAgregarDescarga);
 
-	QPushButton *botonCancelar = new QPushButton(QIcon(":/iconos/cancelar.svg"), "Cancelar");
+	QPushButton *botonCancelar = new QPushButton(QIcon(obtenerRutaIcono() + "cancelar.svg"), "Cancelar");
 	connect(botonCancelar, &QPushButton::clicked, this, &VentanaAgregarDescarga::reject);
 
 	filaBotones->addStretch(1);

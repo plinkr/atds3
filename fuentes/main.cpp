@@ -3,6 +3,7 @@
 #include "ventanaprincipal.hpp"
 #include <thread>
 #include <QApplication>
+#include <QPalette>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QDir>
@@ -40,6 +41,8 @@ QString _agenteUsuarioTodus;
  */
 QSharedPointer<toDus> _toDus;
 
+bool _temaClaro;
+
 /**
  * @brief Crea las configuraciones de la aplicación por defecto si no existen
  */
@@ -55,6 +58,12 @@ QString obtenerRutaDescargas();
  * @brief Crea los directorios para alojar los archivos descargados
  */
 void crearDirectoriosDescargas();
+
+/**
+ * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo
+ * @return Ruta del icono
+ */
+QString obtenerRutaIcono();
 
 /**
  * @brief Cifra un texto
@@ -89,6 +98,14 @@ int main(int argc, char *argv[])
 	crearConfiguracionesDefecto();
 
 	crearDirectoriosDescargas();
+
+	QPalette *p = new QPalette();
+	if (p->window().color().lightness() >= 150) {
+		_temaClaro = true;
+	} else {
+		_temaClaro = false;
+	}
+	delete p;
 
 	VentanaPrincipal ventanaPrincipal;
 	ventanaPrincipal.show();
@@ -181,6 +198,18 @@ void crearDirectoriosDescargas() {
 		if (directorioDescarga.exists(directorio) == false) {
 			directorioDescarga.mkdir(directorio);
 		}
+	}
+}
+
+/**
+ * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo
+ * @return Ruta del icono
+ */
+QString obtenerRutaIcono() {
+	if (_temaClaro == true) {
+		return ":/iconos/claro/";
+	} else {
+		return ":/iconos/oscuro/";
 	}
 }
 

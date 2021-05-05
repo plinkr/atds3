@@ -8,5 +8,5 @@ X-DBUS-StartupType=Unique
 StartupNotify=true
 
 Name=ATDS3
-GenericName=ATDS3
+GenericName=Administrador de Transferencias para toDus (S3)
 Comment=Administrador de Transferencias para toDus (S3)

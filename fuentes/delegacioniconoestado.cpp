@@ -14,16 +14,16 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 	switch (indice.data().toInt()) {
 		case _ListadoEstados::EnEsperaPausar:
 		case _ListadoEstados::Pausada:
-			icono = QIcon(":/iconos/pausar.svg");
+			icono = QIcon(obtenerRutaIcono() + "pausar.svg");
 			break;
 		case _ListadoEstados::EnEsperaIniciar:
-			icono = QIcon(":/iconos/reloj.svg");
+			icono = QIcon(obtenerRutaIcono() + "reloj.svg");
 			break;
 		case _ListadoEstados::Iniciada:
-			icono = QIcon(":/iconos/iniciar.svg");
+			icono = QIcon(obtenerRutaIcono() + "iniciar.svg");
 			break;
 		case _ListadoEstados::Finalizada:
-			icono = QIcon(":/iconos/finalizado.svg");
+			icono = QIcon(obtenerRutaIcono() + "finalizado.svg");
 			break;
 	}
 

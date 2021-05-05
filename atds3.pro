@@ -35,7 +35,7 @@ RESOURCES += \
 	recursos/iconos.qrc
 
 DISTFILES +=	README.md \
-				LICENSE.txt \
+				LICENSE \
 				generar_todus_pb.sh \
 				atds3.desktop
 
@@ -52,12 +52,15 @@ windows: GenerarTodusPB.commands = $$PWD/generar_todus_pb.bat "$$PWD" "$$OUT_PWD
 GenerarTodusPB.CONFIG += target_predeps
 QMAKE_EXTRA_COMPILERS += GenerarTodusPB
 
+unix: unix_desktop_icon.path = /usr/local/share/pixmaps
+unix:linux: unix_desktop_icon.path = /usr/share/pixmaps
+unix_desktop_icon.files = recursos/iconos/atds3.svg
 unix: unix_desktop.path = /usr/local/share/applications
-unix:linux: GenerarTodusPB.commands = /usr/share/applications
-unix_desktop.files = atds3.desktop recursos/iconos/descarga.svg
+unix:linux: unix_desktop.path = /usr/share/applications
+unix_desktop.files = atds3.desktop
 
 # Default rules for deployment.
 unix: target.path = /usr/local/bin
 unix:linux: target.path = /usr/bin
 !isEmpty(target.path): INSTALLS += target
-unix: INSTALLS += unix_desktop
+unix: INSTALLS += unix_desktop_icon unix_desktop

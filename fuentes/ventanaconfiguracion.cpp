@@ -196,37 +196,37 @@ QListView *VentanaConfiguracion::construirListadoOpciones() {
 	_modeloListadoOpciones = new ModeloCategorias();
 
 	QStandardItem *opcionTodus = new QStandardItem();
-	opcionTodus->setIcon(QPixmap(":/iconos/todus.png"));
+	opcionTodus->setIcon(QIcon(":/iconos/todus.png"));
 	opcionTodus->setText("toDus");
 	opcionTodus->setToolTip("Configuraciones relacionadas con la conexión a la red toDus");
 	_modeloListadoOpciones->appendRow(opcionTodus);
 
 	QStandardItem *opcionDescargas = new QStandardItem();
-	opcionDescargas->setIcon(QIcon(":/iconos/descarga.svg"));
+	opcionDescargas->setIcon(QIcon(obtenerRutaIcono() + "descarga.svg"));
 	opcionDescargas->setText("Descargas");
 	opcionDescargas->setToolTip("Configuraciones relacionadas con las descargas");
 	_modeloListadoOpciones->appendRow(opcionDescargas);
 /*
 	QStandardItem *opcionSubidas = new QStandardItem();
-	opcionSubidas->setIcon(QIcon(":/iconos/subida.svg"));
+	opcionSubidas->setIcon(QIcon(obtenerRutaIcono() + "subida.svg"));
 	opcionSubidas->setText("Subidas");
 	opcionSubidas->setToolTip("Configuraciones relacionadas con las subidas");
 	_modeloListadoOpciones->appendRow(opcionSubidas);
 
 	QStandardItem *opcionHerramientas = new QStandardItem();
-	opcionHerramientas->setIcon(QIcon(":/iconos/herramientas.svg"));
+	opcionHerramientas->setIcon(QIcon(obtenerRutaIcono() + "categoria-programas.svg"));
 	opcionHerramientas->setText("Herramientas");
 	opcionHerramientas->setToolTip("Configuraciones relacionadas con las herramientas");
 	_modeloListadoOpciones->appendRow(opcionHerramientas);
 */
 	QStandardItem *opcionProxy = new QStandardItem();
-	opcionProxy->setIcon(QPixmap(":/iconos/proxy.svg"));
+	opcionProxy->setIcon(QPixmap(obtenerRutaIcono() + "proxy.svg"));
 	opcionProxy->setText("Proxy");
 	opcionProxy->setToolTip("Configuraciones relacionadas con el proxy");
 	_modeloListadoOpciones->appendRow(opcionProxy);
 
 	QStandardItem *opcionAvanzadas = new QStandardItem();
-	opcionAvanzadas->setIcon(QPixmap(":/iconos/configurar.svg"));
+	opcionAvanzadas->setIcon(QPixmap(obtenerRutaIcono() + "configurar.svg"));
 	opcionAvanzadas->setText("Avanzadas");
 	opcionAvanzadas->setToolTip("Configuraciones avanzadas");
 	_modeloListadoOpciones->appendRow(opcionAvanzadas);
@@ -374,7 +374,7 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 	_rutaDescargas->setReadOnly(true);
 	_rutaDescargas->setText(configuracion.value("descargas/ruta").toString());
 	QPushButton *botonSeleccionarRutaDescargas = new QPushButton();
-	botonSeleccionarRutaDescargas->setIcon(QIcon(":/iconos/seleccionar-directorio.svg"));
+	botonSeleccionarRutaDescargas->setIcon(QIcon(obtenerRutaIcono() + "seleccionar-directorio.svg"));
 	botonSeleccionarRutaDescargas->setText("Seleccionar");
 	connect(botonSeleccionarRutaDescargas, &QPushButton::clicked, this, &VentanaConfiguracion::eventoSeleccionarRutaDescargas);
 
@@ -529,7 +529,7 @@ QWidget *VentanaConfiguracion::construirOpcionHerramientas() {
 	_ruta7Zip->setReadOnly(true);
 	_ruta7Zip->setText(configuracion.value("herramientas/ruta7Zip").toString());
 	QPushButton *botonSeleccionarRuta7Zip = new QPushButton();
-	botonSeleccionarRuta7Zip->setIcon(QIcon(":/iconos/seleccionar-directorio.svg"));
+	botonSeleccionarRuta7Zip->setIcon(QIcon(obtenerRutaIcono() + "seleccionar-directorio.svg"));
 	botonSeleccionarRuta7Zip->setText("Seleccionar");
 	connect(botonSeleccionarRuta7Zip, &QPushButton::clicked, this, &VentanaConfiguracion::eventoSeleccionarRuta7Zip);
 
@@ -731,7 +731,7 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaConfiguracion::construirIU() {
-	QIcon iconoAgregar = QIcon(":/iconos/configurar.svg");
+	QIcon iconoAgregar = QIcon(obtenerRutaIcono() + "configurar.svg");
 
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
@@ -757,7 +757,7 @@ void VentanaConfiguracion::construirIU() {
 	QHBoxLayout *filaBotones = new QHBoxLayout();
 
 	QPushButton *botonCerrar = new QPushButton();
-	botonCerrar->setIcon(QIcon(":/iconos/finalizado.svg"));
+	botonCerrar->setIcon(QIcon(obtenerRutaIcono() + "finalizado.svg"));
 	botonCerrar->setText("&Guardar");
 	connect(botonCerrar, &QPushButton::clicked, this, &VentanaConfiguracion::guardarOpciones);
 

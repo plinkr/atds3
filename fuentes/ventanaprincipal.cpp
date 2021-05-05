@@ -449,13 +449,7 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	for (int f = 0; f < modelo->rowCount(); f++) {
-		if (modelo->data(modelo->index(f, 1)).toInt() != _ListadoEstados::Pausada) {
-			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
-		}
-	}
-
-	modelo->submitAll();
+	_gestorDescargas->detenerDescargas();
 }
 
 /**
@@ -589,7 +583,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
  */
 void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramientas) {
 	QAction *accionAgregarDescarga = new QAction();
-	accionAgregarDescarga->setIcon(QIcon(":/iconos/agregar.svg"));
+	accionAgregarDescarga->setIcon(QIcon(obtenerRutaIcono() + "agregar.svg"));
 	accionAgregarDescarga->setText("Agregar");
 	accionAgregarDescarga->setToolTip("Agrega una descarga al listado");
 	accionAgregarDescarga->setStatusTip("Agrega una descarga al listado");
@@ -598,7 +592,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionAgregarDescarga);
 
 	QAction *accionAgregarDescargasDesdeArchivo = new QAction();
-	accionAgregarDescargasDesdeArchivo->setIcon(QIcon(":/iconos/agregar-desde-archivo.svg"));
+	accionAgregarDescargasDesdeArchivo->setIcon(QIcon(obtenerRutaIcono() + "agregar-desde-archivo.svg"));
 	accionAgregarDescargasDesdeArchivo->setText("Agregar desde archivo");
 	accionAgregarDescargasDesdeArchivo->setToolTip("Agrega un listado de descargas procesados desde un archivo");
 	accionAgregarDescargasDesdeArchivo->setStatusTip("Agrega un listado de descargas procesados desde un archivo");
@@ -607,7 +601,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionAgregarDescargasDesdeArchivo);
 
 	QAction *accionEliminarDescarga = new QAction();
-	accionEliminarDescarga->setIcon(QIcon(":/iconos/eliminar.svg"));
+	accionEliminarDescarga->setIcon(QIcon(obtenerRutaIcono() + "eliminar.svg"));
 	accionEliminarDescarga->setText("Eliminar");
 	accionEliminarDescarga->setToolTip("Elimina la(s) descarga(s) selecionada(s)");
 	accionEliminarDescarga->setStatusTip("Elimina la(s) descarga(s) selecionada(s)");
@@ -616,7 +610,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionEliminarDescarga);
 
 	QAction *accionEliminarTodasDescargas = new QAction();
-	accionEliminarTodasDescargas->setIcon(QIcon(":/iconos/limpiar.svg"));
+	accionEliminarTodasDescargas->setIcon(QIcon(obtenerRutaIcono() + "limpiar.svg"));
 	accionEliminarTodasDescargas->setText("Eliminar todas");
 	accionEliminarTodasDescargas->setToolTip("Elimina todas las descargas del listado");
 	accionEliminarTodasDescargas->setStatusTip("Elimina todas las descargas del listado");
@@ -627,7 +621,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addSeparator();
 
 	QAction *accionIniciarDescarga = new QAction();
-	accionIniciarDescarga->setIcon(QIcon(":/iconos/iniciar.svg"));
+	accionIniciarDescarga->setIcon(QIcon(obtenerRutaIcono() + "iniciar.svg"));
 	accionIniciarDescarga->setText("Iniciar descarga");
 	accionIniciarDescarga->setToolTip("Inicia la descarga seleccionada");
 	accionIniciarDescarga->setStatusTip("Inicia la descarga seleccionada");
@@ -636,7 +630,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionIniciarDescarga);
 
 	QAction *accionPausarDescarga = new QAction();
-	accionPausarDescarga->setIcon(QIcon(":/iconos/pausar.svg"));
+	accionPausarDescarga->setIcon(QIcon(obtenerRutaIcono() + "pausar.svg"));
 	accionPausarDescarga->setText("Pausar descarga");
 	accionPausarDescarga->setToolTip("Pausa la descarga seleccionada");
 	accionPausarDescarga->setStatusTip("Pausa la descarga seleccionada");
@@ -645,7 +639,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionPausarDescarga);
 
 	QAction *accionIniciarTodasDescargas = new QAction();
-	accionIniciarTodasDescargas->setIcon(QIcon(":/iconos/iniciar-todas.svg"));
+	accionIniciarTodasDescargas->setIcon(QIcon(obtenerRutaIcono() + "iniciar-todas.svg"));
 	accionIniciarTodasDescargas->setText("Iniciar todas las descargas");
 	accionIniciarTodasDescargas->setToolTip("Inicia todas las descargas");
 	accionIniciarTodasDescargas->setStatusTip("Inicia todas las descargas");
@@ -654,7 +648,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addAction(accionIniciarTodasDescargas);
 
 	QAction *accionPausarTodasDescargas = new QAction();
-	accionPausarTodasDescargas->setIcon(QIcon(":/iconos/pausar-todas.svg"));
+	accionPausarTodasDescargas->setIcon(QIcon(obtenerRutaIcono() + "pausar-todas.svg"));
 	accionPausarTodasDescargas->setText("Pausar todas las descargas");
 	accionPausarTodasDescargas->setToolTip("Pausa todas las descargas");
 	accionPausarTodasDescargas->setStatusTip("Pausa todas las descargas");
@@ -665,7 +659,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addSeparator();
 
 	QAction *accionConfiguracion = new QAction();
-	accionConfiguracion->setIcon(QIcon(":/iconos/configurar.svg"));
+	accionConfiguracion->setIcon(QIcon(obtenerRutaIcono() + "configurar.svg"));
 	accionConfiguracion->setText("Configuración");
 	accionConfiguracion->setToolTip("Configura datos de la aplicación");
 	accionConfiguracion->setStatusTip("Configura datos de la aplicación");
@@ -676,7 +670,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addSeparator();
 
 	QAction *accionAcerca = new QAction();
-	accionAcerca->setIcon(QIcon(":/iconos/acerca.svg"));
+	accionAcerca->setIcon(QIcon(obtenerRutaIcono() + "acerca.svg"));
 	accionAcerca->setText("Acerca de");
 	accionAcerca->setToolTip("Muestra información del creador");
 	accionAcerca->setStatusTip("Muestra información del creador");
@@ -692,7 +686,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	_estadoSesionTodus->setContentsMargins(margenes);
 
 	_avatarTodus = new QLabel();
-	_avatarTodus->setPixmap(QIcon(":/iconos/usuario.svg").pixmap(QSize(48, 48)));
+	_avatarTodus->setPixmap(QIcon(obtenerRutaIcono() + "usuario.svg").pixmap(QSize(48, 48)));
 
 	barraHerramientas->addWidget(elementoEspaciador);
 	barraHerramientas->addWidget(_estadoSesionTodus);
@@ -710,37 +704,37 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
 	_modeloListadoCategorias = new ModeloCategorias();
 
 	QStandardItem *categoriaDescargando = new QStandardItem();
-	categoriaDescargando->setIcon(QIcon(":/iconos/descarga.svg"));
+	categoriaDescargando->setIcon(QIcon(obtenerRutaIcono() + "descarga.svg"));
 	categoriaDescargando->setText("Descargando");
 	categoriaDescargando->setToolTip("Descargas activas");
 	_modeloListadoCategorias->appendRow(categoriaDescargando);
 
 	QStandardItem *categoriaFinalizadas = new QStandardItem();
-	categoriaFinalizadas->setIcon(QIcon(":/iconos/finalizado.svg"));
+	categoriaFinalizadas->setIcon(QIcon(obtenerRutaIcono() + "finalizado.svg"));
 	categoriaFinalizadas->setText("Finalizadas");
 	categoriaFinalizadas->setToolTip("Descargas finalizadas");
 	_modeloListadoCategorias->appendRow(categoriaFinalizadas);
 
 	QStandardItem *categoriaProgramas = new QStandardItem();
-	categoriaProgramas->setIcon(QIcon(":/iconos/categoria-programas.svg"));
+	categoriaProgramas->setIcon(QIcon(obtenerRutaIcono() + "categoria-programas.svg"));
 	categoriaProgramas->setText("Programas");
 	categoriaProgramas->setToolTip("Categoría 'Programas'");
 	_modeloListadoCategorias->appendRow(categoriaProgramas);
 
 	QStandardItem *categoriaMusica = new QStandardItem();
-	categoriaMusica->setIcon(QIcon(":/iconos/categoria-musica.svg"));
+	categoriaMusica->setIcon(QIcon(obtenerRutaIcono() + "categoria-musica.svg"));
 	categoriaMusica->setText("Música");
 	categoriaMusica->setToolTip("Categoría 'Música'");
 	_modeloListadoCategorias->appendRow(categoriaMusica);
 
 	QStandardItem *categoriaVideo = new QStandardItem();
-	categoriaVideo->setIcon(QIcon(":/iconos/categoria-videos.svg"));
+	categoriaVideo->setIcon(QIcon(obtenerRutaIcono() + "categoria-videos.svg"));
 	categoriaVideo->setText("Videos");
 	categoriaVideo->setToolTip("Categoría 'Videos'");
 	_modeloListadoCategorias->appendRow(categoriaVideo);
 
 	QStandardItem *categoriaOtros = new QStandardItem();
-	categoriaOtros->setIcon(QIcon(":/iconos/categoria-otros.svg"));
+	categoriaOtros->setIcon(QIcon(obtenerRutaIcono() + "categoria-otros.svg"));
 	categoriaOtros->setText("Otros");
 	categoriaOtros->setToolTip("Categoría 'Otros'");
 	_modeloListadoCategorias->appendRow(categoriaOtros);
@@ -867,7 +861,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaPrincipal::construirIU() {
-	setWindowIcon(QIcon(":/iconos/descarga.svg"));
+	setWindowIcon(QIcon(":/iconos/atds3.svg"));
 	setMinimumSize(QSize(1050, 600));
 
 	/**
