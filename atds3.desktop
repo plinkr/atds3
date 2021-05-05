@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Exec=atds3
+Icon=atds3
+Terminal=false
+Categories=Qt;KDE;Network;
+X-DBUS-StartupType=Unique
+StartupNotify=true
+
+Name=ATDS3
+GenericName=ATDS3
+Comment=Administrador de Transferencias para toDus (S3)

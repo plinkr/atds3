@@ -34,11 +34,13 @@ HEADERS += \
 RESOURCES += \
 	recursos/iconos.qrc
 
-DISTFILES += README.md LICENSE.txt generar_todus_pb.sh
+DISTFILES +=	README.md \
+				LICENSE.txt \
+				generar_todus_pb.sh \
+				atds3.desktop
 
-INCLUDEPATH += \
-	/usr/local/include \
-	cabeceras
+INCLUDEPATH += cabeceras
+unix: INCLUDEPATH += /usr/local/include
 
 LIBS += -lssl -lcrypto -lprotobuf
 
@@ -47,12 +49,15 @@ GenerarTodusPB.input = PHONY_DEPS
 GenerarTodusPB.output = todus.pb.o
 unix: GenerarTodusPB.commands = $$PWD/generar_todus_pb.sh "$$PWD" "$$OUT_PWD" "$$QMAKE_CXX"
 windows: GenerarTodusPB.commands = $$PWD/generar_todus_pb.bat "$$PWD" "$$OUT_PWD" "$$QMAKE_CXX"
-GenerarTodusPB.SOURCES += fuentes/todus.pb.cc
-GenerarTodusPB.HEADERS += cabeceras/todus.pb.h
 GenerarTodusPB.CONFIG += target_predeps
 QMAKE_EXTRA_COMPILERS += GenerarTodusPB
+
+unix: unix_desktop.path = /usr/local/share/applications
+unix:linux: GenerarTodusPB.commands = /usr/share/applications
+unix_desktop.files = atds3.desktop recursos/iconos/descarga.svg
 
 # Default rules for deployment.
 unix: target.path = /usr/local/bin
 unix:linux: target.path = /usr/bin
 !isEmpty(target.path): INSTALLS += target
+unix: INSTALLS += unix_desktop
