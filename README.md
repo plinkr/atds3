@@ -42,7 +42,7 @@
 #### FreeBSD
 * Instalar las [dependencias](#dependencias) utilizando el administrador de paquetes binarios:
 ```
-pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
+pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets openssl protobuf
 ```
 
 <a name="macos"></a>
@@ -50,7 +50,7 @@ pkg install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-networ
 * Instalar las herramientas de línea de comandos de Xcode vía `xcode-select --install`.
 * Instalar las [dependencias](#dependencias) utilizando [Homebrew](https://brew.sh):
 ```
-brew install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets protobuf
+brew install qt5-qmake qt5-core qt5-gui qt5-sql qt5-sqldrivers-sqlite3 qt5-network qt5-widgets openssl protobuf
 ```
 
 <a name="linux"></a>
@@ -87,7 +87,7 @@ La forma mas simple de construir `ATDS3`:
 mkdir _construccion
 cd _construccion
 qmake ../atds3.pro CONFIG+=release
-make -j2
+make install
 ```
 
 <a name="licencia"></a>

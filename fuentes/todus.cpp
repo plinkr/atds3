@@ -96,6 +96,12 @@ void toDus::solicitarEnlaceFirmado(const QString &enlace) {
 	}
 }
 
+void toDus::solicitarEnlaceFirmadoSubida() {
+	if (_progresoInicioSesion == ProgresoInicioSesion::SesionIniciada) {
+		xmppSolicitarEnlaceSubida();
+	}
+}
+
 void toDus::eventoFinalizadaCodigoSMS() {
 	if (_respuestaCodigoSMS->error() == QNetworkReply::NetworkError::NoError) {
 		QSettings configuracion;
@@ -217,6 +223,8 @@ void toDus::eventoDatosRecibidos() {
 		bufer = _socaloSSL->readAll();
 
 		switch (_progresoInicioSesion) {
+			case ProgresoInicioSesion::Ninguno:
+				break;
 			case ProgresoInicioSesion::Saludo: // Respuesta al saludo
 				re = QRegExp("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
 				if (re.indexIn(bufer) != -1) {
@@ -266,11 +274,20 @@ void toDus::eventoDatosRecibidos() {
 						QString enlaceNoFirmado = _listadoEnlacesFirmados[idSesion];
 						_listadoEnlacesFirmados.remove(idSesion);
 						emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
+					} else {
+						// Comando: PURL
+						re = QRegExp("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='200'/></iq>");
+						if (re.indexIn(bufer) != -1) {
+							QString idSesion = re.cap(1);
+							QString enlaceFirmadoSubida = re.cap(2);
+							QString enlaceNoFirmadoDescarga = re.cap(3);
+							//_listadoEnlacesFirmados.remove(idSesion);
+							//emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
+							std::cout << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << std::endl;
+							std::cout << enlaceNoFirmadoDescarga.toStdString() << std::endl;
+						}
 					}
 				}
-				break;
-			default:
-//				std::cout << bufer.toStdString() << std::endl;
 				break;
 		}
 	}
@@ -385,7 +402,7 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 #else
 	connect(_respuestaFichaSolicitud, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
 #endif
-	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::solicitarFichaAcceso);
+	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaSolicitud);
 }
 
 void toDus::solicitarFichaAcceso() {
@@ -423,6 +440,7 @@ void toDus::solicitarFichaAcceso() {
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
 
 	configuracion.remove("todus/fichaAcceso");
+	configuracion.remove("todus/fichaAccesoTiempoExpiracion");
 	configuracion.remove("todus/fichaAccesoCruda");
 
 	_respuestaFichaAcceso = _administradorAccesoRed->post(solicitud, datos.c_str());
@@ -487,6 +505,13 @@ void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace) {
 	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:gurl' url='" + enlace + "'></query></iq>\n";
 
 	_listadoEnlacesFirmados[idSesion] = enlace;
+
+	_socaloSSL->write(buferAEnviar.toLocal8Bit());
+}
+
+void toDus::xmppSolicitarEnlaceSubida() {
+	QString idSesion = _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++));
+	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:purl' persistent='false' room='' type='0' size='52428800'></query></iq>\n";
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }

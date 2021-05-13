@@ -4,6 +4,7 @@
 #include "main.hpp"
 #include <QSettings>
 #include <QSharedPointer>
+#include <iostream>
 
 
 GestorDescargas::GestorDescargas(QObject *padre)
@@ -27,43 +28,40 @@ void GestorDescargas::agregarDescarga(unsigned int id, QSharedPointer<ModeloEntr
 		_descargasActivas[id] = new Descarga(id, modelo, modeloDescargando, this);
 		connect(_descargasActivas[id], &Descarga::terminada, this, &GestorDescargas::procesarTerminacionDescarga);
 
-		if (_totalDescargasActivas < _configuracionTotalDescargasParalelas && _toDus->obtenerEstado() == toDus::Estado::Listo) {
+		/*if (_totalDescargasActivas < _configuracionTotalDescargasParalelas && _toDus->obtenerEstado() == toDus::Estado::Listo) {
 			_descargasActivas[id]->iniciar();
 			_totalDescargasActivas++;
-		}
+		}*/
 	}
 }
 
 void GestorDescargas::detenerDescarga(unsigned int id) {
 	if (_descargasActivas.find(id) != _descargasActivas.end()) {
-		bool iniciado = _descargasActivas[id]->iniciado();
+		if (_descargasActivas[id] != nullptr) {
+			bool iniciado = _descargasActivas[id]->iniciado();
 
-		_descargasActivas[id]->detener();
+			_descargasActivas[id]->detener();
 
-		if (iniciado == true) {
-			_totalDescargasActivas--;
+			if (iniciado == true) {
+				_totalDescargasActivas--;
+			}
+
+			_descargasActivas.remove(id);
 		}
-
-		_descargasActivas.remove(id);
 	}
 }
 
 void GestorDescargas::detenerDescargas() {
-	bool iniciado = false;
-
 	_deteniendoDescargas = true;
 
 	for (unsigned int id : _descargasActivas.keys()) {
-		iniciado = _descargasActivas[id]->iniciado();
-		_descargasActivas[id]->detener();
-
-		if (iniciado == true) {
-			_totalDescargasActivas--;
+		if (_descargasActivas[id] != nullptr) {
+			_descargasActivas[id]->detener();
 		}
-
-		_descargasActivas.remove(id);
 	}
 
+	_descargasActivas.clear();
+	_totalDescargasActivas = 0;
 	_deteniendoDescargas = false;
 }
 
@@ -71,40 +69,47 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 	QSettings configuracion;
 
 	if (_descargasActivas.find(id) != _descargasActivas.end()) {
-		/*if (configuracion.value("descargas/descomprimirAlFinalizar").toBool() == true) {
-			QString nombreArchivoOriginal = _descargasActivas[id]->modelo()->data(_descargasActivas[id]->modelo()->index(_descargasActivas[id]->fila(), 2)).toString();
+		if (_descargasActivas[id] != nullptr) {
+			if (_descargasActivas[id]->error() == false) {
+				/*if (configuracion.value("descargas/descomprimirAlFinalizar").toBool() == true) {
+					QString nombreArchivoOriginal = _descargasActivas[id]->modelo()->data(_descargasActivas[id]->modelo()->index(_descargasActivas[id]->fila(), 2)).toString();
 
-			if (nombreArchivoOriginal.indexOf(".rar") == true) {
-				if (nombreArchivoOriginal.indexOf(".part") == true) {
-					nombreArchivoOriginal.remove(nombreArchivoOriginal.lastIndexOf("."));
+					if (nombreArchivoOriginal.indexOf(".rar") == true) {
+						if (nombreArchivoOriginal.indexOf(".part") == true) {
+							nombreArchivoOriginal.remove(nombreArchivoOriginal.lastIndexOf("."));
+						}
+					} else {
+
+					}
+
+					for (int f = 0; f < _descargasActivas[id]->modelo()->rowCount(); f++) {
+						if ()
+					}
+				}*/
+				if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
+					_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
+					_descargasActivas[id]->modelo()->submitAll();
 				}
-			} else {
-
 			}
+			//_descargasActivas[id]->_respuesta->deleteLater();
 
-			for (int f = 0; f < _descargasActivas[id]->modelo()->rowCount(); f++) {
-				if ()
-			}
-		}*/
-		if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
-			_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
-			_descargasActivas[id]->modelo()->submitAll();
+			_totalDescargasActivas--;
+			_descargasActivas.remove(id);
 		}
-
-		_totalDescargasActivas--;
-		_descargasActivas.remove(id);
 
 		iniciarProximaDescargaDisponible();
 	}
 }
 
 void GestorDescargas::iniciarProximaDescargaDisponible() {
-	if (_totalDescargasActivas < _configuracionTotalDescargasParalelas && _toDus->obtenerEstado() == toDus::Estado::Listo) {
+	if (_deteniendoDescargas == false && _totalDescargasActivas < _configuracionTotalDescargasParalelas && _toDus->obtenerEstado() == toDus::Estado::Listo) {
 		for (auto d : _descargasActivas.values()) {
-			if (d->iniciado() == false) {
-				_totalDescargasActivas++;
-				d->iniciar();
-				break;
+			if (d != nullptr) {
+				if (d->iniciado() == false) {
+					_totalDescargasActivas++;
+					d->iniciar();
+					break;
+				}
 			}
 		}
 	}

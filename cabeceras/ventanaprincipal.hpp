@@ -106,6 +106,8 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		void eventoEliminarTodasDescargas();
 
+		void eventoSubir();
+
 		/**
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar descarga'
 		 */

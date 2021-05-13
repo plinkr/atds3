@@ -53,6 +53,8 @@ class toDus : public QObject {
 		 */
 		void solicitarEnlaceFirmado(const QString &enlace);
 
+		void solicitarEnlaceFirmadoSubida();
+
 	signals:
 		void estadoCambiado(Estado estado);
 		void enlaceFirmadoObtenido(const QString &noFirmado, const QString &firmado);
@@ -103,6 +105,7 @@ class toDus : public QObject {
 		void xmppEstablecerSesion();
 		void xmppMantenerSesionActiva();
 		void xmppSolicitarEnlaceDescarga(const QString &enlace);
+		void xmppSolicitarEnlaceSubida();
 };
 
 #endif // TODUS_HPP

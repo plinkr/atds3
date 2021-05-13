@@ -323,6 +323,10 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 	modelo->submitAll();
 }
 
+void VentanaPrincipal::eventoSubir() {
+	_toDus->solicitarEnlaceFirmadoSubida();
+}
+
 /**
  * @brief Evento que se dispara cuando se hace clic en el botón 'Iniciar descarga'
  */
@@ -386,7 +390,6 @@ void VentanaPrincipal::eventoPausarDescarga() {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
 			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt());
 		}
-		modelo->submitAll();
 	}
 }
 
@@ -427,28 +430,6 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar todas las descargas'
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
-	QSharedPointer<ModeloEntradas> modelo;
-
-	switch (_categoriaActiva) {
-		case 0x01:
-			modelo = _modeloCategoriaDescargando;
-			break;
-		case 0x02:
-			modelo = _modeloCategoriaFinalizadas;
-			break;
-		case _ListadoCategorias::Programas:
-			modelo = _modeloCategoriaProgramas;
-			break;
-		case _ListadoCategorias::Musica:
-			modelo = _modeloCategoriaMusica;
-			break;
-		case _ListadoCategorias::Videos:
-			modelo = _modeloCategoriaVideos;
-			break;
-		case _ListadoCategorias::Otros:
-			modelo = _modeloCategoriaOtros;
-	}
-
 	_gestorDescargas->detenerDescargas();
 }
 
@@ -547,6 +528,8 @@ void VentanaPrincipal::eventoDescargaTerminadaAvatarTodus() {
  * @param Nuevo estado
  */
 void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
+	QSettings configuracion;
+
 	if (_estadoSesionTodus.isNull() == true) {
 		return;
 	}
@@ -568,7 +551,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Iniciando sesión...");
 			break;
 		case toDus::Estado::Listo:
-			_estadoSesionTodus->setText("Listo para usar.");
+			_estadoSesionTodus->setText("<b>" + configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo.");
 			actualizarAvatar();
 			break;
 		case toDus::Estado::Desconectando:
@@ -617,6 +600,17 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionEliminarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Delete));
 	connect(accionEliminarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoEliminarTodasDescargas);
 	barraHerramientas->addAction(accionEliminarTodasDescargas);
+
+	barraHerramientas->addSeparator();
+
+	QAction *accionSubir = new QAction();
+	accionSubir->setIcon(QIcon(obtenerRutaIcono() + "subida.svg"));
+	accionSubir->setText("Subir");
+	accionSubir->setToolTip("Subida");
+	accionSubir->setStatusTip("Subida");
+	accionSubir->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
+	connect(accionSubir, &QAction::triggered, this, &VentanaPrincipal::eventoSubir);
+	barraHerramientas->addAction(accionSubir);
 
 	barraHerramientas->addSeparator();
 

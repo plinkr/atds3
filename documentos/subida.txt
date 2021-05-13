@@ -1,3 +1,6 @@
 1- <iq i='ab12C-2' t='get'><query xmlns='todus:purl' type='0' persistent='false' size='41943040' room=''></query></iq>
 2- te dan un url firmado, valido por 2 minutos
 3- se sube con PUT
+
+
+curl --progress-bar --http2 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjA0Mjc4OTgsInVzZXJuYW1lIjoiNTM1NTEzODk4OSIsInZlcnNpb24iOiIyMTgwNiJ9.FiOmXysejRi5AT3eGK_zS-Oueqh2Wbd_l8kX_LUlXuQ' --request put --tcp-nodelay --tlsv1 --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file 'archivo' 'enlace'

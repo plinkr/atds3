@@ -5,12 +5,11 @@
 #include <QSettings>
 #include <QRegExp>
 #include <QFileInfo>
-
-#include <iostream>
+//#include <iostream>
 
 
 Descarga::Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, QObject *padre)
-	:  QNetworkAccessManager(padre), _iniciado(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
+	:  QNetworkAccessManager(padre), _iniciado(false), _error(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _respuesta(nullptr), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
 	connect(this, &Descarga::finished, this, &Descarga::deleteLater);
 
 	setProxy(obtenerConfiguracionProxy());
@@ -51,7 +50,9 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 		recibidos += _tamanoPrevio;
 		total += _tamanoPrevio;
 
-		_modelo->setData(_modelo->index(_filaModelo, 3), (recibidos * 100) / total);
+		if (total > 0) {
+			_modelo->setData(_modelo->index(_filaModelo, 3), (recibidos * 100) / total);
+		}
 		_modelo->setData(_modelo->index(_filaModelo, 4), recibidos - _ultimoTamanoRecibido);
 		_modelo->setData(_modelo->index(_filaModelo, 8), total);
 		_modelo->setData(_modelo->index(_filaModelo, 9), recibidos);
@@ -68,11 +69,14 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 
 void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
 	switch (codigo) {
+		case QNetworkReply::NoError:
+			break;
 		case QNetworkReply::TimeoutError:
 			iniciarDescarga();
 			break;
 		default:
-			//std::cout << "Descargar Error: " << codigo << std::endl;
+			_error = true;
+//			std::cout << "Descargar Error: " << codigo << std::endl;
 			break;
 	}
 }
@@ -89,8 +93,7 @@ void Descarga::descargaTerminada() {
 		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Finalizada);
 		_modelo->setData(_modelo->index(_filaModelo, 3), 100);
 		_modelo->setData(_modelo->index(_filaModelo, 9), _modelo->index(_filaModelo, 8));
-	}
-	if (_respuesta->error() == QNetworkReply::OperationCanceledError) {
+	} else {
 		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
 	}
 
@@ -101,9 +104,7 @@ void Descarga::descargaTerminada() {
 
 	_iniciado = false;
 
-	if (_respuesta->error() == QNetworkReply::NoError) {
-		emit terminada(_id);
-	}
+	emit terminada(_id);
 
 	_respuesta->deleteLater();
 }
@@ -113,8 +114,6 @@ bool Descarga::iniciado() {
 }
 
 void Descarga::iniciar() {
-	_iniciado = true;
-
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
 		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
@@ -127,7 +126,9 @@ void Descarga::iniciar() {
 
 void Descarga::detener() {
 	if (_iniciado == true) {
-		_respuesta->abort();
+		if (_respuesta != nullptr) {
+			_respuesta->abort();
+		}
 	} else {
 		if (modelosValido() == false) {
 			_filaModelo = encontrarFilaDesdeId(_modelo);
@@ -148,6 +149,10 @@ int Descarga::fila() {
 
 QSharedPointer<ModeloEntradas> Descarga::modelo() {
 	return _modelo;
+}
+
+bool Descarga::error() {
+	return _error;
 }
 
 void Descarga::procesarRespuestaDesdeTodus(const QString &noFirmado, const QString &firmado) {
@@ -212,6 +217,8 @@ void Descarga::iniciarDescarga() {
 
 	_ultimoTiempoRecepcion = std::time(nullptr);
 
+	_iniciado = true;
+
 	_respuesta = get(solicitud);
 	connect(_respuesta, &QNetworkReply::encrypted, this, &Descarga::descargaIniciada);
 	connect(_respuesta, &QIODevice::readyRead, this, &Descarga::eventoRecepcionDatos);
@@ -236,7 +243,7 @@ bool Descarga::modelosValido() {
 }
 
 unsigned int Descarga::encontrarFilaDesdeId(QSharedPointer<ModeloEntradas> modelo) {
-	for (unsigned int i = 0; modelo->rowCount(); i++) {
+	for (int i = 0; i < modelo->rowCount(); i++) {
 		if (modelo->data(modelo->index(i, 0)).toUInt() == _id) {
 			return i;
 		}
