@@ -26,6 +26,8 @@
 
 * Compilador C++ compatible con el estándar C++17 (Clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio 2015+), Intel C++ Compiler 17+)
 * qmake
+* make (UNIX y Linux)
+* nmake (Windows)
 * Qt
   * Qt 5 Core
   * Qt 5 GUI
