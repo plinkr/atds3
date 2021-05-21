@@ -52,7 +52,6 @@ void GestorDescargas::detenerDescarga(unsigned int id) {
 void GestorDescargas::detenerDescargas() {
 	_deteniendoDescargas = true;
 
-
 	for (auto it = _descargasActivas.begin(); it != _descargasActivas.end(); it++) {
 		it.value()->detener();
 	}
@@ -93,8 +92,9 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 			}*/
 			if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
 				_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
-				_descargasActivas[id]->modelo()->submitAll();
 			}
+
+			_descargasActivas[id]->modelo()->submitAll();
 
 			_descargasActivas.remove(id);
 		}
