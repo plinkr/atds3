@@ -95,6 +95,7 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 			}
 
 			_descargasActivas[id]->modelo()->submitAll();
+			_descargasActivas[id]->modeloDescargas()->select();
 
 			_descargasActivas.remove(id);
 		}

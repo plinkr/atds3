@@ -25,6 +25,7 @@ class Descarga : public QNetworkAccessManager {
 
 		int fila();
 		QSharedPointer<ModeloEntradas> modelo();
+		QSharedPointer<ModeloEntradas> modeloDescargas();
 
 		bool error();
 
@@ -53,7 +54,7 @@ class Descarga : public QNetworkAccessManager {
 		QString _enlaceNoFirmado;
 		QString _enlaceFirmado;
 		QSharedPointer<ModeloEntradas> _modelo;
-		QSharedPointer<ModeloEntradas> _modeloDescargando;
+		QSharedPointer<ModeloEntradas> _modeloDescargas;
 		QNetworkReply *_respuesta;
 		QFile _archivo;
 		std::time_t _ultimoTiempoRecepcion;

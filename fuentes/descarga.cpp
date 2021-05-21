@@ -10,7 +10,7 @@
 
 
 Descarga::Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, QObject *padre)
-	: QNetworkAccessManager(padre),  _iniciado(false), _error(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _respuesta(nullptr), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
+	: QNetworkAccessManager(padre),  _iniciado(false), _error(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargas(modeloDescargando), _respuesta(nullptr), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
 	moveToThread(padre->thread());
 	setProxy(obtenerConfiguracionProxy());
 }
@@ -18,11 +18,11 @@ Descarga::Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QShar
 void Descarga::descargaIniciada() {
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
-		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 	}
 
 	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Iniciada);
-	_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 1), _ListadoEstados::Iniciada);
+	_modeloDescargas->setData(_modeloDescargas->index(_filaModeloDescargando, 1), _ListadoEstados::Iniciada);
 
 	_iniciado = true;
 }
@@ -39,7 +39,7 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 	if (tiempoRecepcion - _ultimoTiempoRecepcion >= 1) {
 		if (modelosValido() == false) {
 			_filaModelo = encontrarFilaDesdeId(_modelo);
-			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 		}
 
 		recibidos += _tamanoPrevio;
@@ -47,15 +47,15 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 
 		if (total > 0) {
 			_modelo->setData(_modelo->index(_filaModelo, 3), (recibidos * 100) / total);
-			_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 3), (recibidos * 100) / total);
+			_modeloDescargas->setData(_modeloDescargas->index(_filaModeloDescargando, 3), (recibidos * 100) / total);
 		}
 		_modelo->setData(_modelo->index(_filaModelo, 4), recibidos - _ultimoTamanoRecibido);
 		_modelo->setData(_modelo->index(_filaModelo, 8), total);
 		_modelo->setData(_modelo->index(_filaModelo, 9), recibidos);
 
-		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 4), recibidos - _ultimoTamanoRecibido);
-		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 8), total);
-		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 9), recibidos);
+		_modeloDescargas->setData(_modeloDescargas->index(_filaModeloDescargando, 4), recibidos - _ultimoTamanoRecibido);
+		_modeloDescargas->setData(_modeloDescargas->index(_filaModeloDescargando, 8), total);
+		_modeloDescargas->setData(_modeloDescargas->index(_filaModeloDescargando, 9), recibidos);
 
 		_ultimoTiempoRecepcion = tiempoRecepcion;
 		_ultimoTamanoRecibido = recibidos;
@@ -78,7 +78,7 @@ void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
 
 			if (modelosValido() == false) {
 				_filaModelo = encontrarFilaDesdeId(_modelo);
-				_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+				_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 			}
 			_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::EnEsperaIniciar);
 
@@ -91,7 +91,7 @@ void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
 	}
 
 	_modelo->submitAll();
-	_modeloDescargando->select();
+	_modeloDescargas->select();
 }
 
 void Descarga::descargaTerminada() {
@@ -99,7 +99,7 @@ void Descarga::descargaTerminada() {
 
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
-		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 	}
 
 	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
@@ -108,9 +108,6 @@ void Descarga::descargaTerminada() {
 		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Finalizada);
 		_modelo->setData(_modelo->index(_filaModelo, 3), 100);
 		_modelo->setData(_modelo->index(_filaModelo, 9), _modelo->index(_filaModelo, 8));
-
-		_modelo->submitAll();
-		_modeloDescargando->select();
 
 		_iniciado = false;
 
@@ -126,7 +123,7 @@ void Descarga::iniciar() {
 	if (_toDus->obtenerEstado() == toDus::Estado::Listo) {
 		if (modelosValido() == false) {
 			_filaModelo = encontrarFilaDesdeId(_modelo);
-			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 		}
 		_enlaceNoFirmado = _modelo->data(_modelo->index(_filaModelo, 7)).toString();
 
@@ -144,14 +141,13 @@ void Descarga::detener() {
 	}
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
-		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 	}
 
 	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
 	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
 	//_modelo->submitAll();
-
-	//_modeloDescargando->select();
+	//_modeloDescargas->select();
 }
 
 int Descarga::fila() {
@@ -160,6 +156,10 @@ int Descarga::fila() {
 
 QSharedPointer<ModeloEntradas> Descarga::modelo() {
 	return _modelo;
+}
+
+QSharedPointer<ModeloEntradas> Descarga::modeloDescargas() {
+	return _modeloDescargas;
 }
 
 bool Descarga::error() {
@@ -190,7 +190,7 @@ void Descarga::iniciarDescarga() {
 
 	if (modelosValido() == false) {
 		_filaModelo = encontrarFilaDesdeId(_modelo);
-		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargas);
 	}
 
 	QString rutaArchivo = _modelo->data(_modelo->index(_filaModelo, 5)).toString() + "/" + _modelo->data(_modelo->index(_filaModelo, 2)).toString();
@@ -238,7 +238,7 @@ bool Descarga::modelosValido() {
 	if (_modelo->data(_modelo->index(_filaModelo, 0)).toUInt() != _id) {
 		return false;
 	}
-	if (_modeloDescargando->data(_modeloDescargando->index(_filaModeloDescargando, 0)).toUInt() != _id) {
+	if (_modeloDescargas->data(_modeloDescargas->index(_filaModeloDescargando, 0)).toUInt() != _id) {
 		return false;
 	}
 
