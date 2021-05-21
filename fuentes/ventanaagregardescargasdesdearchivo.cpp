@@ -1,4 +1,4 @@
-#include "ventanaagregardescargasdesdearchivos.hpp"
+#include "ventanaagregardescargasdesdearchivo.hpp"
 #include "ventanaprincipal.hpp"
 #include <QDialog>
 #include <QIcon>
@@ -56,7 +56,7 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 
 	dialogoSeleccion.setFileMode(QFileDialog::ExistingFiles);
 	dialogoSeleccion.setNameFilter(tr("Archivos de texto(*.txt)"));
-	if (dialogoSeleccion.exec() == true) {
+	if (dialogoSeleccion.exec() == QFileDialog::Accepted) {
 		listadoArchivos = dialogoSeleccion.selectedFiles();
 
 		limpiarCampos();
@@ -117,7 +117,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
-	setWindowFlags(Qt::Dialog | Qt::Popup);
+	setWindowFlags(Qt::Dialog);
 	setStyleSheet("QPushButton, QComboBox { qproperty-iconSize: 24px 24px; } ");
 
 	QVBoxLayout *diseno = new QVBoxLayout();

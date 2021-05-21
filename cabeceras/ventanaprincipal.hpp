@@ -31,6 +31,11 @@ class VentanaPrincipal : public QMainWindow
 
 	public:
 		/**
+		 * @brief Modelo del listado de la categoría 'Descargando'
+		 */
+		QSharedPointer<ModeloEntradas> _modelocategoriaDescargas;
+
+		/**
 		 * @brief Modelo del listado de la categoría 'Programas'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaProgramas;
@@ -57,6 +62,12 @@ class VentanaPrincipal : public QMainWindow
 
 		VentanaPrincipal(QWidget *parent = nullptr);
 		~VentanaPrincipal();
+
+	public slots:
+		/**
+		 * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
+		 */
+		void eventoConfiguracion();
 
 	signals:
 		/**
@@ -129,11 +140,6 @@ class VentanaPrincipal : public QMainWindow
 		void eventoPausarTodasDescargas();
 
 		/**
-		 * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
-		 */
-		void eventoConfiguracion();
-
-		/**
 		 * @brief Evento que se dispara cuando se hace clic en el botón 'Acerca de'
 		 */
 		void eventoAcerca();
@@ -165,11 +171,6 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Modelo del listado de categorías
 		 */
 		QPointer<ModeloCategorias> _modeloListadoCategorias;
-
-		/**
-		 * @brief Modelo del listado de la categoría 'Descargando'
-		 */
-		QSharedPointer<ModeloEntradas> _modeloCategoriaDescargando;
 
 		/**
 		 * @brief Modelo del listado de la categoría 'Finalizadas'
@@ -315,11 +316,18 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		QPointer<GestorDescargas> _gestorDescargas;
 
+		QList<QUrl> _listadoArchivosSoltar;
+
 		/**
 		 * @brief Evento que se produce cuando el usuario cierra la ventana principal
 		 * @param evento Evento
 		 */
 		void closeEvent(QCloseEvent *evento);
+
+		void dragEnterEvent(QDragEnterEvent* evento);
+		void dragMoveEvent(QDragMoveEvent* evento);
+		void dragLeaveEvent(QDragLeaveEvent* evento);
+		void dropEvent(QDropEvent *);
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas

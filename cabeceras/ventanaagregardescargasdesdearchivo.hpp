@@ -23,6 +23,11 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		void limpiarCampos();
 
 		/**
+		 * @brief Procesa un archivo en búsqueda de entradas compatibles
+		 */
+		void procesarArchivo(const QString &archivo);
+
+		/**
 		 * @brief Devuelve los datos de las descargas que el usuario especificó
 		 * @return Datos del listado de las descargas procesadas
 		 */
@@ -69,11 +74,6 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		 * Iniciar la descarga inmediatamente?
 		 */
 		QPointer<QCheckBox> _iniciar;
-
-		/**
-		 * @brief Procesa un archivo en búsqueda de entradas compatibles
-		 */
-		void procesarArchivo(const QString &archivo);
 
 		/**
 		 * @brief Construye la interfaz de usuario

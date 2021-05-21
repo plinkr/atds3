@@ -3,18 +3,21 @@
 
 #include <QThread>
 #include <QPointer>
+#include <QReadWriteLock>
 #include "descarga.hpp"
 
+
+class VentanaPrincipal;
 
 class GestorDescargas : public QThread {
 	Q_OBJECT
 
 	public:
-		GestorDescargas(QObject *padre);
+		GestorDescargas(VentanaPrincipal *padre = nullptr);
 
 		void run() override;
 
-		void agregarDescarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
+		void agregarDescarga(int fila, unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
 		void detenerDescarga(unsigned int id);
 		void detenerDescargas();
 
@@ -22,6 +25,8 @@ class GestorDescargas : public QThread {
 		void procesarTerminacionDescarga(unsigned int id);
 
 	private:
+		VentanaPrincipal *_padre;
+
 		/**
 		 * @brief Configuracion: Total de descargas paralelas
 		 */
@@ -31,11 +36,23 @@ class GestorDescargas : public QThread {
 		 * @brief Total de descargas activas
 		 */
 		int _totalDescargasActivas;
+		QReadWriteLock _mutexTotalDescargasActivas;
 
 		/**
 		 * @brief Descargas activas
 		 */
 		QMap<unsigned int, QPointer<Descarga>> _descargasActivas;
+
+		struct _descargaEnCola {
+				int fila;
+				QSharedPointer<ModeloEntradas> modelo;
+				QSharedPointer<ModeloEntradas> modeloDescargando;
+		};
+		/**
+		 * @brief Descargas en cola
+		 */
+		QMap<unsigned int, _descargaEnCola> _descargasEnCola;
+		QReadWriteLock _mutexDescargasEnCola;
 
 		/**
 		 * @brief Inidica si se están deteniendo todas las descargas

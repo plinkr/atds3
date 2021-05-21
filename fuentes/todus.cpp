@@ -1,8 +1,16 @@
 #include "todus.hpp"
-#include "todus.pb.h"
+#ifdef Q_OS_UNIX
+#include "todus_unix.pb.h"
+#endif
+#ifdef Q_OS_WIN
+#include "todus_windows.pb.h"
+#endif
 #include "main.hpp"
+#include <ctime>
+#include <QTimer>
+#include <QByteArray>
 #include <QSettings>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -14,11 +22,11 @@
 
 
 toDus::toDus(QObject *padre)
-	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _reconexionSolicitada(false), _fichaAccesoRenovada(false) {
+	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+	_administradorAccesoRed = new QNetworkAccessManager(this);
 	_socaloSSL = new QSslSocket(this);
-	_administradorAccesoRed = new QNetworkAccessManager();
 	_idSesion = generarIDSesion(5);
 	_socaloSSL->setPeerVerifyMode(QSslSocket::VerifyNone);
 	_temporizadorMantenerSesionActiva.setInterval(60000);
@@ -44,6 +52,7 @@ toDus::Estado toDus::obtenerEstado() {
  * @brief Desconecta de toDus
  */
 void toDus::desconectar() {
+	_desconexionSolicitada = true;
 	_socaloSSL->disconnectFromHost();
 }
 
@@ -52,7 +61,7 @@ void toDus::desconectar() {
  */
 void toDus::reconectar() {
 	if (_socaloSSL->state() != QAbstractSocket::UnconnectedState) {
-		_reconexionSolicitada = true;
+		_desconexionSolicitada = false;
 		_socaloSSL->disconnectFromHost();
 	} else {
 		iniciarSesion();
@@ -72,7 +81,9 @@ void toDus::iniciarSesion() {
 	_administradorAccesoRed->setProxy(obtenerConfiguracionProxy());
 	_socaloSSL->setProxy(obtenerConfiguracionProxy());
 
+	_idInicioSesion = generarIDSesion(150);
 	_fichaAccesoRenovada = false;
+	_desconexionSolicitada = false;
 
 	if (fichaAcceso.size() > 0) {
 		if (tiempoActual > fichaAccesoTiempoExpiracion) {
@@ -90,9 +101,9 @@ void toDus::iniciarSesion() {
  * @brief Solicita a toDus el enlace firmado para obtener un archivo
  * @param enlace Enlace no firmado
  */
-void toDus::solicitarEnlaceFirmado(const QString &enlace) {
+void toDus::solicitarEnlaceFirmado(const QString &enlace, std::function<void(const QString &)> retroalimentador) {
 	if (_progresoInicioSesion == ProgresoInicioSesion::SesionIniciada) {
-		xmppSolicitarEnlaceDescarga(enlace);
+		xmppSolicitarEnlaceDescarga(enlace, std::move(retroalimentador));
 	}
 }
 
@@ -114,7 +125,7 @@ void toDus::eventoFinalizadaCodigoSMS() {
 		}
 	}
 
-	_respuestaCodigoSMS->deleteLater();
+//	_respuestaCodigoSMS->deleteLater();
 }
 
 void toDus::eventoRecepcionDatosFichaSolicitud() {
@@ -126,7 +137,7 @@ void toDus::eventoRecepcionDatosFichaSolicitud() {
 }
 
 void toDus::eventoFinalizadaFichaSolicitud() {
-	if (_respuestaFichaSolicitud->error() != QNetworkReply::NetworkError::NoError) {
+	if (_respuestaFichaSolicitud->error() == QNetworkReply::NetworkError::NoError) {
 		QSettings configuracion;
 		QByteArray fichaSolicitudCruda = configuracion.value("todus/fichaSolicitudCruda").toByteArray();
 		toDusPB::RecepcionFichaSolicitud pbRecepcionFichaSolicitud;
@@ -145,7 +156,7 @@ void toDus::eventoFinalizadaFichaSolicitud() {
 		}
 	}
 
-	_respuestaFichaSolicitud->deleteLater();
+//	_respuestaFichaSolicitud->deleteLater();
 }
 
 void toDus::eventoRecepcionDatosFichaAcceso() {
@@ -171,11 +182,11 @@ void toDus::eventoFinalizadaFichaAcceso() {
 		}
 	}
 
-	_respuestaFichaSolicitud->deleteLater();
+	//_respuestaFichaSolicitud->deleteLater();
 }
 
 void toDus::eventoError(QNetworkReply::NetworkError codigo) {
-	std::cout << codigo << std::endl;
+	std::cout << "toDus::eventoError() - " << codigo << std::endl;
 	Q_UNUSED(codigo);
 }
 
@@ -183,9 +194,8 @@ void toDus::eventoCambiarEstado(QAbstractSocket::SocketState estado) {
 	switch (estado) {
 		case QAbstractSocket::UnconnectedState:
 			_estado = Estado::Desconectado;
-			if (_reconexionSolicitada == true) {
-				_reconexionSolicitada = false;
-				iniciarSesion();
+			if (_desconexionSolicitada == false) {
+				QTimer::singleShot(2000, this, &toDus::iniciarSesion);
 			}
 			break;
 		case QAbstractSocket::HostLookupState:
@@ -217,7 +227,8 @@ void toDus::eventoConexionLista() {
 
 void toDus::eventoDatosRecibidos() {
 	QByteArray bufer;
-	QRegExp re;
+	QRegularExpression re;
+	QRegularExpressionMatch rem;
 
 	while (_socaloSSL->bytesAvailable() > 0) {
 		bufer = _socaloSSL->readAll();
@@ -226,21 +237,24 @@ void toDus::eventoDatosRecibidos() {
 			case ProgresoInicioSesion::Ninguno:
 				break;
 			case ProgresoInicioSesion::Saludo: // Respuesta al saludo
-				re = QRegExp("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
-				if (re.indexIn(bufer) != -1) {
+				re = QRegularExpression("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::MecanismosAutentificacion;
 					xmppIniciarSesion();
 				}
 				break;
 			case ProgresoInicioSesion::MecanismosAutentificacion: // Respuesta al intento de autentificación
-				re = QRegExp("<ok xmlns='x2'/>");
-				if (re.indexIn(bufer) != -1) {
+				re = QRegularExpression("<ok xmlns='x2'/>");
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::Autenficicacion;
 					xmppSaludar();
 					xmppEstablecerSesion();
 				} else {
-					re = QRegExp("<failure xmlns='x2'><not-authorized/>.+</failure>");
-					if (re.indexIn(bufer) != -1) {
+					re = QRegularExpression("<failure xmlns='x2'><not-authorized/>.+</failure>");
+					rem = re.match(bufer);
+					if (rem.hasMatch() == true) {
 						_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
 						desconectar();
 
@@ -254,33 +268,39 @@ void toDus::eventoDatosRecibidos() {
 				}
 				break;
 			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
-				re = QRegExp("<iq t='result' i='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos - 1)) + "'>.+<jid>(.+)</jid>.+</iq>");
-				if (re.indexIn(bufer) != -1) {
+				re = QRegularExpression("<iq t='result' i='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos - 1)) + "'>.+<jid>(.+)</jid>.+</iq>");
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::SesionIniciada;
-					_jID = re.cap(1);
+					_jID = rem.captured(1);
 					_temporizadorMantenerSesionActiva.start();
+					_desconexionSolicitada = false;
 					_estado = Estado::Listo;
 					emit estadoCambiado(_estado);
 				}
 				break;
 			case ProgresoInicioSesion::SesionIniciada: // Respuesta a algún comando
 				// La respuesta está dirigida a esta sesión?
-				re = QRegExp("<iq.+o='" + _jID + "'.+t='result'.+>.+</iq>");
-				if (re.indexIn(bufer) != -1) {
+				re = QRegularExpression("<iq.+o='" + _jID + "'.+t='result'.+>.+</iq>");
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
 					// Comando: GURL
-					re = QRegExp("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.+)' status='200'/></iq>");
-					if (re.indexIn(bufer) != -1) {
-						QString idSesion = re.cap(1);
-						QString enlaceNoFirmado = _listadoEnlacesFirmados[idSesion];
-						_listadoEnlacesFirmados.remove(idSesion);
-						emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
+					re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.+)' status='200'/></iq>");
+					rem = re.match(bufer);
+					if (rem.hasMatch() == true) {
+						QString idSesion = rem.captured(1);
+						if (_listadoRetroalimentadores.find(idSesion) != _listadoRetroalimentadores.end()) {
+							_listadoRetroalimentadores[idSesion](rem.captured(2));
+							_listadoRetroalimentadores.remove(idSesion);
+						}
 					} else {
 						// Comando: PURL
-						re = QRegExp("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='200'/></iq>");
-						if (re.indexIn(bufer) != -1) {
-							QString idSesion = re.cap(1);
-							QString enlaceFirmadoSubida = re.cap(2);
-							QString enlaceNoFirmadoDescarga = re.cap(3);
+						re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='200'/></iq>");
+						rem = re.match(bufer);
+						if (rem.hasMatch() == true) {
+							QString idSesion = rem.captured(1);
+							QString enlaceFirmadoSubida = rem.captured(2);
+							QString enlaceNoFirmadoDescarga = rem.captured(3);
 							//_listadoEnlacesFirmados.remove(idSesion);
 							//emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
 							std::cout << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << std::endl;
@@ -332,11 +352,14 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	toDusPB::SolicitudSMS pbSolicitudSMS;
 
 	pbSolicitudSMS.set_telefono(telefono.toStdString());
-	pbSolicitudSMS.set_id(generarIDSesion(150).toStdString());
+	pbSolicitudSMS.set_id(_idInicioSesion.toStdString());
 	pbSolicitudSMS.SerializeToString(&datos);
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
+	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
 		url.setHost(ipServidorAutentificacion);
@@ -350,11 +373,7 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
 
 	_respuestaCodigoSMS = _administradorAccesoRed->post(solicitud, datos.c_str());
-#if QT_VERSION < 0x050d00
-	connect(_respuestaCodigoSMS, SIGNAL(error), this, SLOT(eventoError));
-#else
 	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#endif
 	connect(_respuestaCodigoSMS, &QNetworkReply::finished, this, &toDus::eventoFinalizadaCodigoSMS);
 }
 
@@ -372,12 +391,15 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 
 	telefono.remove(0, 1);
 	pbSolicitudFichaSolicitud.set_telefono(telefono.toStdString());
-	pbSolicitudFichaSolicitud.set_id(generarIDSesion(150).toStdString());
+	pbSolicitudFichaSolicitud.set_id(_idInicioSesion.toStdString());
 	pbSolicitudFichaSolicitud.set_codigo(codigo.toStdString());
 	pbSolicitudFichaSolicitud.SerializeToString(&datos);
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
+	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
 		url.setHost(ipServidorAutentificacion);
@@ -397,11 +419,7 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 
 	_respuestaFichaSolicitud = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaSolicitud, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaSolicitud);
-#if QT_VERSION < 0x050d00
-	connect(_respuestaFichaSolicitud, SIGNAL(error), this, SLOT(eventoError));
-#else
 	connect(_respuestaFichaSolicitud, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#endif
 	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaSolicitud);
 }
 
@@ -427,6 +445,9 @@ void toDus::solicitarFichaAcceso() {
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
+	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
 		url.setHost(ipServidorAutentificacion);
@@ -445,11 +466,7 @@ void toDus::solicitarFichaAcceso() {
 
 	_respuestaFichaAcceso = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaAcceso, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaAcceso);
-#if QT_VERSION < 0x050d00
-	connect(_respuestaFichaAcceso, SIGNAL(error), this, SLOT(eventoError));
-#else
 	connect(_respuestaFichaAcceso, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#endif
 	connect(_respuestaFichaAcceso, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaAcceso);
 }
 
@@ -482,7 +499,7 @@ void toDus::xmppIniciarSesion() {
 	QString b64Telefono = QByteArray::fromBase64(fichaAcceso.split(".")[1].toLocal8Bit());
 	QJsonDocument json = QJsonDocument::fromJson(b64Telefono.toLocal8Bit());
 	QString telefono = json.object().value("username").toString();
-	QString credenciales = '\0' + telefono + '\0' + fichaAcceso;
+	QString credenciales = QChar('\0') + telefono + QChar('\0') + fichaAcceso;
 	QByteArray buferAEnviar = "<ah xmlns='ah:ns' e='PLAIN'>" + credenciales.toLocal8Bit().toBase64() + "</ah>\n";
 
 	_socaloSSL->write(buferAEnviar);
@@ -500,11 +517,11 @@ void toDus::xmppMantenerSesionActiva() {
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }
 
-void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace) {
+void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void (const QString &)> retroalimentador) {
 	QString idSesion = _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++));
 	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:gurl' url='" + enlace + "'></query></iq>\n";
 
-	_listadoEnlacesFirmados[idSesion] = enlace;
+	_listadoRetroalimentadores[idSesion] = std::move(retroalimentador);
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }

@@ -7,16 +7,15 @@
 #include "descarga.hpp"
 #include "gestordescargas.hpp"
 #include "ventanaagregardescarga.hpp"
-#include "ventanaagregardescargasdesdearchivos.hpp"
+#include "ventanaagregardescargasdesdearchivo.hpp"
 #include "ventanaconfiguracion.hpp"
 #include "main.hpp"
+#include <QGuiApplication>
 #include <QCloseEvent>
-#include <QSharedPointer>
 #include <QVBoxLayout>
 #include <QToolBar>
 #include <QDockWidget>
 #include <QStatusBar>
-#include <QStandardItemModel>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlTableModel>
@@ -30,12 +29,17 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QIcon>
+#include <QMimeData>
+#include <QUrl>
+#include <QScreen>
 #include <iostream>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	: QMainWindow(parent), _categoriaActiva(0) {
 	Q_INIT_RESOURCE(iconos);
+
+	setAcceptDrops(true);
 
 	construirIU();
 
@@ -54,7 +58,7 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 		for (int f = 0; f < modelo->rowCount(); f++) {
 			estado = modelo->data(modelo->index(f, 1)).toInt();
 			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
-				_gestorDescargas->agregarDescarga(modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+				_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modelocategoriaDescargas);
 			}
 		}
 	}
@@ -65,22 +69,82 @@ VentanaPrincipal::~VentanaPrincipal() {
 }
 
 void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
+	QSettings configuracion;
+
+	// Oculta la ventana
 	hide();
 
+	// Guarda los cambios pendientes a la base de datos
 	_modeloCategoriaProgramas->submitAll();
 	_modeloCategoriaMusica->submitAll();
 	_modeloCategoriaVideos->submitAll();
 	_modeloCategoriaOtros->submitAll();
 
+	// Desconecta la actualización del estado de la sesión toDus
 	disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 
+	// Detiene adecuadamente todas las descargas activas
 	_gestorDescargas->requestInterruption();
 	_gestorDescargas->wait();
 
+	// Desconecta la sesión toDus
 	_toDus->desconectar();
 	_toDus.clear();
 
+	// Guarda la geometría de la ventana en las configuraciones
+	configuracion.setValue("atds3/geometria", saveGeometry());
+
+	// Continua el proceso de cerrado de la aplicación
 	evento->accept();
+}
+
+void VentanaPrincipal::dragEnterEvent(QDragEnterEvent *evento) {
+	const QMimeData *mime = evento->mimeData();
+
+	if (mime->hasUrls()) {
+		QList<QUrl> urls = mime->urls();
+
+		for (const auto &url : urls) {
+			if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+				_listadoArchivosSoltar = urls;
+				evento->acceptProposedAction();
+				return;
+			}
+		}
+	}
+}
+
+void VentanaPrincipal::dragMoveEvent(QDragMoveEvent *evento) {
+	for (const auto &url : _listadoArchivosSoltar) {
+		if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+			evento->acceptProposedAction();
+			return;
+		}
+	}
+}
+
+void VentanaPrincipal::dragLeaveEvent(QDragLeaveEvent *evento) {
+	_listadoArchivosSoltar.clear();
+	evento->accept();
+}
+
+void VentanaPrincipal::dropEvent(QDropEvent *) {
+	/**
+	 * Construye la ventana 'Agregar descargas desde archivo'
+	 */
+	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
+	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
+	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
+
+	for (const auto &url : _listadoArchivosSoltar) {
+		if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+			_ventanaAgregarDescargasDesdeArchivo->procesarArchivo(url.toLocalFile());
+		}
+	}
+
+	_listadoArchivosSoltar.clear();
+
+	_ventanaAgregarDescargasDesdeArchivo->show();
 }
 
 /**
@@ -91,6 +155,8 @@ void VentanaPrincipal::agregarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 	QSettings configuracion;
 	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
+
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
 	switch (datos.categoria) {
 		case _ListadoCategorias::Programas:
@@ -122,13 +188,16 @@ void VentanaPrincipal::agregarDescarga() {
 	registro.setValue("velocidad", 0);
 
 	modelo->insertRecord(-1, registro);
+
 	modelo->submitAll();
+	_modelocategoriaDescargas->select();
+	qApp->processEvents();
 
 	if (datos.iniciar == true) {
-		_gestorDescargas->agregarDescarga(modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+		_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modelocategoriaDescargas);
 	}
 
-	_modeloCategoriaDescargando->select();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -139,6 +208,8 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QSharedPointer<ModeloEntradas> modelo;
 	QSettings configuracion;
 	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
+
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
 	switch (listadoDescargas[0].categoria) {
 		case _ListadoCategorias::Programas:
@@ -158,7 +229,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 			rutaDescarga += "/otros";
 	}
 
-	for (const _NuevaDescarga &nuevaDescarga : listadoDescargas) {
+	for (_NuevaDescarga &nuevaDescarga : listadoDescargas) {
 		QSqlRecord registro = modelo->record();
 		registro.remove(0); // Campo 'id'
 		registro.setValue("categoria", nuevaDescarga.categoria);
@@ -170,15 +241,17 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		registro.setValue("velocidad", 0);
 
 		modelo->insertRecord(-1, registro);
+
 		modelo->submitAll();
+		_modelocategoriaDescargas->select();
+		qApp->processEvents();
 
 		if (nuevaDescarga.iniciar == true) {
-			_gestorDescargas->agregarDescarga(modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+			_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modelocategoriaDescargas);
 		}
 	}
 
-
-	_modeloCategoriaDescargando->select();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -247,7 +320,13 @@ void VentanaPrincipal::procesarCambiosConfiguracion() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descarga'
  */
 void VentanaPrincipal::eventoAgregarDescarga() {
-	_ventanaAgregarDescarga->limpiarCampos();
+	/**
+	 * Construye la ventana 'Agregar descarga'
+	 */
+	_ventanaAgregarDescarga = new VentanaAgregarDescarga(this);
+	_ventanaAgregarDescarga->setModal(true);
+	connect(_ventanaAgregarDescarga, &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
+//	_ventanaAgregarDescarga->limpiarCampos();
 	_ventanaAgregarDescarga->show();
 }
 
@@ -255,7 +334,14 @@ void VentanaPrincipal::eventoAgregarDescarga() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Agregar descargas desde archivo'
  */
 void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
-	_ventanaAgregarDescargasDesdeArchivo->limpiarCampos();
+
+	/**
+	 * Construye la ventana 'Agregar descargas desde archivo'
+	 */
+	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
+	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
+	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
+//	_ventanaAgregarDescargasDesdeArchivo->limpiarCampos();
 	_ventanaAgregarDescargasDesdeArchivo->show();
 }
 
@@ -265,9 +351,11 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
 void VentanaPrincipal::eventoEliminarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modeloCategoriaDescargando;
+			modelo = _modelocategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -287,10 +375,14 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
+			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt());
 			modelo->removeRow(i.row());
+			qApp->processEvents();
 		}
 		modelo->submitAll();
 	}
+
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -301,7 +393,7 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modeloCategoriaDescargando;
+			modelo = _modelocategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -319,8 +411,15 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
+	for (int f = 0; f < modelo->rowCount(); f++) {
+		_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
+		qApp->processEvents();
+	}
 	modelo->removeRows(0, modelo->rowCount());
 	modelo->submitAll();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 void VentanaPrincipal::eventoSubir() {
@@ -335,6 +434,8 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
+			modelo = _modelocategoriaDescargas;
+			break;
 		case 0x02:
 			return;
 			break;
@@ -351,13 +452,16 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 			modelo = _modeloCategoriaOtros;
 	}
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
 			if (modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::Pausada) {
-				_gestorDescargas->agregarDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+				_gestorDescargas->agregarDescarga(i.row(), modelo->data(modelo->index(i.row(), 0)).toUInt(), modelo, _modelocategoriaDescargas);
 			}
 		}
 	}
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -366,9 +470,11 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 void VentanaPrincipal::eventoPausarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modeloCategoriaDescargando;
+			modelo = _modelocategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -391,6 +497,9 @@ void VentanaPrincipal::eventoPausarDescarga() {
 			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt());
 		}
 	}
+
+	_modelocategoriaDescargas->select();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -399,13 +508,14 @@ void VentanaPrincipal::eventoPausarDescarga() {
 void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modeloCategoriaDescargando;
-			break;
+			modelo = _modelocategoriaDescargas;
+			return;
 		case 0x02:
-			modelo = _modeloCategoriaFinalizadas;
-			break;
+			return;
 		case _ListadoCategorias::Programas:
 			modelo = _modeloCategoriaProgramas;
 			break;
@@ -421,16 +531,26 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
-			_gestorDescargas->agregarDescarga(modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargando);
+			_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modelocategoriaDescargas);
 		}
 	}
+	_modelocategoriaDescargas->select();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
  * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar todas las descargas'
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 	_gestorDescargas->detenerDescargas();
+	_modeloCategoriaProgramas->submitAll();
+	_modeloCategoriaMusica->submitAll();
+	_modeloCategoriaVideos->submitAll();
+	_modeloCategoriaOtros->submitAll();
+	_modelocategoriaDescargas->select();
+	centralWidget()->update();
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**
@@ -456,6 +576,12 @@ void VentanaPrincipal::eventoConfiguracion() {
 	_configuracionUsuarioServidorProxy = configuracion.value("proxy/usuario").toString();
 	_configuracionContrasenaServidorProxy = configuracion.value("proxy/contrasena").toString();
 
+	/**
+	 * Construye la ventana 'Agregar descargas desde archivo'
+	 */
+	_ventanaConfiguracion = new VentanaConfiguracion(this);
+	_ventanaConfiguracion->setModal(true);
+	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::procesarCambiosConfiguracion);
 	_ventanaConfiguracion->show();
 }
 
@@ -469,14 +595,21 @@ void VentanaPrincipal::eventoAcerca() {}
  * @param indice Índice del modelo
  */
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
+	QSettings configuracion;
 	QSharedPointer<ModeloEntradas> modeloActivo;
+
+	_modeloCategoriaProgramas->submitAll();
+	_modeloCategoriaMusica->submitAll();
+	_modeloCategoriaVideos->submitAll();
+	_modeloCategoriaOtros->submitAll();
+
+	configuracion.setValue("atds3/ultimaCategoria", indice.row());
 
 	switch (indice.row()) {
 		case 0:
-			modeloActivo = _modeloCategoriaDescargando;
+			modeloActivo = _modelocategoriaDescargas;
 			break;
 		case 1:
-			_modeloCategoriaFinalizadas->select();
 			modeloActivo = _modeloCategoriaFinalizadas;
 			break;
 		case 2:
@@ -493,6 +626,7 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 			break;
 	}
 
+	modeloActivo->select();
 	_listadoDescargas->setModel(modeloActivo.get());
 	_categoriaActiva = indice.row() + 1;
 
@@ -551,7 +685,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Iniciando sesión...");
 			break;
 		case toDus::Estado::Listo:
-			_estadoSesionTodus->setText("<b>" + configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo.");
+			_estadoSesionTodus->setText("<b>" + configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo para usar.");
 			actualizarAvatar();
 			break;
 		case toDus::Estado::Desconectando:
@@ -579,7 +713,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionAgregarDescargasDesdeArchivo->setText("Agregar desde archivo");
 	accionAgregarDescargasDesdeArchivo->setToolTip("Agrega un listado de descargas procesados desde un archivo");
 	accionAgregarDescargasDesdeArchivo->setStatusTip("Agrega un listado de descargas procesados desde un archivo");
-	accionAgregarDescargasDesdeArchivo->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Insert));
+	accionAgregarDescargasDesdeArchivo->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Insert));
 	connect(accionAgregarDescargasDesdeArchivo, &QAction::triggered, this, &VentanaPrincipal::eventoAgregarDescargasDesdeArchivo);
 	barraHerramientas->addAction(accionAgregarDescargasDesdeArchivo);
 
@@ -597,29 +731,29 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionEliminarTodasDescargas->setText("Eliminar todas");
 	accionEliminarTodasDescargas->setToolTip("Elimina todas las descargas del listado");
 	accionEliminarTodasDescargas->setStatusTip("Elimina todas las descargas del listado");
-	accionEliminarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Delete));
+	accionEliminarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Delete));
 	connect(accionEliminarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoEliminarTodasDescargas);
 	barraHerramientas->addAction(accionEliminarTodasDescargas);
 
 	barraHerramientas->addSeparator();
-
+/*
 	QAction *accionSubir = new QAction();
 	accionSubir->setIcon(QIcon(obtenerRutaIcono() + "subida.svg"));
 	accionSubir->setText("Subir");
 	accionSubir->setToolTip("Subida");
 	accionSubir->setStatusTip("Subida");
-	accionSubir->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
+	accionSubir->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_S));
 	connect(accionSubir, &QAction::triggered, this, &VentanaPrincipal::eventoSubir);
 	barraHerramientas->addAction(accionSubir);
 
 	barraHerramientas->addSeparator();
-
+*/
 	QAction *accionIniciarDescarga = new QAction();
 	accionIniciarDescarga->setIcon(QIcon(obtenerRutaIcono() + "iniciar.svg"));
 	accionIniciarDescarga->setText("Iniciar descarga");
 	accionIniciarDescarga->setToolTip("Inicia la descarga seleccionada");
 	accionIniciarDescarga->setStatusTip("Inicia la descarga seleccionada");
-	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
+	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_I));
 	connect(accionIniciarDescarga, &QAction::triggered, this, &VentanaPrincipal::eventoIniciarDescarga);
 	barraHerramientas->addAction(accionIniciarDescarga);
 
@@ -628,7 +762,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionPausarDescarga->setText("Pausar descarga");
 	accionPausarDescarga->setToolTip("Pausa la descarga seleccionada");
 	accionPausarDescarga->setStatusTip("Pausa la descarga seleccionada");
-	accionPausarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_D));
+	accionPausarDescarga->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
 	connect(accionPausarDescarga, &QAction::triggered, this, &VentanaPrincipal::eventoPausarDescarga);
 	barraHerramientas->addAction(accionPausarDescarga);
 
@@ -637,7 +771,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionIniciarTodasDescargas->setText("Iniciar todas las descargas");
 	accionIniciarTodasDescargas->setToolTip("Inicia todas las descargas");
 	accionIniciarTodasDescargas->setStatusTip("Inicia todas las descargas");
-	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_I));
+	accionIniciarDescarga->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_I));
 	connect(accionIniciarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoIniciarTodasDescargas);
 	barraHerramientas->addAction(accionIniciarTodasDescargas);
 
@@ -646,7 +780,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionPausarTodasDescargas->setText("Pausar todas las descargas");
 	accionPausarTodasDescargas->setToolTip("Pausa todas las descargas");
 	accionPausarTodasDescargas->setStatusTip("Pausa todas las descargas");
-	accionPausarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_D));
+	accionPausarTodasDescargas->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
 	connect(accionPausarTodasDescargas, &QAction::triggered, this, &VentanaPrincipal::eventoPausarTodasDescargas);
 	barraHerramientas->addAction(accionPausarTodasDescargas);
 
@@ -657,7 +791,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionConfiguracion->setText("Configuración");
 	accionConfiguracion->setToolTip("Configura datos de la aplicación");
 	accionConfiguracion->setStatusTip("Configura datos de la aplicación");
-	accionConfiguracion->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
+	accionConfiguracion->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));
 	connect(accionConfiguracion, SIGNAL(triggered(bool)), this, SLOT(eventoConfiguracion()));
 	barraHerramientas->addAction(accionConfiguracion);
 /*
@@ -678,6 +812,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	QMargins margenes = _estadoSesionTodus->contentsMargins();
 	margenes.setRight(margenes.right() + 10);
 	_estadoSesionTodus->setContentsMargins(margenes);
+	_estadoSesionTodus->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
 	_avatarTodus = new QLabel();
 	_avatarTodus->setPixmap(QIcon(obtenerRutaIcono() + "usuario.svg").pixmap(QSize(48, 48)));
@@ -694,14 +829,14 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
  * @return Puntero al elemento del listado de categorías
  */
 QListView *VentanaPrincipal::construirListadoCategorias() {
-
+	QSettings configuracion;
 	_modeloListadoCategorias = new ModeloCategorias();
 
-	QStandardItem *categoriaDescargando = new QStandardItem();
-	categoriaDescargando->setIcon(QIcon(obtenerRutaIcono() + "descarga.svg"));
-	categoriaDescargando->setText("Descargando");
-	categoriaDescargando->setToolTip("Descargas activas");
-	_modeloListadoCategorias->appendRow(categoriaDescargando);
+	QStandardItem *categoriaDescargas = new QStandardItem();
+	categoriaDescargas->setIcon(QIcon(obtenerRutaIcono() + "descarga.svg"));
+	categoriaDescargas->setText("Descargas");
+	categoriaDescargas->setToolTip("Descargas activas, inactivas y finalizadas");
+	_modeloListadoCategorias->appendRow(categoriaDescargas);
 
 	QStandardItem *categoriaFinalizadas = new QStandardItem();
 	categoriaFinalizadas->setIcon(QIcon(obtenerRutaIcono() + "finalizado.svg"));
@@ -740,12 +875,14 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
 	_listadoCategorias->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoCategorias->setFlow(QListView::TopToBottom);
 	_listadoCategorias->setModel(_modeloListadoCategorias);
+	_listadoCategorias->setMovement(QListView::Static);
 	_listadoCategorias->setUniformItemSizes(true);
 	_listadoCategorias->setStyleSheet("QListView::item { width: 120px; }");
+	_listadoCategorias->setItemAlignment(Qt::AlignCenter);
 	_listadoCategorias->setWrapping(true);
 	_listadoCategorias->setViewMode(QListView::IconMode);
-	_listadoCategorias->setCurrentIndex(_modeloListadoCategorias->indexFromItem(categoriaDescargando));
 	connect(_listadoCategorias, &QListView::activated, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
+	connect(_listadoCategorias, &QListView::pressed, this, &VentanaPrincipal::eventoCategoriaSeleccionada);
 
 	return _listadoCategorias;
 }
@@ -773,12 +910,27 @@ void VentanaPrincipal::inicializarBaseDatos() {
  */
 QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
+	 * Ancho y alto mínimo de la ventana. Inicialmente toma 1/3 de los valores actuales
+	 * de la pantalla y les fuerza un mínimo sin son inferiores a los valores que se
+	 * necesitan para que la ventana se visualice completamente.
+	 */
+	int ancho = qApp->primaryScreen()->availableSize().width() * 0.33;
+	int alto = qApp->primaryScreen()->availableSize().height() * 0.33;
+
+	if (ancho < 600) {
+		ancho = 600;
+	}
+	if (alto < 400) {
+		alto = 400;
+	}
+
+	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
-	_modeloCategoriaDescargando = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaDescargando->setEditStrategy(QSqlTableModel::OnManualSubmit);
-	_modeloCategoriaDescargando->setFilter(QString("estado = %1 OR estado = %2").arg(_ListadoEstados::EnEsperaIniciar).arg(_ListadoEstados::Iniciada));
-	_modeloCategoriaDescargando->select();
+	_modelocategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modelocategoriaDescargas->setEditStrategy(QSqlTableModel::OnManualSubmit);
+	_modelocategoriaDescargas->setFilter(QString("categoria != %1").arg(_ListadoCategorias::Subidas));
+	_modelocategoriaDescargas->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Finalizadas'
@@ -824,14 +976,15 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setAlternatingRowColors(true);
 	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoDescargas->setItemsExpandable(false);
-	_listadoDescargas->setModel(_modeloCategoriaDescargando.get());
-	_listadoDescargas->setMinimumSize(QSize((400*16)/9, 400));
+	_listadoDescargas->setModel(_modelocategoriaDescargas.get());
+	_listadoDescargas->setMinimumSize(QSize(ancho, alto));
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_listadoDescargas->setSortingEnabled(false);
+	_listadoDescargas->setStyleSheet("QTreeView::item { height: 28px; }");
 	_listadoDescargas->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-	_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+	//_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 
 	_listadoDescargas->hideColumn(0);
@@ -855,8 +1008,14 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaPrincipal::construirIU() {
+	QSettings configuracion;
+
 	setWindowIcon(QIcon(":/iconos/atds3.svg"));
-	setMinimumSize(QSize(1050, 600));
+
+	// Restaura la geometría de la ventana previamente guardado
+	if (configuracion.value("atds3/geometria").toByteArray().size() > 0) {
+		restoreGeometry(configuracion.value("atds3/geometria").toByteArray());
+	}
 
 	/**
 	 * Barra de herramientas
@@ -888,28 +1047,12 @@ void VentanaPrincipal::construirIU() {
 	 * Construir elemento central: listado de descargas
 	 */
 	setCentralWidget(construirListadoDescargas());
-	setContentsMargins(QMargins(5, 5, 5, 5));
+	//setContentsMargins(QMargins(5, 5, 5, 5));
 
-	/**
-	 * Construye la ventana 'Agregar descarga'
-	 */
-	_ventanaAgregarDescarga = new VentanaAgregarDescarga(this);
-	_ventanaAgregarDescarga->setModal(true);
-	connect(_ventanaAgregarDescarga, &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
-
-	/**
-	 * Construye la ventana 'Agregar descargas desde archivo'
-	 */
-	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
-	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
-	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
-
-	/**
-	 * Construye la ventana 'Agregar descargas desde archivo'
-	 */
-	_ventanaConfiguracion = new VentanaConfiguracion(this);
-	_ventanaConfiguracion->setModal(true);
-	connect(_ventanaConfiguracion, &VentanaConfiguracion::accepted, this, &VentanaPrincipal::procesarCambiosConfiguracion);
+	// Restaura la última categoría seleccionada
+	QModelIndex indiceSeleccionado = _modeloListadoCategorias->index(configuracion.value("atds3/ultimaCategoria", 0).toInt(), 0);
+	_listadoCategorias->setCurrentIndex(indiceSeleccionado);
+	eventoCategoriaSeleccionada(indiceSeleccionado);
 
 	statusBar()->showMessage("Listo");
 }
@@ -937,11 +1080,12 @@ void VentanaPrincipal::actualizarAvatar() {
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
+	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorS3.size() > 0) {
 		url.setHost(ipServidorS3);
-	} else {
-		url.setHost(nombreDNSServidorS3);
 	}
 	url.setPort(puertoServidorS3);
 

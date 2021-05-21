@@ -1,7 +1,6 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-
 #include <QString>
 #include <QSharedPointer>
 #include <QNetworkProxy>
@@ -43,6 +42,7 @@ extern QSharedPointer<toDus> _toDus;
  * @brief Listado de categorías
  */
 enum _ListadoCategorias {
+	Subidas = 0x02,
 	Programas = 0x03,
 	Musica = 0x04,
 	Videos = 0x05,
@@ -87,6 +87,10 @@ extern QString descifrarTexto(const QByteArray &datos, const QString &contrasena
  * @brief Actualiza la configuración del proxy a nivel de aplicación
  */
 extern QNetworkProxy obtenerConfiguracionProxy();
+
+#ifdef Q_OS_WIN
+extern QPalette _obtenerPaletaColores();
+#endif
 
 #endif // MAIN_HPP
 

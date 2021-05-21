@@ -2,24 +2,17 @@
 #include "modeloentradas.hpp"
 #include "ventanaprincipal.hpp"
 #include "main.hpp"
+#include <type_traits>
+#include <functional>
 #include <QSettings>
-#include <QRegExp>
 #include <QFileInfo>
-//#include <iostream>
+#include <QTimer>
 
 
 Descarga::Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, QObject *padre)
-	:  QNetworkAccessManager(padre), _iniciado(false), _error(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _respuesta(nullptr), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
-	connect(this, &Descarga::finished, this, &Descarga::deleteLater);
-
+	: QNetworkAccessManager(padre),  _iniciado(false), _error(false), _id(id), _filaModelo(0), _filaModeloDescargando(0), _modelo(modelo), _modeloDescargando(modeloDescargando), _respuesta(nullptr), _ultimoTiempoRecepcion(0), _ultimoTamanoRecibido(0), _tamanoPrevio(0) {
+	moveToThread(padre->thread());
 	setProxy(obtenerConfiguracionProxy());
-
-	_filaModelo = encontrarFilaDesdeId(_modelo);
-	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::EnEsperaIniciar);
-	_modelo->submitAll();
-
-	_modeloDescargando->select();
-	_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
 }
 
 void Descarga::descargaIniciada() {
@@ -30,6 +23,8 @@ void Descarga::descargaIniciada() {
 
 	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Iniciada);
 	_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 1), _ListadoEstados::Iniciada);
+
+	_iniciado = true;
 }
 
 void Descarga::eventoRecepcionDatos() {
@@ -52,12 +47,12 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 
 		if (total > 0) {
 			_modelo->setData(_modelo->index(_filaModelo, 3), (recibidos * 100) / total);
+			_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 3), (recibidos * 100) / total);
 		}
 		_modelo->setData(_modelo->index(_filaModelo, 4), recibidos - _ultimoTamanoRecibido);
 		_modelo->setData(_modelo->index(_filaModelo, 8), total);
 		_modelo->setData(_modelo->index(_filaModelo, 9), recibidos);
 
-		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 3), (recibidos * 100) / total);
 		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 4), recibidos - _ultimoTamanoRecibido);
 		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 8), total);
 		_modeloDescargando->setData(_modeloDescargando->index(_filaModeloDescargando, 9), recibidos);
@@ -68,17 +63,35 @@ void Descarga::progresoDescarga(qint64 recibidos, qint64 total) {
 }
 
 void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
+	_archivo.close();
+
 	switch (codigo) {
 		case QNetworkReply::NoError:
 			break;
+		case QNetworkReply::RemoteHostClosedError:
+		case QNetworkReply::HostNotFoundError:
+		case QNetworkReply::TemporaryNetworkFailureError:
 		case QNetworkReply::TimeoutError:
-			iniciarDescarga();
+		case QNetworkReply::ProxyTimeoutError:
+			_iniciado = false;
+			_error = true;
+
+			if (modelosValido() == false) {
+				_filaModelo = encontrarFilaDesdeId(_modelo);
+				_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+			}
+			_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::EnEsperaIniciar);
+
+			QTimer::singleShot(2000, this, &Descarga::iniciar);
 			break;
 		default:
+			_iniciado = false;
 			_error = true;
-//			std::cout << "Descargar Error: " << codigo << std::endl;
 			break;
 	}
+
+	_modelo->submitAll();
+	_modeloDescargando->select();
 }
 
 void Descarga::descargaTerminada() {
@@ -89,24 +102,20 @@ void Descarga::descargaTerminada() {
 		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
 	}
 
+	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
+
 	if (_respuesta->error() == QNetworkReply::NoError) {
 		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Finalizada);
 		_modelo->setData(_modelo->index(_filaModelo, 3), 100);
 		_modelo->setData(_modelo->index(_filaModelo, 9), _modelo->index(_filaModelo, 8));
-	} else {
-		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
+
+		_modelo->submitAll();
+		_modeloDescargando->select();
+
+		_iniciado = false;
+
+		emit terminada(_id);
 	}
-
-	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
-	_modelo->submitAll();
-
-	_modeloDescargando->select();
-
-	_iniciado = false;
-
-	emit terminada(_id);
-
-	_respuesta->deleteLater();
 }
 
 bool Descarga::iniciado() {
@@ -114,33 +123,35 @@ bool Descarga::iniciado() {
 }
 
 void Descarga::iniciar() {
-	if (modelosValido() == false) {
-		_filaModelo = encontrarFilaDesdeId(_modelo);
-		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
-	}
-	_enlaceNoFirmado = _modelo->data(_modelo->index(_filaModelo, 7)).toString();
-
-	connect(_toDus.get(), &toDus::enlaceFirmadoObtenido, this, &Descarga::procesarRespuestaDesdeTodus);
-	_toDus->solicitarEnlaceFirmado(_enlaceNoFirmado);
-}
-
-void Descarga::detener() {
-	if (_iniciado == true) {
-		if (_respuesta != nullptr) {
-			_respuesta->abort();
-		}
-	} else {
+	if (_toDus->obtenerEstado() == toDus::Estado::Listo) {
 		if (modelosValido() == false) {
 			_filaModelo = encontrarFilaDesdeId(_modelo);
 			_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
 		}
+		_enlaceNoFirmado = _modelo->data(_modelo->index(_filaModelo, 7)).toString();
 
-		_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
-		_modelo->setData(_modelo->index(_filaModelo, 4), 0);
-		_modelo->submitAll();
-
-		_modeloDescargando->select();
+		if (_iniciado == false) {
+			_toDus->solicitarEnlaceFirmado(_enlaceNoFirmado, std::bind(&Descarga::procesarRespuestaDesdeTodus, this, std::placeholders::_1));
+		}
+	} else {
+		QTimer::singleShot(2000, this, &Descarga::iniciar);
 	}
+}
+
+void Descarga::detener() {
+	if (_iniciado == true) {
+		_respuesta->abort();
+	}
+	if (modelosValido() == false) {
+		_filaModelo = encontrarFilaDesdeId(_modelo);
+		_filaModeloDescargando = encontrarFilaDesdeId(_modeloDescargando);
+	}
+
+	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
+	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
+	//_modelo->submitAll();
+
+	//_modeloDescargando->select();
 }
 
 int Descarga::fila() {
@@ -155,16 +166,13 @@ bool Descarga::error() {
 	return _error;
 }
 
-void Descarga::procesarRespuestaDesdeTodus(const QString &noFirmado, const QString &firmado) {
-	if (noFirmado == _enlaceNoFirmado) {
-		QString enlaceProcesado = firmado;
+void Descarga::procesarRespuestaDesdeTodus(const QString &firmado) {
+	QString enlaceProcesado = firmado;
 
-		enlaceProcesado.replace("&amp;", "&");
-		_enlaceFirmado = enlaceProcesado;
+	enlaceProcesado.replace("&amp;", "&");
+	_enlaceFirmado = enlaceProcesado;
 
-		disconnect(_toDus.get(), &toDus::enlaceFirmadoObtenido, this, &Descarga::procesarRespuestaDesdeTodus);
-		iniciarDescarga();
-	}
+	iniciarDescarga();
 }
 
 void Descarga::iniciarDescarga() {
@@ -194,11 +202,12 @@ void Descarga::iniciarDescarga() {
 
 	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
 	solicitud.setSslConfiguration(configuracionSSL);
+	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorS3.size() > 0) {
 		url.setHost(ipServidorS3);
-	} else {
-		url.setHost(nombreDNSServidorS3);
 	}
 	url.setPort(puertoServidorS3);
 
@@ -217,17 +226,11 @@ void Descarga::iniciarDescarga() {
 
 	_ultimoTiempoRecepcion = std::time(nullptr);
 
-	_iniciado = true;
-
 	_respuesta = get(solicitud);
 	connect(_respuesta, &QNetworkReply::encrypted, this, &Descarga::descargaIniciada);
 	connect(_respuesta, &QIODevice::readyRead, this, &Descarga::eventoRecepcionDatos);
 	connect(_respuesta, &QNetworkReply::downloadProgress, this, &Descarga::progresoDescarga);
-#if QT_VERSION < 0x050d00
-	connect(_respuesta, SIGNAL(error), this, SLOT(eventoError));
-#else
 	connect(_respuesta, &QNetworkReply::errorOccurred, this, &Descarga::eventoError);
-#endif
 	connect(_respuesta, &QNetworkReply::finished, this, &Descarga::descargaTerminada);
 }
 

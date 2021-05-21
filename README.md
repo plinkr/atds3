@@ -24,7 +24,7 @@
 ## Dependencias
 `ATDS3` depende de:
 
-* Compilador C++ compatible con el estándar C++20 (Clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio 2015+), Intel C++ Compiler 17+)
+* Compilador C++ compatible con el estándar C++17 (Clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio 2015+), Intel C++ Compiler 17+)
 * qmake
 * Qt
   * Qt 5 Core
@@ -62,21 +62,16 @@ apt install g++ make qtbase5-dev qt5-default libssl-dev libprotobuf-dev protobuf
 
 <a name="windows"></a>
 #### Windows
-* Download and install Microsoft Visual Studio 2015 or later.
-* Install [vcpkg](https://github.com/Microsoft/vcpkg#quick-start).
-* Run the following commands to install `TDLib` dependencies using vcpkg:
+* Descargar e instalar Microsoft Visual Studio 2015 o superior (Herramientas de compilación para C+, SDK de Windows, Paquete de idioma Inglés y Git).
+* Descargar e instalar [Qt Opensource 6.0](https://www.qt.io/download-qt-installer) o superior (Librerías de Qt para MSVC2019 y formato de imágenes).
+* Instalar [vcpkg](https://github.com/Microsoft/vcpkg#quick-start) y las dependencias de `ATDS3` como se muestra a continuación:
 ```
-cd <path to vcpkg>
-.\vcpkg.exe install openssl:x64-windows openssl:x86-windows zlib:x64-windows zlib:x86-windows
+cd \
+git clone https://github.com/Microsoft/vcpkg
+cd vcpkg
+.\bootstrap-vcpkg.bat
+.\vcpkg.exe install openssl:x64-windows protobuf:x64-windows
 ```
-* Download and install [CMake](https://cmake.org/download/); choose "Add CMake to the system PATH" option while installing.
-* Build `TDLib` with CMake as explained in [building](#building), but instead of `cmake -DCMAKE_BUILD_TYPE=Release ..` use
-```
-cmake -DCMAKE_TOOLCHAIN_FILE=<path to vcpkg>/scripts/buildsystems/vcpkg.cmake ..
-```
-
-To build 32-bit/64-bit `TDLib` using MSVC, you will need to additionally specify parameter `-A Win32`/`-A x64` to CMake.
-To build `TDLib` in Release mode using MSVC, you will need to additionally specify parameter `--config Release` to the `cmake --build .` command.
 
 <a name="construccion"></a>
 ## Construcción
@@ -84,10 +79,21 @@ To build `TDLib` in Release mode using MSVC, you will need to additionally speci
 La forma mas simple de construir `ATDS3`:
 
 ```
-mkdir _construccion
-cd _construccion
+mkdir construccion
+cd construccion
 qmake ../atds3.pro CONFIG+=release
-make install
+```
+
+En UNIX y Linux:
+
+```
+make
+```
+
+En Windows:
+
+```
+nmake
 ```
 
 <a name="licencia"></a>

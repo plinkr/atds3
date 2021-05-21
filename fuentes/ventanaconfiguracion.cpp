@@ -17,7 +17,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
-#include <iostream>
 
 
 VentanaConfiguracion::VentanaConfiguracion(QWidget *padre)
@@ -53,9 +52,15 @@ void VentanaConfiguracion::eventoSeleccionarRuta7Zip() {
  */
 void VentanaConfiguracion::guardarOpciones() {
 	QSettings configuracion;
+	QString telefono = _telefono->text().trimmed();
 
-	if (_telefono->text().trimmed().size() > 0) {
-		configuracion.setValue("todus/telefono", _telefono->text().trimmed());
+	if (telefono.size() > 0) {
+		if (telefono.size() <= 8) {
+			telefono = "+53" + telefono;
+		} else if (telefono[0] != '+') {
+			telefono = "+" + telefono;
+		}
+		configuracion.setValue("todus/telefono", telefono);
 	} else {
 		configuracion.remove("todus/telefono");
 	}
@@ -245,6 +250,7 @@ QListView *VentanaConfiguracion::construirListadoOpciones() {
 	listadoOpciones->setViewMode(QListView::IconMode);
 	listadoOpciones->setCurrentIndex(_modeloListadoOpciones->indexFromItem(opcionTodus));
 	connect(listadoOpciones, &QListView::activated, this, &VentanaConfiguracion::eventoOpcionSeleccionada);
+	connect(listadoOpciones, &QListView::pressed, this, &VentanaConfiguracion::eventoOpcionSeleccionada);
 
 	return listadoOpciones;
 }
@@ -322,7 +328,7 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 	formularioTodus->setContentsMargins(margenes);
 
 	_telefono = new QLineEdit();
-	_telefono->setPlaceholderText("Número en formato internacional...");
+	_telefono->setPlaceholderText("Número telefónico...");
 	_telefono->setText(configuracion.value("todus/telefono").toString());
 
 	_fichaAcceso = new QPlainTextEdit();
@@ -735,7 +741,7 @@ void VentanaConfiguracion::construirIU() {
 
 	setWindowIcon(iconoAgregar);
 	setWindowTitle(_tituloVentana);
-	setWindowFlags(Qt::Dialog | Qt::Popup);
+	setWindowFlags(Qt::Dialog);
 	setStyleSheet("QPushButton, QComboBox { qproperty-iconSize: 24px 24px; } ");
 
 	QVBoxLayout *diseno = new QVBoxLayout();
@@ -743,7 +749,7 @@ void VentanaConfiguracion::construirIU() {
 	QHBoxLayout *filaContenido = new QHBoxLayout();
 
 	_elementosApilados = new QStackedWidget();
-	_elementosApilados->setMinimumSize(QSize(650, 500));
+	_elementosApilados->setMinimumWidth(650);
 	_elementosApilados->addWidget(construirOpcionTodus());
 	_elementosApilados->addWidget(construirOpcionDescargas());
 	//_elementosApilados->addWidget(construirOpcionSubidas());

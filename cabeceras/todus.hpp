@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <functional>
 
 
 class toDus : public QObject {
@@ -43,17 +44,18 @@ class toDus : public QObject {
 		void reconectar();
 
 		/**
-		 * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
-		 */
-		void iniciarSesion();
-
-		/**
 		 * @brief Solicita a toDus el enlace firmado para obtener un archivo
 		 * @param enlace Enlace no firmado
 		 */
-		void solicitarEnlaceFirmado(const QString &enlace);
+		void solicitarEnlaceFirmado(const QString &enlace, std::function<void(const QString &)> retroalimentador);
 
 		void solicitarEnlaceFirmadoSubida();
+
+	public slots:
+		/**
+		 * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
+		 */
+		void iniciarSesion();
 
 	signals:
 		void estadoCambiado(Estado estado);
@@ -88,9 +90,10 @@ class toDus : public QObject {
 		QString _jID;
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
-		bool _reconexionSolicitada;
+		bool _desconexionSolicitada;
 		bool _fichaAccesoRenovada;
-		QMap<QString, QString> _listadoEnlacesFirmados;
+		QMap<QString, std::function<void(const QString &)>> _listadoRetroalimentadores;
+		QString _idInicioSesion;
 		QNetworkReply *_respuestaCodigoSMS;
 		QNetworkReply *_respuestaFichaSolicitud;
 		QNetworkReply *_respuestaFichaAcceso;
@@ -104,7 +107,7 @@ class toDus : public QObject {
 		void xmppIniciarSesion();
 		void xmppEstablecerSesion();
 		void xmppMantenerSesionActiva();
-		void xmppSolicitarEnlaceDescarga(const QString &enlace);
+		void xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void(const QString &)> retroalimentador);
 		void xmppSolicitarEnlaceSubida();
 };
 

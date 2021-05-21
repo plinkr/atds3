@@ -3,12 +3,14 @@
 #include "ventanaprincipal.hpp"
 #include <thread>
 #include <QApplication>
-#include <QPalette>
 #include <QSettings>
+#include <QColor>
+#include <QPalette>
+#include <QToolTip>
+#include <QLineEdit>
 #include <QStandardPaths>
 #include <QDir>
 #include <openssl/evp.h>
-#include <iostream>
 
 
 /**
@@ -41,7 +43,7 @@ QString _agenteUsuarioTodus;
  */
 QSharedPointer<toDus> _toDus;
 
-bool _temaClaro;
+bool _temaClaro = true;
 
 /**
  * @brief Crea las configuraciones de la aplicación por defecto si no existen
@@ -80,6 +82,10 @@ QString descifrarTexto(const QByteArray &datos, const QString &contrasena);
  */
 QNetworkProxy obtenerConfiguracionProxy();
 
+#ifdef Q_OS_WIN
+QPalette _obtenerPaletaColoresOscuros();
+#endif
+
 
 int main(int argc, char *argv[])
 {
@@ -99,6 +105,18 @@ int main(int argc, char *argv[])
 
 	crearDirectoriosDescargas();
 
+#ifdef Q_OS_WIN
+	{
+		QSettings windowsRegistro("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", QSettings::NativeFormat);
+
+		app.setStyle("Fusion");
+		if (windowsRegistro.value("AppsUseLightTheme").toInt() == 0) {
+			QToolTip::setPalette(_obtenerPaletaColoresOscuros());
+			app.setPalette(_obtenerPaletaColoresOscuros());
+			_temaClaro = false;
+		}
+	}
+#else
 	QPalette *p = new QPalette();
 	if (p->window().color().lightness() >= 150) {
 		_temaClaro = true;
@@ -106,6 +124,7 @@ int main(int argc, char *argv[])
 		_temaClaro = false;
 	}
 	delete p;
+#endif
 
 	VentanaPrincipal ventanaPrincipal;
 	ventanaPrincipal.show();
@@ -115,7 +134,7 @@ int main(int argc, char *argv[])
 	if (configuracion.value("todus/fichaAcceso").toString().size() > 0 || configuracion.value("todus/telefono").toString().size() > 0) {
 		_toDus->iniciarSesion();
 	} else {
-		ventanaPrincipal._ventanaConfiguracion->show();
+		ventanaPrincipal.eventoConfiguracion();
 	}
 
 	return app.exec();
@@ -191,7 +210,7 @@ QString obtenerRutaDescargas() {
 void crearDirectoriosDescargas() {
 	QDir directorioDescarga;
 	QString rutaDescarga = obtenerRutaDescargas();
-	QList<QString> directorios {"programas", "musica", "videos", "otros"};
+	QVector<QString> directorios {"programas", "musica", "videos", "otros"};
 
 	directorioDescarga.cd(rutaDescarga);
 	for (const QString &directorio : directorios) {
@@ -229,7 +248,7 @@ QByteArray cifrarTexto(const QString &datos, const QString &contrasena) {
 	if (EVP_EncryptInit_ex(evpContextoCifrado, EVP_aes_256_cbc(), nullptr, (const unsigned char *)&contrasenaStd[0], (const unsigned char *)&vectorInicializacion[0]) != -1) {
 		resultados.resize(512);
 
-		if (EVP_EncryptUpdate(evpContextoCifrado, (unsigned char *)&resultados[0], &longitudDatosDescifrados1, (const unsigned char *)&datosDescifrados[0], datosDescifrados.size()) != -1) {
+		if (EVP_EncryptUpdate(evpContextoCifrado, (unsigned char *)&resultados[0], &longitudDatosDescifrados1, (const unsigned char *)&datosDescifrados[0], static_cast<int>(datosDescifrados.size())) != -1) {
 			if (EVP_EncryptFinal_ex(evpContextoCifrado, (unsigned char *)&resultados[0] + longitudDatosDescifrados1, &longitudDatosDescifrados2) != -1) {
 				resultados.resize(longitudDatosDescifrados1 + longitudDatosDescifrados2);
 			}
@@ -257,7 +276,7 @@ QString descifrarTexto(const QByteArray &datos, const QString &contrasena) {
 	if (EVP_DecryptInit_ex(evpContextoCifrado, EVP_aes_256_cbc(), nullptr, (const unsigned char *)&contrasenaStd[0], (const unsigned char *)&vectorInicializacion[0]) != -1) {
 		resultados.resize(512);
 
-		if (EVP_DecryptUpdate(evpContextoCifrado, (unsigned char *)&resultados[0], &longitudDatosCifrados1, (const unsigned char *)&datosCifrados[0], datosCifrados.size()) != -1) {
+		if (EVP_DecryptUpdate(evpContextoCifrado, (unsigned char *)&resultados[0], &longitudDatosCifrados1, (const unsigned char *)&datosCifrados[0], static_cast<int>(datosCifrados.size())) != -1) {
 			if (EVP_DecryptFinal_ex(evpContextoCifrado, (unsigned char *)&resultados[0] + longitudDatosCifrados1, &longitudDatosCifrados2) != -1) {
 				resultados.resize(longitudDatosCifrados1 + longitudDatosCifrados2);
 			}
@@ -306,3 +325,33 @@ QNetworkProxy obtenerConfiguracionProxy() {
 
 	return proxy;
 }
+
+#ifdef Q_OS_WIN
+QPalette _obtenerPaletaColoresOscuros() {
+	QPalette paletaColores = qApp->palette();
+
+	paletaColores.setColor(QPalette::Window, QColor(53, 53, 53));
+	paletaColores.setColor(QPalette::WindowText, Qt::white);
+	paletaColores.setColor(QPalette::Base, QColor(25, 25, 25));
+	paletaColores.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+	paletaColores.setColor(QPalette::ToolTipBase, QColor(53, 53, 53));
+	paletaColores.setColor(QPalette::ToolTipText, Qt::white);
+	paletaColores.setColor(QPalette::Text, Qt::white);
+	paletaColores.setColor(QPalette::PlaceholderText, Qt::gray);
+	paletaColores.setColor(QPalette::Button, QColor(53, 53, 53));
+	paletaColores.setColor(QPalette::ButtonText, Qt::white);
+	paletaColores.setColor(QPalette::BrightText, Qt::red);
+	paletaColores.setColor(QPalette::Link, QColor(42, 130, 218));
+	paletaColores.setColor(QPalette::Highlight, QColor(42, 130, 218));
+	paletaColores.setColor(QPalette::HighlightedText, Qt::black);
+	paletaColores.setColor(QPalette::Disabled, QPalette::Text, QColor(164, 166, 168));
+	paletaColores.setColor(QPalette::Disabled, QPalette::WindowText, QColor(164, 166, 168));
+	paletaColores.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(164, 166, 168));
+	paletaColores.setColor(QPalette::Disabled, QPalette::HighlightedText, QColor(164, 166, 168));
+	paletaColores.setColor(QPalette::Disabled, QPalette::Base, QColor(68, 68, 68));
+	paletaColores.setColor(QPalette::Disabled, QPalette::Window, QColor(68, 68, 68));
+	paletaColores.setColor(QPalette::Disabled, QPalette::Highlight, QColor(68, 68, 68));
+
+	return paletaColores;
+}
+#endif
