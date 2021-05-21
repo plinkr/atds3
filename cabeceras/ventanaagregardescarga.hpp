@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QSettings>
 
 
 struct _NuevaDescarga;
@@ -35,6 +36,8 @@ class VentanaAgregarDescarga : public QDialog
 		void eventoAgregarDescarga();
 
 	private:
+		QSettings _configuracion;
+
 		/**
 		 * Título de la ventana
 		 */

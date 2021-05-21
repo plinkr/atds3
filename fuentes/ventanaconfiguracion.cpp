@@ -51,7 +51,6 @@ void VentanaConfiguracion::eventoSeleccionarRuta7Zip() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Guardar'
  */
 void VentanaConfiguracion::guardarOpciones() {
-	QSettings configuracion;
 	QString telefono = _telefono->text().trimmed();
 
 	if (telefono.size() > 0) {
@@ -60,141 +59,141 @@ void VentanaConfiguracion::guardarOpciones() {
 		} else if (telefono[0] != '+') {
 			telefono = "+" + telefono;
 		}
-		configuracion.setValue("todus/telefono", telefono);
+		_configuracion.setValue("todus/telefono", telefono);
 	} else {
-		configuracion.remove("todus/telefono");
+		_configuracion.remove("todus/telefono");
 	}
 
 	if (_fichaAcceso->toPlainText().trimmed().size() > 0) {
-		configuracion.setValue("todus/fichaAcceso", _fichaAcceso->toPlainText().trimmed());
+		_configuracion.setValue("todus/fichaAcceso", _fichaAcceso->toPlainText().trimmed());
 	} else {
-		configuracion.remove("todus/fichaAcceso");
+		_configuracion.remove("todus/fichaAcceso");
 	}
 
 	if (_rutaDescargas->text().trimmed().size() > 0) {
-		configuracion.setValue("descargas/ruta", _rutaDescargas->text().trimmed());
+		_configuracion.setValue("descargas/ruta", _rutaDescargas->text().trimmed());
 	} else {
-		configuracion.remove("descargas/ruta");
+		_configuracion.remove("descargas/ruta");
 	}
 
 	if (_totalDescargasParalelas->text().trimmed().size() > 0) {
-		configuracion.setValue("descargas/descargasParalelas", _totalDescargasParalelas->text().trimmed());
+		_configuracion.setValue("descargas/descargasParalelas", _totalDescargasParalelas->text().trimmed());
 	} else {
-		configuracion.remove("descargas/descargasParalelas");
+		_configuracion.remove("descargas/descargasParalelas");
 	}
 
-	//configuracion.setValue("descargas/descomprimirAlFinalizar", _descomprimirAlFinalizarDescarga->isChecked());
+	//_configuracion.setValue("descargas/descomprimirAlFinalizar", _descomprimirAlFinalizarDescarga->isChecked());
 
-	configuracion.setValue("descargas/eliminarAlFinalizar", _eliminarAlFinalizarDescarga->isChecked());
+	_configuracion.setValue("descargas/eliminarAlFinalizar", _eliminarAlFinalizarDescarga->isChecked());
 /*
 	if (_totalSubidasParalelas->text().trimmed().size() > 0) {
-		configuracion.setValue("subidas/subidasParalelas", _totalSubidasParalelas->text().trimmed());
+		_configuracion.setValue("subidas/subidasParalelas", _totalSubidasParalelas->text().trimmed());
 	} else {
-		configuracion.remove("subidas/subidasParalelas");
+		_configuracion.remove("subidas/subidasParalelas");
 	}
 
-	configuracion.setValue("subidas/comprimirArchivosAntesSubir", _comprimirArchivosAntesSubir->isChecked());
+	_configuracion.setValue("subidas/comprimirArchivosAntesSubir", _comprimirArchivosAntesSubir->isChecked());
 
-	configuracion.setValue("subidas/dividirArchivosAntesSubir", _dividirArchivosAntesSubir->isChecked());
+	_configuracion.setValue("subidas/dividirArchivosAntesSubir", _dividirArchivosAntesSubir->isChecked());
 
-	configuracion.setValue("subidas/tamanoDivisionArchivos", _tamanoDivisionArchivos->value());
+	_configuracion.setValue("subidas/tamanoDivisionArchivos", _tamanoDivisionArchivos->value());
 
-	configuracion.setValue("subidas/eliminarAlFinalizar", _eliminarAlFinalizarSubida->isChecked());
+	_configuracion.setValue("subidas/eliminarAlFinalizar", _eliminarAlFinalizarSubida->isChecked());
 
 	if (_ruta7Zip->text().trimmed().size() > 0) {
-		configuracion.setValue("herramientas/ruta7Zip", _ruta7Zip->text().trimmed());
+		_configuracion.setValue("herramientas/ruta7Zip", _ruta7Zip->text().trimmed());
 	} else {
-		configuracion.remove("herramientas/ruta7Zip");
+		_configuracion.remove("herramientas/ruta7Zip");
 	}
 */
-	configuracion.setValue("proxy/tipo", _tipoServidorProxy->currentIndex());
+	_configuracion.setValue("proxy/tipo", _tipoServidorProxy->currentIndex());
 
 	if (_tipoServidorProxy->currentIndex() > 0) {
 		if (_servidorProxy->text().trimmed().size() > 0) {
-			configuracion.setValue("proxy/servidor", _servidorProxy->text().trimmed());
+			_configuracion.setValue("proxy/servidor", _servidorProxy->text().trimmed());
 		} else {
-			configuracion.remove("proxy/servidor");
+			_configuracion.remove("proxy/servidor");
 		}
 
-		configuracion.setValue("proxy/puerto", _puertoServidorProxy->value());
+		_configuracion.setValue("proxy/puerto", _puertoServidorProxy->value());
 
 		if (_usuarioServidorProxy->text().trimmed().size() > 0) {
-			configuracion.setValue("proxy/usuario", _usuarioServidorProxy->text().trimmed());
+			_configuracion.setValue("proxy/usuario", _usuarioServidorProxy->text().trimmed());
 		} else {
-			configuracion.remove("proxy/usuario");
+			_configuracion.remove("proxy/usuario");
 		}
 
 		if (_contrasenaServidorProxy->text().trimmed().size() > 0) {
-			configuracion.setValue("proxy/contrasena", cifrarTexto(_contrasenaServidorProxy->text().trimmed().toLocal8Bit(), _usuarioServidorProxy->text().trimmed() + "@" + _servidorProxy->text().trimmed() + ":" + QString::number(_puertoServidorProxy->value())).toBase64());
+			_configuracion.setValue("proxy/contrasena", cifrarTexto(_contrasenaServidorProxy->text().trimmed().toLocal8Bit(), _usuarioServidorProxy->text().trimmed() + "@" + _servidorProxy->text().trimmed() + ":" + QString::number(_puertoServidorProxy->value())).toBase64());
 		} else {
-			configuracion.remove("proxy/contrasena");
+			_configuracion.remove("proxy/contrasena");
 		}
 	}
 
 	if (_ipServidorAutentificacion->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
+		_configuracion.setValue("avanzadas/ipServidorAutentificacion", _ipServidorAutentificacion->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/ipServidorAutentificacion");
+		_configuracion.remove("avanzadas/ipServidorAutentificacion");
 	}
 
 	if (_puertoServidorAutentificacion->value() != 443) {
-		configuracion.setValue("avanzadas/puertoServidorAutentificacion", _puertoServidorAutentificacion->value());
+		_configuracion.setValue("avanzadas/puertoServidorAutentificacion", _puertoServidorAutentificacion->value());
 	} else {
-		configuracion.remove("avanzadas/puertoServidorAutentificacion");
+		_configuracion.remove("avanzadas/puertoServidorAutentificacion");
 	}
 
 	if (_nombreDNSServidorAutentificacion->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
+		_configuracion.setValue("avanzadas/nombreDNSServidorAutentificacion", _nombreDNSServidorAutentificacion->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/nombreDNSServidorAutentificacion");
+		_configuracion.remove("avanzadas/nombreDNSServidorAutentificacion");
 	}
 
 	if (_ipServidorSesion->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/ipServidorSesion", _ipServidorSesion->text().trimmed());
+		_configuracion.setValue("avanzadas/ipServidorSesion", _ipServidorSesion->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/ipServidorSesion");
+		_configuracion.remove("avanzadas/ipServidorSesion");
 	}
 
 	if (_puertoServidorSesion->value() != 1756) {
-		configuracion.setValue("avanzadas/puertoServidorSesion", _puertoServidorSesion->value());
+		_configuracion.setValue("avanzadas/puertoServidorSesion", _puertoServidorSesion->value());
 	} else {
-		configuracion.remove("avanzadas/puertoServidorSesion");
+		_configuracion.remove("avanzadas/puertoServidorSesion");
 	}
 
 	if (_nombreDNSServidorSesion->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
+		_configuracion.setValue("avanzadas/nombreDNSServidorSesion", _nombreDNSServidorSesion->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/nombreDNSServidorSesion");
+		_configuracion.remove("avanzadas/nombreDNSServidorSesion");
 	}
 
 	if (_ipServidorS3->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/ipServidorS3", _ipServidorS3->text().trimmed());
+		_configuracion.setValue("avanzadas/ipServidorS3", _ipServidorS3->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/ipServidorS3");
+		_configuracion.remove("avanzadas/ipServidorS3");
 	}
 
 	if (_puertoServidorS3->value() != 443) {
-		configuracion.setValue("avanzadas/puertoServidorS3", _puertoServidorS3->value());
+		_configuracion.setValue("avanzadas/puertoServidorS3", _puertoServidorS3->value());
 	} else {
-		configuracion.remove("avanzadas/puertoServidorS3");
+		_configuracion.remove("avanzadas/puertoServidorS3");
 	}
 
 	if (_nombreDNSServidorS3->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
+		_configuracion.setValue("avanzadas/nombreDNSServidorS3", _nombreDNSServidorS3->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/nombreDNSServidorS3");
+		_configuracion.remove("avanzadas/nombreDNSServidorS3");
 	}
 
 	if (_agenteUsuario->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/agenteUsuario", _agenteUsuario->text().trimmed());
+		_configuracion.setValue("avanzadas/agenteUsuario", _agenteUsuario->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/agenteUsuario");
+		_configuracion.remove("avanzadas/agenteUsuario");
 	}
 
 	if (_numeroVersion->text().trimmed().size() > 0) {
-		configuracion.setValue("avanzadas/numeroVersion", _numeroVersion->text().trimmed());
+		_configuracion.setValue("avanzadas/numeroVersion", _numeroVersion->text().trimmed());
 	} else {
-		configuracion.remove("avanzadas/numeroVersion");
+		_configuracion.remove("avanzadas/numeroVersion");
 	}
 
 	emit accept();
@@ -209,37 +208,37 @@ QListView *VentanaConfiguracion::construirListadoOpciones() {
 	QStandardItem *opcionTodus = new QStandardItem();
 	opcionTodus->setIcon(QIcon(":/iconos/todus.png"));
 	opcionTodus->setText("toDus");
-	opcionTodus->setToolTip("Configuraciones relacionadas con la conexión a la red toDus");
+	opcionTodus->setToolTip("_configuraciones relacionadas con la conexión a la red toDus");
 	_modeloListadoOpciones->appendRow(opcionTodus);
 
 	QStandardItem *opcionDescargas = new QStandardItem();
 	opcionDescargas->setIcon(QIcon(obtenerRutaIcono() + "descarga.svg"));
 	opcionDescargas->setText("Descargas");
-	opcionDescargas->setToolTip("Configuraciones relacionadas con las descargas");
+	opcionDescargas->setToolTip("_configuraciones relacionadas con las descargas");
 	_modeloListadoOpciones->appendRow(opcionDescargas);
 /*
 	QStandardItem *opcionSubidas = new QStandardItem();
 	opcionSubidas->setIcon(QIcon(obtenerRutaIcono() + "subida.svg"));
 	opcionSubidas->setText("Subidas");
-	opcionSubidas->setToolTip("Configuraciones relacionadas con las subidas");
+	opcionSubidas->setToolTip("_configuraciones relacionadas con las subidas");
 	_modeloListadoOpciones->appendRow(opcionSubidas);
 
 	QStandardItem *opcionHerramientas = new QStandardItem();
 	opcionHerramientas->setIcon(QIcon(obtenerRutaIcono() + "categoria-programas.svg"));
 	opcionHerramientas->setText("Herramientas");
-	opcionHerramientas->setToolTip("Configuraciones relacionadas con las herramientas");
+	opcionHerramientas->setToolTip("_configuraciones relacionadas con las herramientas");
 	_modeloListadoOpciones->appendRow(opcionHerramientas);
 */
 	QStandardItem *opcionProxy = new QStandardItem();
 	opcionProxy->setIcon(QPixmap(obtenerRutaIcono() + "proxy.svg"));
 	opcionProxy->setText("Proxy");
-	opcionProxy->setToolTip("Configuraciones relacionadas con el proxy");
+	opcionProxy->setToolTip("_configuraciones relacionadas con el proxy");
 	_modeloListadoOpciones->appendRow(opcionProxy);
 
 	QStandardItem *opcionAvanzadas = new QStandardItem();
 	opcionAvanzadas->setIcon(QPixmap(obtenerRutaIcono() + "configurar.svg"));
 	opcionAvanzadas->setText("Avanzadas");
-	opcionAvanzadas->setToolTip("Configuraciones avanzadas");
+	opcionAvanzadas->setToolTip("_configuraciones avanzadas");
 	_modeloListadoOpciones->appendRow(opcionAvanzadas);
 
 	QListView *listadoOpciones = new QListView();
@@ -314,10 +313,9 @@ QLabel *VentanaConfiguracion::construirSubtitulo(const QString &subtitulo) {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'toDus'
+ * @brief Construye los elementos de _configuracion para la opción 'toDus'
  */
 QWidget *VentanaConfiguracion::construirOpcionTodus() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -335,12 +333,12 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 
 	_telefono = new QLineEdit();
 	_telefono->setPlaceholderText("Número telefónico...");
-	_telefono->setText(configuracion.value("todus/telefono").toString());
+	_telefono->setText(_configuracion.value("todus/telefono").toString());
 
 	_fichaAcceso = new QPlainTextEdit();
 	_fichaAcceso->setMaximumHeight(100);
 	_fichaAcceso->setPlaceholderText("Ficha de acceso o déjelo en blanco...");
-	_fichaAcceso->setPlainText(configuracion.value("todus/fichaAcceso").toString());
+	_fichaAcceso->setPlainText(_configuracion.value("todus/fichaAcceso").toString());
 
 	formularioTodus->addRow("Teléfono:", _telefono);
 	formularioTodus->addRow("", construirSubtitulo("Este campo es uno de los más importantes de la configuración de ATDS3. Aquí se define el número de teléfono para el inicio de sesión en toDus."));
@@ -357,10 +355,9 @@ QWidget *VentanaConfiguracion::construirOpcionTodus() {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'toDus'
+ * @brief Construye los elementos de _configuracion para la opción 'toDus'
  */
 QWidget *VentanaConfiguracion::construirOpcionDescargas() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -384,7 +381,7 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 	rutaDescargasEtiqueta->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding));
 	_rutaDescargas = new QLineEdit();
 	_rutaDescargas->setReadOnly(true);
-	_rutaDescargas->setText(configuracion.value("descargas/ruta").toString());
+	_rutaDescargas->setText(_configuracion.value("descargas/ruta").toString());
 	QPushButton *botonSeleccionarRutaDescargas = new QPushButton();
 	botonSeleccionarRutaDescargas->setIcon(QIcon(obtenerRutaIcono() + "seleccionar-directorio.svg"));
 	botonSeleccionarRutaDescargas->setText("Seleccionar");
@@ -396,7 +393,7 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 	_totalDescargasParalelas = new QSpinBox();
 	_totalDescargasParalelas->setAlignment(Qt::AlignRight);
 	_totalDescargasParalelas->setMinimumWidth(60);
-	_totalDescargasParalelas->setValue(configuracion.value("descargas/descargasParalelas").toInt());
+	_totalDescargasParalelas->setValue(_configuracion.value("descargas/descargasParalelas").toInt());
 
 	formularioDescargas->addRow(rutaDescargasEtiqueta, filaElementosRutaDescargas);
 	formularioDescargas->addRow("", construirSubtitulo("Define la ruta en donde se guardarán las nuevas descargas. Dentro de esta ruta se crearán las carpetas de las categorías y se almacenará la base de datos de la aplicación."));
@@ -409,10 +406,10 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 	formularioAccionAlFinalizarDescarga->setContentsMargins(margenes);
 
 	_descomprimirAlFinalizarDescarga = new QCheckBox();
-	_descomprimirAlFinalizarDescarga->setChecked(configuracion.value("descargas/descomprimirAlFinalizar").toBool());
+	_descomprimirAlFinalizarDescarga->setChecked(_configuracion.value("descargas/descomprimirAlFinalizar").toBool());
 
 	_eliminarAlFinalizarDescarga = new QCheckBox();
-	_eliminarAlFinalizarDescarga->setChecked(configuracion.value("descargas/eliminarAlFinalizar").toBool());
+	_eliminarAlFinalizarDescarga->setChecked(_configuracion.value("descargas/eliminarAlFinalizar").toBool());
 
 	//formularioAccionAlFinalizarDescarga->addRow("Descomprimir?", _descomprimirAlFinalizarDescarga);
 	//formularioAccionAlFinalizarDescarga->addRow("", construirSubtitulo("Define si se debe intentar descomprimir el archivo o las partes del achivo comprimido tras finalizar la descarga. Al finalizar la descompresión se eliminarán los archivos comprimidos."));
@@ -431,10 +428,9 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'Subidas'
+ * @brief Construye los elementos de _configuracion para la opción 'Subidas'
  */
 QWidget *VentanaConfiguracion::construirOpcionSubidas() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -453,7 +449,7 @@ QWidget *VentanaConfiguracion::construirOpcionSubidas() {
 	_totalSubidasParalelas = new QSpinBox();
 	_totalSubidasParalelas->setAlignment(Qt::AlignRight);
 	_totalSubidasParalelas->setMinimumWidth(60);
-	_totalSubidasParalelas->setValue(configuracion.value("subidas/subidasParalelas").toInt());
+	_totalSubidasParalelas->setValue(_configuracion.value("subidas/subidasParalelas").toInt());
 
 	formularioSubidas->addRow("Total de subidas paralelas:", _totalSubidasParalelas);
 	formularioSubidas->addRow("", construirSubtitulo("Define el total de tareas de subidas que pueden estar activas de forma simultánea."));
@@ -464,10 +460,10 @@ QWidget *VentanaConfiguracion::construirOpcionSubidas() {
 	formularioAccionAntesSubir->setContentsMargins(margenes);
 
 	_comprimirArchivosAntesSubir = new QCheckBox();
-	_comprimirArchivosAntesSubir->setChecked(configuracion.value("subidas/comprimirArchivosAntesSubir").toBool());
+	_comprimirArchivosAntesSubir->setChecked(_configuracion.value("subidas/comprimirArchivosAntesSubir").toBool());
 
 	_dividirArchivosAntesSubir = new QCheckBox();
-	_dividirArchivosAntesSubir->setChecked(configuracion.value("subidas/dividirArchivosAntesSubir").toBool());
+	_dividirArchivosAntesSubir->setChecked(_configuracion.value("subidas/dividirArchivosAntesSubir").toBool());
 
 	QHBoxLayout *filaElementosTamanoDivisionArchivos= new QHBoxLayout();
 	filaElementosTamanoDivisionArchivos->setContentsMargins(0, 0, 0, 0);
@@ -475,7 +471,7 @@ QWidget *VentanaConfiguracion::construirOpcionSubidas() {
 	_tamanoDivisionArchivos = new QSpinBox();
 	_tamanoDivisionArchivos->setAlignment(Qt::AlignRight);
 	_tamanoDivisionArchivos->setMinimumWidth(60);
-	_tamanoDivisionArchivos->setValue(configuracion.value("subidas/tamanoDivisionArchivos").toInt());
+	_tamanoDivisionArchivos->setValue(_configuracion.value("subidas/tamanoDivisionArchivos").toInt());
 
 	filaElementosTamanoDivisionArchivos->addWidget(_tamanoDivisionArchivos);
 	filaElementosTamanoDivisionArchivos->addWidget(new QLabel("MiB"));
@@ -493,7 +489,7 @@ QWidget *VentanaConfiguracion::construirOpcionSubidas() {
 	formularioAccionAlFinalizar->setContentsMargins(margenes);
 
 	_eliminarAlFinalizarSubida = new QCheckBox();
-	_eliminarAlFinalizarSubida->setChecked(configuracion.value("subidas/eliminarAlFinalizar").toBool());
+	_eliminarAlFinalizarSubida->setChecked(_configuracion.value("subidas/eliminarAlFinalizar").toBool());
 
 	formularioAccionAlFinalizar->addRow("Eliminar del listado?", _eliminarAlFinalizarSubida);
 	formularioAccionAlFinalizar->addRow("", construirSubtitulo("Define si se debe eliminar del listado la subida tras finalizar."));
@@ -512,10 +508,9 @@ QWidget *VentanaConfiguracion::construirOpcionSubidas() {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'Herramientas'
+ * @brief Construye los elementos de _configuracion para la opción 'Herramientas'
  */
 QWidget *VentanaConfiguracion::construirOpcionHerramientas() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -539,7 +534,7 @@ QWidget *VentanaConfiguracion::construirOpcionHerramientas() {
 	ruta7ZipEtiqueta->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding));
 	_ruta7Zip = new QLineEdit();
 	_ruta7Zip->setReadOnly(true);
-	_ruta7Zip->setText(configuracion.value("herramientas/ruta7Zip").toString());
+	_ruta7Zip->setText(_configuracion.value("herramientas/ruta7Zip").toString());
 	QPushButton *botonSeleccionarRuta7Zip = new QPushButton();
 	botonSeleccionarRuta7Zip->setIcon(QIcon(obtenerRutaIcono() + "seleccionar-directorio.svg"));
 	botonSeleccionarRuta7Zip->setText("Seleccionar");
@@ -561,10 +556,9 @@ QWidget *VentanaConfiguracion::construirOpcionHerramientas() {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'Proxy'
+ * @brief Construye los elementos de _configuracion para la opción 'Proxy'
  */
 QWidget *VentanaConfiguracion::construirOpcionProxy() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -584,18 +578,18 @@ QWidget *VentanaConfiguracion::construirOpcionProxy() {
 
 	_tipoServidorProxy = new QComboBox();
 	_tipoServidorProxy->addItems(QStringList({"Sin proxy", "HTTP(S)", "SOCKS 4/5"}));
-	_tipoServidorProxy->setCurrentIndex(configuracion.value("proxy/tipo").toInt());
+	_tipoServidorProxy->setCurrentIndex(_configuracion.value("proxy/tipo").toInt());
 
 	_servidorProxy = new QLineEdit();
 	_servidorProxy->setPlaceholderText("Dirección IP o nombre DNS del servidor proxy...");
-	_servidorProxy->setText(configuracion.value("proxy/servidor").toString());
+	_servidorProxy->setText(_configuracion.value("proxy/servidor").toString());
 
 	_puertoServidorProxy = new QSpinBox();
 	_puertoServidorProxy->setAlignment(Qt::AlignRight);
 	_puertoServidorProxy->setMinimum(0x01);
 	_puertoServidorProxy->setMaximum(0xFFFF);
 	_puertoServidorProxy->setMinimumWidth(75);
-	_puertoServidorProxy->setValue(configuracion.value("proxy/puerto", 3128).toInt());
+	_puertoServidorProxy->setValue(_configuracion.value("proxy/puerto", 3128).toInt());
 
 	disenoElementosServidorProxy->addWidget(_servidorProxy);
 	disenoElementosServidorProxy->addWidget(new QLabel("Puerto:"));
@@ -603,12 +597,12 @@ QWidget *VentanaConfiguracion::construirOpcionProxy() {
 
 	_usuarioServidorProxy = new QLineEdit();
 	_usuarioServidorProxy->setPlaceholderText("Nombre de usuario o déjelo en blanco...");
-	_usuarioServidorProxy->setText(configuracion.value("proxy/usuario").toString());
+	_usuarioServidorProxy->setText(_configuracion.value("proxy/usuario").toString());
 
 	_contrasenaServidorProxy = new QLineEdit();
 	_contrasenaServidorProxy->setPlaceholderText("Contraseña o déjelo en blanco...");
 	_contrasenaServidorProxy->setEchoMode(QLineEdit::Password);
-	if (configuracion.contains("proxy/contrasena") == true) {
+	if (_configuracion.contains("proxy/contrasena") == true) {
 		_contrasenaServidorProxy->setText("********");
 	}
 
@@ -628,10 +622,9 @@ QWidget *VentanaConfiguracion::construirOpcionProxy() {
 }
 
 /**
- * @brief Construye los elementos de configuracion para la opción 'Avanzadas'
+ * @brief Construye los elementos de _configuracion para la opción 'Avanzadas'
  */
 QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
-	QSettings configuracion;
 	QWidget *elementos = new QWidget();
 	QMargins margenes = elementos->contentsMargins();
 	margenes.setLeft(margenes.left() + 5);
@@ -651,14 +644,14 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 
 	_ipServidorAutentificacion = new QLineEdit();
 	_ipServidorAutentificacion->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorAutentificacion->setText(configuracion.value("avanzadas/ipServidorAutentificacion").toString());
+	_ipServidorAutentificacion->setText(_configuracion.value("avanzadas/ipServidorAutentificacion").toString());
 
 	_puertoServidorAutentificacion = new QSpinBox();
 	_puertoServidorAutentificacion->setAlignment(Qt::AlignRight);
 	_puertoServidorAutentificacion->setMinimum(0x01);
 	_puertoServidorAutentificacion->setMaximum(0xFFFF);
 	_puertoServidorAutentificacion->setMinimumWidth(75);
-	_puertoServidorAutentificacion->setValue(configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt());
+	_puertoServidorAutentificacion->setValue(_configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt());
 
 	disenoElementosServidorAutentificacion->addWidget(_ipServidorAutentificacion);
 	disenoElementosServidorAutentificacion->addWidget(new QLabel("Puerto:"));
@@ -666,20 +659,20 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 
 	_nombreDNSServidorAutentificacion = new QLineEdit();
 	_nombreDNSServidorAutentificacion->setPlaceholderText("Nombre DNS o déjelo en blanco...");
-	_nombreDNSServidorAutentificacion->setText(configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString());
+	_nombreDNSServidorAutentificacion->setText(_configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString());
 
 	QHBoxLayout *disenoElementosServidorSesion = new QHBoxLayout();
 
 	_ipServidorSesion = new QLineEdit();
 	_ipServidorSesion->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorSesion->setText(configuracion.value("avanzadas/ipServidorSesion").toString());
+	_ipServidorSesion->setText(_configuracion.value("avanzadas/ipServidorSesion").toString());
 
 	_puertoServidorSesion = new QSpinBox();
 	_puertoServidorSesion->setAlignment(Qt::AlignRight);
 	_puertoServidorSesion->setMinimum(0x01);
 	_puertoServidorSesion->setMaximum(0xFFFF);
 	_puertoServidorSesion->setMinimumWidth(75);
-	_puertoServidorSesion->setValue(configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt());
+	_puertoServidorSesion->setValue(_configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt());
 
 	disenoElementosServidorSesion->addWidget(_ipServidorSesion);
 	disenoElementosServidorSesion->addWidget(new QLabel("Puerto:"));
@@ -687,20 +680,20 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 
 	_nombreDNSServidorSesion = new QLineEdit();
 	_nombreDNSServidorSesion->setPlaceholderText("Dirección DNS o déjelo en blanco...");
-	_nombreDNSServidorSesion->setText(configuracion.value("avanzadas/nombreDNSServidorSesion").toString());
+	_nombreDNSServidorSesion->setText(_configuracion.value("avanzadas/nombreDNSServidorSesion").toString());
 
 	QHBoxLayout *disenoElementosServidorS3 = new QHBoxLayout();
 
 	_ipServidorS3 = new QLineEdit();
 	_ipServidorS3->setPlaceholderText("Dirección IP o déjelo en blanco...");
-	_ipServidorS3->setText(configuracion.value("avanzadas/ipServidorS3").toString());
+	_ipServidorS3->setText(_configuracion.value("avanzadas/ipServidorS3").toString());
 
 	_puertoServidorS3 = new QSpinBox();
 	_puertoServidorS3->setAlignment(Qt::AlignRight);
 	_puertoServidorS3->setMinimum(0x01);
 	_puertoServidorS3->setMaximum(0xFFFF);
 	_puertoServidorS3->setMinimumWidth(75);
-	_puertoServidorS3->setValue(configuracion.value("avanzadas/puertoServidorS3", 443).toInt());
+	_puertoServidorS3->setValue(_configuracion.value("avanzadas/puertoServidorS3", 443).toInt());
 
 	disenoElementosServidorS3->addWidget(_ipServidorS3);
 	disenoElementosServidorS3->addWidget(new QLabel("Puerto:"));
@@ -708,7 +701,7 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 
 	_nombreDNSServidorS3 = new QLineEdit();
 	_nombreDNSServidorS3->setPlaceholderText("Dirección DNS o déjelo en blanco...");
-	_nombreDNSServidorS3->setText(configuracion.value("avanzadas/nombreDNSServidorS3").toString());
+	_nombreDNSServidorS3->setText(_configuracion.value("avanzadas/nombreDNSServidorS3").toString());
 
 	formularioConexion->addRow("IP servidor autentificación:", disenoElementosServidorAutentificacion);
 	formularioConexion->addRow("Nombre DNS servidor autentificación:", _nombreDNSServidorAutentificacion);
@@ -724,11 +717,11 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 
 	_agenteUsuario = new QLineEdit();
 	_agenteUsuario->setPlaceholderText("Agente de usuario o déjelo en blanco...");
-	_agenteUsuario->setText(configuracion.value("avanzadas/agenteUsuario").toString());
+	_agenteUsuario->setText(_configuracion.value("avanzadas/agenteUsuario").toString());
 
 	_numeroVersion = new QLineEdit();
 	_numeroVersion->setPlaceholderText("Número de versión de toDus o déjelo en blanco...");
-	_numeroVersion->setText(configuracion.value("avanzadas/numeroVersion").toString());
+	_numeroVersion->setText(_configuracion.value("avanzadas/numeroVersion").toString());
 
 	formularioOtras->addRow("Agente usuario:", _agenteUsuario);
 	formularioOtras->addRow("Número de versión:", _numeroVersion);

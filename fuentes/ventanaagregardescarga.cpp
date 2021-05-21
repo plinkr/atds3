@@ -13,6 +13,7 @@
 VentanaAgregarDescarga::VentanaAgregarDescarga(QWidget *padre)
 	: QDialog(padre), _tituloVentana("Agregar descarga") {
 	construirIU();
+	limpiarCampos();
 }
 
 /**
@@ -22,6 +23,9 @@ void VentanaAgregarDescarga::limpiarCampos() {
 	_enlace->setText("");
 	_enlace->setFocus();
 	_nombre->setText("");
+
+	// Restaura la última categoría seleccionada
+	_categoria->setCurrentIndex(_configuracion.value("atds3/ultimaCategoriaAgregarDescarga", 0).toInt());
 }
 
 /**
@@ -31,6 +35,12 @@ void VentanaAgregarDescarga::eventoAgregarDescarga() {
 	if (_enlace->text().trimmed().size() == 0) {
 		return;
 	}
+
+	// Guarda la categoría seleccionada
+	_configuracion.setValue("atds3/ultimaCategoriaAgregarDescarga", _categoria->currentIndex());
+
+	// Guardar el valor del campo 'Iniciar descarga?'
+	_configuracion.setValue("atds3/iniciarDescargaAgregarDescarga", _iniciar->isChecked());
 
 	emit accept();
 }
@@ -80,7 +90,7 @@ void VentanaAgregarDescarga::construirIU() {
 	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-videos.svg"), "Videos", _ListadoCategorias::Videos);
 	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
 	_iniciar = new QCheckBox();
-	_iniciar->setChecked(true);
+	_iniciar->setChecked(_configuracion.value("atds3/iniciarDescargaAgregarDescarga", true).toBool());
 
 	disenoFormulario->addRow("Enlace:", _enlace);
 	disenoFormulario->addRow("Nombre del archivo:", _nombre);

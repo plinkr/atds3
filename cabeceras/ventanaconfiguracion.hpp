@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QPointer>
+#include <QSettings>
 
 
 class ModeloCategorias;
@@ -46,6 +47,8 @@ class VentanaConfiguracion : public QDialog
 		void guardarOpciones();
 
 	private:
+		QSettings _configuracion;
+
 		/**
 		 * Título de la ventana
 		 */

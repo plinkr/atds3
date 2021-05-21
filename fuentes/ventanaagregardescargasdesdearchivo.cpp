@@ -17,6 +17,7 @@
 VentanaAgregarDescargasDesdeArchivos::VentanaAgregarDescargasDesdeArchivos(QWidget *parent)
 	: QDialog(parent), _tituloVentana("Agregar descargas desde archivo") {
 	construirIU();
+	limpiarCampos();
 }
 
 /**
@@ -29,6 +30,9 @@ void VentanaAgregarDescargasDesdeArchivos::limpiarCampos() {
 	_modeloElementosProcesados->setColumnCount(2);
 	_modeloElementosProcesados->setHeaderData(0, Qt::Horizontal, "Nombre");
 	_modeloElementosProcesados->setHeaderData(1, Qt::Horizontal, "Enlace");
+
+	// Restaura la última categoría seleccionada
+	_categoria->setCurrentIndex(_configuracion.value("atds3/ultimaCategoriaAgregarDescarga", 0).toInt());
 }
 
 /**
@@ -44,6 +48,12 @@ void VentanaAgregarDescargasDesdeArchivos::eventoAgregarDescargas() {
 		nuevaDescarga.iniciar = _iniciar->isChecked();
 	}
 
+	// Guarda la categoría seleccionada
+	_configuracion.setValue("atds3/ultimaCategoriaAgregarDescarga", _categoria->currentIndex());
+
+	// Guardar el valor del campo 'Iniciar descarga?'
+	_configuracion.setValue("atds3/iniciarDescargaAgregarDescarga", _iniciar->isChecked());
+
 	emit accept();
 }
 
@@ -54,12 +64,15 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 	QFileDialog dialogoSeleccion(this);
 	QStringList listadoArchivos;
 
+	// Restaurar la última ruta utilizada
+	dialogoSeleccion.setDirectory(_configuracion.value("atds3/ultimaRutaAgregarDescarga", QDir::homePath()).toString());
 	dialogoSeleccion.setFileMode(QFileDialog::ExistingFiles);
 	dialogoSeleccion.setNameFilter(tr("Archivos de texto(*.txt)"));
 	if (dialogoSeleccion.exec() == QFileDialog::Accepted) {
 		listadoArchivos = dialogoSeleccion.selectedFiles();
 
-		limpiarCampos();
+		// Guarda la ruta
+		_configuracion.setValue("atds3/ultimaRutaAgregarDescarga", dialogoSeleccion.directory().absolutePath());
 
 		// Procesar los archivos seleccionados
 		for (const auto &archivo : listadoArchivos) {
@@ -150,7 +163,7 @@ void VentanaAgregarDescargasDesdeArchivos::construirIU() {
 	_categoria->addItem(QIcon(obtenerRutaIcono() + "categoria-otros.svg"), "Otros", _ListadoCategorias::Otros);
 
 	_iniciar = new QCheckBox();
-	_iniciar->setChecked(true);
+	_iniciar->setChecked(_configuracion.value("atds3/iniciarDescargaAgregarDescarga", true).toBool());
 
 	disenoFormulario->addRow("", _botonSeleccionarArchivos);
 	disenoFormulario->addRow("Elementos procesados:", elementosProcesados);

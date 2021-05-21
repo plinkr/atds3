@@ -8,6 +8,7 @@
 #include <QSharedPointer>
 #include <QStandardItemModel>
 #include <QFile>
+#include <QSettings>
 
 
 class QCloseEvent;
@@ -33,7 +34,7 @@ class VentanaPrincipal : public QMainWindow
 		/**
 		 * @brief Modelo del listado de la categoría 'Descargando'
 		 */
-		QSharedPointer<ModeloEntradas> _modelocategoriaDescargas;
+		QSharedPointer<ModeloEntradas> _modeloCategoriaDescargas;
 
 		/**
 		 * @brief Modelo del listado de la categoría 'Programas'
@@ -167,6 +168,8 @@ class VentanaPrincipal : public QMainWindow
 		void actualizarEstadoTodus(toDus::Estado estado);
 
 	private:
+		QSettings _configuracion;
+
 		/**
 		 * @brief Modelo del listado de categorías
 		 */

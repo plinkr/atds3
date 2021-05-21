@@ -58,7 +58,7 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 		for (int f = 0; f < modelo->rowCount(); f++) {
 			estado = modelo->data(modelo->index(f, 1)).toInt();
 			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
-				_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modelocategoriaDescargas);
+				_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 			}
 		}
 	}
@@ -69,8 +69,6 @@ VentanaPrincipal::~VentanaPrincipal() {
 }
 
 void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
-	QSettings configuracion;
-
 	// Oculta la ventana
 	hide();
 
@@ -92,7 +90,7 @@ void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
 	_toDus.clear();
 
 	// Guarda la geometría de la ventana en las configuraciones
-	configuracion.setValue("atds3/geometria", saveGeometry());
+	_configuracion.setValue("atds3/geometria", saveGeometry());
 
 	// Continua el proceso de cerrado de la aplicación
 	evento->accept();
@@ -153,8 +151,7 @@ void VentanaPrincipal::dropEvent(QDropEvent *) {
 void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
 	QSharedPointer<ModeloEntradas> modelo;
-	QSettings configuracion;
-	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
+	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
 
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -190,11 +187,11 @@ void VentanaPrincipal::agregarDescarga() {
 	modelo->insertRecord(-1, registro);
 
 	modelo->submitAll();
-	_modelocategoriaDescargas->select();
+	_modeloCategoriaDescargas->select();
 	qApp->processEvents();
 
 	if (datos.iniciar == true) {
-		_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modelocategoriaDescargas);
+		_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 	}
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
@@ -206,8 +203,7 @@ void VentanaPrincipal::agregarDescarga() {
 void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
 	QSharedPointer<ModeloEntradas> modelo;
-	QSettings configuracion;
-	QString rutaDescarga = configuracion.value("descargas/ruta").toString();
+	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
 
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -243,11 +239,11 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		modelo->insertRecord(-1, registro);
 
 		modelo->submitAll();
-		_modelocategoriaDescargas->select();
+		_modeloCategoriaDescargas->select();
 		qApp->processEvents();
 
 		if (nuevaDescarga.iniciar == true) {
-			_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modelocategoriaDescargas);
+			_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 		}
 	}
 
@@ -258,55 +254,54 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
  * @brief Procesa las configuraciones guardadas y ejecuta las acciones adecuadas
  */
 void VentanaPrincipal::procesarCambiosConfiguracion() {
-	QSettings configuracion;
 	bool reconexionRequerida = false;
 
-	if (_configuracionTelefono != configuracion.value("todus/telefono").toString()) {
+	if (_configuracionTelefono != _configuracion.value("todus/telefono").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionFichaAcceso != configuracion.value("todus/fichaAcceso").toString()) {
+	if (_configuracionFichaAcceso != _configuracion.value("todus/fichaAcceso").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorAutentificacion != configuracion.value("avanzadas/ipServidorAutentificacion").toString()) {
+	if (_configuracionIpServidorAutentificacion != _configuracion.value("avanzadas/ipServidorAutentificacion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorAutentificacion != configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt()) {
+	if (_configuracionPuertoServidorAutentificacion != _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorAutentificacion != configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString()) {
+	if (_configuracionNombreDNSServidorAutentificacion != _configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorSesion != configuracion.value("avanzadas/ipServidorSesion").toString()) {
+	if (_configuracionIpServidorSesion != _configuracion.value("avanzadas/ipServidorSesion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorSesion != configuracion.value("avanzadas/puertoServidorSesion", 443).toInt()) {
+	if (_configuracionPuertoServidorSesion != _configuracion.value("avanzadas/puertoServidorSesion", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorSesion != configuracion.value("avanzadas/nombreDNSServidorSesion").toString()) {
+	if (_configuracionNombreDNSServidorSesion != _configuracion.value("avanzadas/nombreDNSServidorSesion").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionIpServidorS3 != configuracion.value("avanzadas/ipServidorS3").toString()) {
+	if (_configuracionIpServidorS3 != _configuracion.value("avanzadas/ipServidorS3").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorS3 != configuracion.value("avanzadas/puertoServidorS3", 443).toInt()) {
+	if (_configuracionPuertoServidorS3 != _configuracion.value("avanzadas/puertoServidorS3", 443).toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionNombreDNSServidorS3 != configuracion.value("avanzadas/nombreDNSServidorS3").toString()) {
+	if (_configuracionNombreDNSServidorS3 != _configuracion.value("avanzadas/nombreDNSServidorS3").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionTipoProxy != configuracion.value("proxy/tipo").toInt()) {
+	if (_configuracionTipoProxy != _configuracion.value("proxy/tipo").toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionServidorProxy != configuracion.value("proxy/servidor", "").toString()) {
+	if (_configuracionServidorProxy != _configuracion.value("proxy/servidor", "").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionPuertoServidorProxy != configuracion.value("proxy/puerto").toInt()) {
+	if (_configuracionPuertoServidorProxy != _configuracion.value("proxy/puerto").toInt()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionUsuarioServidorProxy != configuracion.value("proxy/usuario", "").toString()) {
+	if (_configuracionUsuarioServidorProxy != _configuracion.value("proxy/usuario", "").toString()) {
 		reconexionRequerida = true;
 	}
-	if (_configuracionContrasenaServidorProxy != configuracion.value("proxy/contrasena", "").toString()) {
+	if (_configuracionContrasenaServidorProxy != _configuracion.value("proxy/contrasena", "").toString()) {
 		reconexionRequerida = true;
 	}
 
@@ -326,7 +321,6 @@ void VentanaPrincipal::eventoAgregarDescarga() {
 	_ventanaAgregarDescarga = new VentanaAgregarDescarga(this);
 	_ventanaAgregarDescarga->setModal(true);
 	connect(_ventanaAgregarDescarga, &VentanaAgregarDescarga::accepted, this, &VentanaPrincipal::agregarDescarga);
-//	_ventanaAgregarDescarga->limpiarCampos();
 	_ventanaAgregarDescarga->show();
 }
 
@@ -341,7 +335,6 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
 	_ventanaAgregarDescargasDesdeArchivo = new VentanaAgregarDescargasDesdeArchivos(this);
 	_ventanaAgregarDescargasDesdeArchivo->setModal(true);
 	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
-//	_ventanaAgregarDescargasDesdeArchivo->limpiarCampos();
 	_ventanaAgregarDescargasDesdeArchivo->show();
 }
 
@@ -355,7 +348,7 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modelocategoriaDescargas;
+			modelo = _modeloCategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -393,7 +386,7 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modelocategoriaDescargas;
+			modelo = _modeloCategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -434,7 +427,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modelocategoriaDescargas;
+			modelo = _modeloCategoriaDescargas;
 			break;
 		case 0x02:
 			return;
@@ -457,7 +450,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
 			if (modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::Pausada) {
-				_gestorDescargas->agregarDescarga(i.row(), modelo->data(modelo->index(i.row(), 0)).toUInt(), modelo, _modelocategoriaDescargas);
+				_gestorDescargas->agregarDescarga(i.row(), modelo->data(modelo->index(i.row(), 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 			}
 		}
 	}
@@ -474,7 +467,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modelocategoriaDescargas;
+			modelo = _modeloCategoriaDescargas;
 			break;
 		case 0x02:
 			modelo = _modeloCategoriaFinalizadas;
@@ -498,7 +491,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 		}
 	}
 
-	_modelocategoriaDescargas->select();
+	_modeloCategoriaDescargas->select();
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -510,7 +503,7 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 
 	switch (_categoriaActiva) {
 		case 0x01:
-			modelo = _modelocategoriaDescargas;
+			modelo = _modeloCategoriaDescargas;
 			break;
 		case 0x02:
 			return;
@@ -531,11 +524,11 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
-			_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modelocategoriaDescargas);
+			_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 		}
 	}
 
-	_modelocategoriaDescargas->select();
+	_modeloCategoriaDescargas->select();
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
@@ -552,7 +545,7 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 	_modeloCategoriaMusica->submitAll();
 	_modeloCategoriaVideos->submitAll();
 	_modeloCategoriaOtros->submitAll();
-	_modelocategoriaDescargas->select();
+	_modeloCategoriaDescargas->select();
 
 	centralWidget()->update();
 
@@ -563,24 +556,22 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Configuración'
  */
 void VentanaPrincipal::eventoConfiguracion() {
-	QSettings configuracion;
-
-	_configuracionTelefono = configuracion.value("todus/telefono").toString();
-	_configuracionFichaAcceso = configuracion.value("todus/fichaAcceso").toString();
-	_configuracionIpServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion").toString();
-	_configuracionPuertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
-	_configuracionNombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString();
-	_configuracionIpServidorSesion = configuracion.value("avanzadas/ipServidorSesion").toString();
-	_configuracionPuertoServidorSesion = configuracion.value("avanzadas/puertoServidorSesion", 443).toInt();
-	_configuracionNombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion").toString();
-	_configuracionIpServidorS3 = configuracion.value("avanzadas/ipServidorS3").toString();
-	_configuracionPuertoServidorS3 = configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
-	_configuracionNombreDNSServidorS3 = configuracion.value("avanzadas/nombreDNSServidorS3").toString();
-	_configuracionTipoProxy = configuracion.value("proxy/tipo").toInt();
-	_configuracionServidorProxy = configuracion.value("proxy/servidor").toString();
-	_configuracionPuertoServidorProxy = configuracion.value("proxy/puerto").toInt();
-	_configuracionUsuarioServidorProxy = configuracion.value("proxy/usuario").toString();
-	_configuracionContrasenaServidorProxy = configuracion.value("proxy/contrasena").toString();
+	_configuracionTelefono = _configuracion.value("todus/telefono").toString();
+	_configuracionFichaAcceso = _configuracion.value("todus/fichaAcceso").toString();
+	_configuracionIpServidorAutentificacion = _configuracion.value("avanzadas/ipServidorAutentificacion").toString();
+	_configuracionPuertoServidorAutentificacion = _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
+	_configuracionNombreDNSServidorAutentificacion = _configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString();
+	_configuracionIpServidorSesion = _configuracion.value("avanzadas/ipServidorSesion").toString();
+	_configuracionPuertoServidorSesion = _configuracion.value("avanzadas/puertoServidorSesion", 443).toInt();
+	_configuracionNombreDNSServidorSesion = _configuracion.value("avanzadas/nombreDNSServidorSesion").toString();
+	_configuracionIpServidorS3 = _configuracion.value("avanzadas/ipServidorS3").toString();
+	_configuracionPuertoServidorS3 = _configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
+	_configuracionNombreDNSServidorS3 = _configuracion.value("avanzadas/nombreDNSServidorS3").toString();
+	_configuracionTipoProxy = _configuracion.value("proxy/tipo").toInt();
+	_configuracionServidorProxy = _configuracion.value("proxy/servidor").toString();
+	_configuracionPuertoServidorProxy = _configuracion.value("proxy/puerto").toInt();
+	_configuracionUsuarioServidorProxy = _configuracion.value("proxy/usuario").toString();
+	_configuracionContrasenaServidorProxy = _configuracion.value("proxy/contrasena").toString();
 
 	/**
 	 * Construye la ventana 'Agregar descargas desde archivo'
@@ -601,7 +592,6 @@ void VentanaPrincipal::eventoAcerca() {}
  * @param indice Índice del modelo
  */
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
-	QSettings configuracion;
 	QSharedPointer<ModeloEntradas> modeloActivo;
 
 	_modeloCategoriaProgramas->submitAll();
@@ -609,11 +599,11 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 	_modeloCategoriaVideos->submitAll();
 	_modeloCategoriaOtros->submitAll();
 
-	configuracion.setValue("atds3/ultimaCategoria", indice.row());
+	_configuracion.setValue("atds3/ultimaCategoria", indice.row());
 
 	switch (indice.row()) {
 		case 0:
-			modeloActivo = _modelocategoriaDescargas;
+			modeloActivo = _modeloCategoriaDescargas;
 			break;
 		case 1:
 			modeloActivo = _modeloCategoriaFinalizadas;
@@ -668,8 +658,6 @@ void VentanaPrincipal::eventoDescargaTerminadaAvatarTodus() {
  * @param Nuevo estado
  */
 void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
-	QSettings configuracion;
-
 	if (_estadoSesionTodus.isNull() == true) {
 		return;
 	}
@@ -691,7 +679,7 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Iniciando sesión...");
 			break;
 		case toDus::Estado::Listo:
-			_estadoSesionTodus->setText("<b>" + configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo para usar.");
+			_estadoSesionTodus->setText("<b>" + _configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo para usar.");
 			actualizarAvatar();
 			break;
 		case toDus::Estado::Desconectando:
@@ -835,7 +823,6 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
  * @return Puntero al elemento del listado de categorías
  */
 QListView *VentanaPrincipal::construirListadoCategorias() {
-	QSettings configuracion;
 	_modeloListadoCategorias = new ModeloCategorias();
 
 	QStandardItem *categoriaDescargas = new QStandardItem();
@@ -933,10 +920,10 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
-	_modelocategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modelocategoriaDescargas->setEditStrategy(QSqlTableModel::OnManualSubmit);
-	_modelocategoriaDescargas->setFilter(QString("categoria != %1").arg(_ListadoCategorias::Subidas));
-	_modelocategoriaDescargas->select();
+	_modeloCategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaDescargas->setEditStrategy(QSqlTableModel::OnManualSubmit);
+	_modeloCategoriaDescargas->setFilter(QString("categoria != %1").arg(_ListadoCategorias::Subidas));
+	_modeloCategoriaDescargas->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Finalizadas'
@@ -982,7 +969,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setAlternatingRowColors(true);
 	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoDescargas->setItemsExpandable(false);
-	_listadoDescargas->setModel(_modelocategoriaDescargas.get());
+	_listadoDescargas->setModel(_modeloCategoriaDescargas.get());
 	_listadoDescargas->setMinimumSize(QSize(ancho, alto));
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -1014,13 +1001,11 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaPrincipal::construirIU() {
-	QSettings configuracion;
-
 	setWindowIcon(QIcon(":/iconos/atds3.svg"));
 
 	// Restaura la geometría de la ventana previamente guardado
-	if (configuracion.value("atds3/geometria").toByteArray().size() > 0) {
-		restoreGeometry(configuracion.value("atds3/geometria").toByteArray());
+	if (_configuracion.value("atds3/geometria").toByteArray().size() > 0) {
+		restoreGeometry(_configuracion.value("atds3/geometria").toByteArray());
 	}
 
 	/**
@@ -1056,7 +1041,7 @@ void VentanaPrincipal::construirIU() {
 	//setContentsMargins(QMargins(5, 5, 5, 5));
 
 	// Restaura la última categoría seleccionada
-	QModelIndex indiceSeleccionado = _modeloListadoCategorias->index(configuracion.value("atds3/ultimaCategoria", 0).toInt(), 0);
+	QModelIndex indiceSeleccionado = _modeloListadoCategorias->index(_configuracion.value("atds3/ultimaCategoria", 0).toInt(), 0);
 	_listadoCategorias->setCurrentIndex(indiceSeleccionado);
 	eventoCategoriaSeleccionada(indiceSeleccionado);
 
@@ -1067,20 +1052,19 @@ void VentanaPrincipal::construirIU() {
  * @brief Descarga el avatar del usuario desde la red toDus y lo muestra en la barra de herramientas
  */
 void VentanaPrincipal::actualizarAvatar() {
-	QSettings configuracion;
-	QString enlaceAvatar = configuracion.value("todus/enlaceAvatar").toString();
+	QString enlaceAvatar = _configuracion.value("todus/enlaceAvatar").toString();
 
 	if (enlaceAvatar.size() == 0) {
 		return;
 	}
 
-	QString ipServidorS3 = configuracion.value("avanzadas/ipServidorS3", "").toString();
-	QString nombreDNSServidorS3 = configuracion.value("avanzadas/nombreDNSServidorS3", "s3.todus.cu").toString();
-	int puertoServidorS3 = configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
+	QString ipServidorS3 = _configuracion.value("avanzadas/ipServidorS3", "").toString();
+	QString nombreDNSServidorS3 = _configuracion.value("avanzadas/nombreDNSServidorS3", "s3.todus.cu").toString();
+	int puertoServidorS3 = _configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
 	QUrl url = QUrl(enlaceAvatar);
 	QNetworkRequest solicitud;
 	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
-	QString autorizacion = "Bearer " + configuracion.value("todus/fichaAcceso").toString();
+	QString autorizacion = "Bearer " + _configuracion.value("todus/fichaAcceso").toString();
 
 	_rutaAvatarTodus = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/" + _aplicacionNombreCorto + "_avatar.jpg";
 
@@ -1096,7 +1080,7 @@ void VentanaPrincipal::actualizarAvatar() {
 	url.setPort(puertoServidorS3);
 
 	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
+	solicitud.setHeader(QNetworkRequest::UserAgentHeader, _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
 	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
 	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
 	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());

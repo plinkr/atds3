@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QSettings>
 
 
 class VentanaAgregarDescargasDesdeArchivos : public QDialog
@@ -45,6 +46,8 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		void eventoSeleccionarArchivosAProcesar();
 
 	private:
+		QSettings _configuracion;
+
 		/**
 		 * Título de la ventana
 		 */
