@@ -23,7 +23,7 @@
 <a name="dependencias"></a>
 ## Dependencias
 `ATDS3` depende de:
-
+ 
 * Compilador C++ compatible con el estándar C++17 (Clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio 2015+), Intel C++ Compiler 17+)
 * qmake
 * make (UNIX y Linux)
