@@ -66,7 +66,8 @@ apt install g++ make qtbase5-dev qt5-default libssl-dev libprotobuf-dev protobuf
 * Descargar e instalar [Qt Opensource 6.0](https://www.qt.io/download-qt-installer) o superior (Librerías de Qt para MSVC2019 y formato de imágenes).
 * Instalar [vcpkg](https://github.com/Microsoft/vcpkg#quick-start) y las dependencias de `ATDS3` como se muestra a continuación:
 ```
-cd \
+C:\
+cd C:\Qt
 git clone https://github.com/Microsoft/vcpkg
 cd vcpkg
 .\bootstrap-vcpkg.bat
