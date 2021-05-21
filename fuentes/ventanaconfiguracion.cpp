@@ -191,6 +191,12 @@ void VentanaConfiguracion::guardarOpciones() {
 		configuracion.remove("avanzadas/agenteUsuario");
 	}
 
+	if (_numeroVersion->text().trimmed().size() > 0) {
+		configuracion.setValue("avanzadas/numeroVersion", _numeroVersion->text().trimmed());
+	} else {
+		configuracion.remove("avanzadas/numeroVersion");
+	}
+
 	emit accept();
 }
 
@@ -711,21 +717,26 @@ QWidget *VentanaConfiguracion::construirOpcionAvanzadas() {
 	formularioConexion->addRow("IP servidor S3:", disenoElementosServidorS3);
 	formularioConexion->addRow("Nombre DNS servidor S3:", _nombreDNSServidorS3);
 
-	QFormLayout *formularioAgenteHTTP = new QFormLayout();
-	margenes = formularioAgenteHTTP->contentsMargins();
+	QFormLayout *formularioOtras = new QFormLayout();
+	margenes = formularioOtras->contentsMargins();
 	margenes.setLeft(margenes.left() + 20);
-	formularioAgenteHTTP->setContentsMargins(margenes);
+	formularioOtras->setContentsMargins(margenes);
 
 	_agenteUsuario = new QLineEdit();
 	_agenteUsuario->setPlaceholderText("Agente de usuario o déjelo en blanco...");
 	_agenteUsuario->setText(configuracion.value("avanzadas/agenteUsuario").toString());
 
-	formularioAgenteHTTP->addRow("Agente usuario de toDus:", _agenteUsuario);
+	_numeroVersion = new QLineEdit();
+	_numeroVersion->setPlaceholderText("Número de versión de toDus o déjelo en blanco...");
+	_numeroVersion->setText(configuracion.value("avanzadas/numeroVersion").toString());
+
+	formularioOtras->addRow("Agente usuario:", _agenteUsuario);
+	formularioOtras->addRow("Número de versión:", _numeroVersion);
 
 	diseno->addWidget(construirTitulo("Conexión"));
 	diseno->addLayout(formularioConexion);
-	diseno->addWidget(construirTitulo("Agente HTTP"));
-	diseno->addLayout(formularioAgenteHTTP);
+	diseno->addWidget(construirTitulo("Otras"));
+	diseno->addLayout(formularioOtras);
 	diseno->addStretch(1);
 
 	elementos->setLayout(diseno);

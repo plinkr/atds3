@@ -197,6 +197,11 @@ class VentanaConfiguracion : public QDialog
 		QPointer<QLineEdit> _agenteUsuario;
 
 		/**
+		 * @brief Número de versión de toDus
+		 */
+		QPointer<QLineEdit> _numeroVersion;
+
+		/**
 		 * @brief Construye los elementos para representar un subtítulo
 		 */
 		QWidget *construirTitulo(const QString &titulo);
