@@ -508,12 +508,10 @@ void VentanaPrincipal::eventoPausarDescarga() {
 void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
-
 	switch (_categoriaActiva) {
 		case 0x01:
 			modelo = _modelocategoriaDescargas;
-			return;
+			break;
 		case 0x02:
 			return;
 		case _ListadoCategorias::Programas:
@@ -529,12 +527,16 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
 			_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modelocategoriaDescargas);
 		}
 	}
+
 	_modelocategoriaDescargas->select();
+
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -543,13 +545,17 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 	_gestorDescargas->detenerDescargas();
+
 	_modeloCategoriaProgramas->submitAll();
 	_modeloCategoriaMusica->submitAll();
 	_modeloCategoriaVideos->submitAll();
 	_modeloCategoriaOtros->submitAll();
 	_modelocategoriaDescargas->select();
+
 	centralWidget()->update();
+
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
