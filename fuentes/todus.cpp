@@ -259,10 +259,8 @@ void toDus::eventoDatosRecibidos() {
 						desconectar();
 
 						if (_fichaAccesoRenovada == false) {
-							QSettings configuracion;
-
 							_fichaAccesoRenovada = true;
-							solicitarFichaSolicitud(configuracion.value("todus/codigoVerificacion").toString());
+							solicitarFichaAcceso();
 						}
 					}
 				}
