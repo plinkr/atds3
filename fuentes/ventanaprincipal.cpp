@@ -62,6 +62,7 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 			}
 		}
 	}
+	_modeloCategoriaDescargas->select();
 }
 VentanaPrincipal::~VentanaPrincipal() {
 	// Emitir la señal de detención de la aplicación para que todos los hilos de descargas cesen su ejecución
