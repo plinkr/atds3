@@ -6,7 +6,7 @@
 DelegacionVelocidad::DelegacionVelocidad(QObject *padre) : QItemDelegate(padre) {}
 
 void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &opcion, const QModelIndex &indice) const {
-	QVector<QString> listadoUnidadesVelocidad {"B/s", "KiB/s", "MiB/s", "GiB/s", "PiB/s"};
+	QVector<QString> listadoUnidadesVelocidad {"B/s", "KiB/s", "MiB/s", "GiB/s", "TiB/s"};
 	int unidadVelocidad = 0;
 	double velocidad = indice.data().toDouble();
 	QString velocidadTexto;

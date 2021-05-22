@@ -22,6 +22,7 @@
 #include <QListView>
 #include <QProgressBar>
 #include <QTreeView>
+#include <QTableView>
 #include <QHeaderView>
 #include <QSqlRecord>
 #include <QStandardPaths>
@@ -147,6 +148,7 @@ void VentanaPrincipal::agregarDescarga() {
 	_NuevaDescarga datos = _ventanaAgregarDescarga->obtenerDatosDescarga();
 	QSharedPointer<ModeloEntradas> modelo;
 	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
+	QSqlQuery solicitudSQL;
 
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -168,7 +170,7 @@ void VentanaPrincipal::agregarDescarga() {
 			rutaDescarga += "/otros";
 			break;
 	}
-
+/*
 	QSqlRecord registro = modelo->record();
 	registro.remove(0); // Campo 'id'
 	registro.setValue("categoria", datos.categoria);
@@ -180,7 +182,18 @@ void VentanaPrincipal::agregarDescarga() {
 	registro.setValue("velocidad", 0);
 
 	modelo->insertRecord(-1, registro);
+*/
+	solicitudSQL.prepare("INSERT INTO entradas (categoria, estado, enlace, ruta, nombre, completado, velocidad) VALUES (:categoria, :estado, :enlace, :ruta, :nombre, :completado, :velocidad)");
+	solicitudSQL.bindValue(":categoria", datos.categoria);
+	solicitudSQL.bindValue(":estado", _ListadoEstados::Pausada);
+	solicitudSQL.bindValue(":enlace", datos.enlace);
+	solicitudSQL.bindValue(":ruta", rutaDescarga);
+	solicitudSQL.bindValue(":nombre", datos.nombre);
+	solicitudSQL.bindValue(":completado", 0);
+	solicitudSQL.bindValue(":velocidad", 0);
+	solicitudSQL.exec();
 
+	modelo->select();
 	_modeloCategoriaDescargas->select();
 
 	if (datos.iniciar == true) {
@@ -197,6 +210,10 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
 	QSharedPointer<ModeloEntradas> modelo;
 	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
+	QString instruccionSQL = "INSERT INTO entradas (categoria, estado, enlace, ruta, nombre, completado, velocidad) VALUES";
+	QTextStream flujo(&instruccionSQL);
+	QSqlQuery solicitudSQL;
+	int filaModelo = 0;
 
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -219,6 +236,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	}
 
 	for (_NuevaDescarga &nuevaDescarga : listadoDescargas) {
+/*
 		QSqlRecord registro = modelo->record();
 		registro.remove(0); // Campo 'id'
 		registro.setValue("categoria", nuevaDescarga.categoria);
@@ -230,15 +248,23 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 		registro.setValue("velocidad", 0);
 
 		modelo->insertRecord(-1, registro);
+*/
+		//qApp->processEvents();
+		flujo << " (" << QString::number(nuevaDescarga.categoria) << ", " << _ListadoEstados::Pausada << ", '" << nuevaDescarga.enlace << "', '" << rutaDescarga << "', '" << nuevaDescarga.nombre << "', 0, 0),";
+	}
 
-		_modeloCategoriaDescargas->select();
-		qApp->processEvents();
+	instruccionSQL.chop(1);
+	solicitudSQL.exec(instruccionSQL);
+	modelo->select();
 
-		if (nuevaDescarga.iniciar == true) {
-			_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
+	filaModelo = modelo->rowCount() - listadoDescargas.size();
+	for (int i = 0; i < listadoDescargas.size(); i++) {
+		if (listadoDescargas[i].iniciar == true) {
+			_gestorDescargas->agregarDescarga(filaModelo + i, modelo->data(modelo->index(filaModelo + i, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 		}
 	}
 
+	_modeloCategoriaDescargas->select();
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -335,6 +361,8 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
  */
 void VentanaPrincipal::eventoEliminarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
+	QSqlQuery solicitudSQL;
+	unsigned int id = 0;
 
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -360,10 +388,13 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
-			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(i.row(), 0)).toUInt());
-			modelo->removeRow(i.row());
-			qApp->processEvents();
+			id = modelo->data(modelo->index(i.row(), 0)).toUInt();
+			_gestorDescargas->detenerDescarga(id);
+			solicitudSQL.exec("DELETE FROM entradas WHERE (id = " + QString::number(id) + ")");
+			//modelo->removeRow(i.row());
+			//qApp->processEvents();
 		}
+		modelo->select();
 	}
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
@@ -399,9 +430,12 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
-		qApp->processEvents();
+		//qApp->processEvents();
 	}
-	modelo->removeRows(0, modelo->rowCount());
+	QSqlQuery solicitudSQL("DELETE FROM entradas WHERE (" + modelo->filter() + ")");
+	modelo->select();
+	//_modeloCategoriaDescargas->select();
+
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -518,6 +552,7 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 		}
 	}
 
+	QTimer::singleShot(100, modelo.get(), &ModeloEntradas::select);
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -525,10 +560,31 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Pausar todas las descargas'
  */
 void VentanaPrincipal::eventoPausarTodasDescargas() {
+	QSharedPointer<ModeloEntradas> modelo;
+
+	switch (_categoriaActiva) {
+		case 0x01:
+			modelo = _modeloCategoriaDescargas;
+			break;
+		case 0x02:
+			return;
+		case _ListadoCategorias::Programas:
+			modelo = _modeloCategoriaProgramas;
+			break;
+		case _ListadoCategorias::Musica:
+			modelo = _modeloCategoriaMusica;
+			break;
+		case _ListadoCategorias::Videos:
+			modelo = _modeloCategoriaVideos;
+			break;
+		case _ListadoCategorias::Otros:
+			modelo = _modeloCategoriaOtros;
+	}
+
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
 	_gestorDescargas->detenerDescargas();
-	centralWidget()->update();
+	QTimer::singleShot(100, modelo.get(), &ModeloEntradas::select);
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
@@ -573,33 +629,38 @@ void VentanaPrincipal::eventoAcerca() {}
  * @param indice Índice del modelo
  */
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
-	QSharedPointer<ModeloEntradas> modeloActivo;
+	//QSharedPointer<ModeloEntradas> modeloActivo;
 
 	_configuracion.setValue("atds3/ultimaCategoria", indice.row());
 
 	switch (indice.row()) {
 		case 0:
-			modeloActivo = _modeloCategoriaDescargas;
+			_modeloCategoriaDescargas->select();
+			_listadoDescargas->setModel(_modeloCategoriaDescargas.get());
 			break;
 		case 1:
-			modeloActivo = _modeloCategoriaFinalizadas;
+			_modeloCategoriaFinalizadas->select();
+			_listadoDescargas->setModel(_modeloCategoriaFinalizadas.get());
 			break;
 		case 2:
-			modeloActivo = _modeloCategoriaProgramas;
+			_modeloCategoriaProgramas->select();
+			_listadoDescargas->setModel(_modeloCategoriaProgramas.get());
 			break;
 		case 3:
-			modeloActivo = _modeloCategoriaMusica;
+			_modeloCategoriaMusica->select();
+			_listadoDescargas->setModel(_modeloCategoriaMusica.get());
 			break;
 		case 4:
-			modeloActivo = _modeloCategoriaVideos;
+			_modeloCategoriaVideos->select();
+			_listadoDescargas->setModel(_modeloCategoriaVideos.get());
 			break;
 		case 5:
-			modeloActivo = _modeloCategoriaOtros;
+			_modeloCategoriaOtros->select();
+			_listadoDescargas->setModel(_modeloCategoriaOtros.get());
 			break;
 	}
 
-	modeloActivo->select();
-	_listadoDescargas->setModel(modeloActivo.get());
+	//modeloActivo->select();
 	_categoriaActiva = indice.row() + 1;
 
 	if (indice.row() == 1) {
@@ -608,7 +669,7 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 		_listadoDescargas->showColumn(4);
 	}
 
-	emit categoriaSeleccionada(modeloActivo);
+	//emit categoriaSeleccionada(modeloActivo);
 }
 
 /**
@@ -896,42 +957,42 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
-	_modeloCategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaDescargas->setFilter(QString("categoria != %1").arg(_ListadoCategorias::Subidas));
 	_modeloCategoriaDescargas->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Finalizadas'
 	 */
-	_modeloCategoriaFinalizadas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaFinalizadas = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaFinalizadas->setFilter(QString("estado = %1").arg(_ListadoEstados::Finalizada));
 	_modeloCategoriaFinalizadas->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Programas'
 	 */
-	_modeloCategoriaProgramas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaProgramas = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Programas));
 	_modeloCategoriaProgramas->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Música'
 	 */
-	_modeloCategoriaMusica = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaMusica = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Musica));
 	_modeloCategoriaMusica->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Videos'
 	 */
-	_modeloCategoriaVideos = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaVideos = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Videos));
 	_modeloCategoriaVideos->select();
 
 	/**
 	 * Modelo del listado de la categoría 'Otros'
 	 */
-	_modeloCategoriaOtros = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
+	_modeloCategoriaOtros = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
 	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Otros));
 	_modeloCategoriaOtros->select();
 
@@ -941,6 +1002,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setItemsExpandable(false);
 	_listadoDescargas->setModel(_modeloCategoriaDescargas.get());
 	_listadoDescargas->setMinimumSize(QSize(ancho, alto));
+	_listadoDescargas->setUniformRowHeights(true);
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);

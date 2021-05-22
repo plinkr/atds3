@@ -1,5 +1,6 @@
 #include "ventanaagregardescargasdesdearchivo.hpp"
 #include "ventanaprincipal.hpp"
+#include <QGuiApplication>
 #include <QDialog>
 #include <QIcon>
 #include <QVBoxLayout>
@@ -69,6 +70,8 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 	dialogoSeleccion.setFileMode(QFileDialog::ExistingFiles);
 	dialogoSeleccion.setNameFilter(tr("Archivos de texto(*.txt)"));
 	if (dialogoSeleccion.exec() == QFileDialog::Accepted) {
+		QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
 		listadoArchivos = dialogoSeleccion.selectedFiles();
 
 		// Guarda la ruta
@@ -78,6 +81,8 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 		for (const auto &archivo : listadoArchivos) {
 			procesarArchivo(archivo);
 		}
+
+		QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 	}
 }
 

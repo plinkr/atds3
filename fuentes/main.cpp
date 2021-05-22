@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 	QSettings configuracion;
 
 	if (configuracion.value("todus/fichaAcceso").toString().size() > 0 || configuracion.value("todus/telefono").toString().size() > 0) {
-		_toDus->iniciarSesion();
+		//_toDus->iniciarSesion();
 	} else {
 		ventanaPrincipal.eventoConfiguracion();
 	}

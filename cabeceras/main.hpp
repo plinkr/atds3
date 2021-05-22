@@ -42,11 +42,11 @@ extern QSharedPointer<toDus> _toDus;
  * @brief Listado de categorías
  */
 enum _ListadoCategorias {
-	Subidas = 0x02,
 	Programas = 0x03,
 	Musica = 0x04,
 	Videos = 0x05,
-	Otros = 0x06
+	Otros = 0x06,
+	Subidas = 0x07
 };
 
 /**
