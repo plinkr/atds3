@@ -22,7 +22,16 @@ void DelegacionBarraProgreso::paint(QPainter *pintor, const QStyleOptionViewItem
 	elemento.textVisible = true;
 
 	drawBackground(pintor, opcion, indice);
-	drawFocus(pintor, opcion, opcion.rect);
+/*
+	if (opcion.state & QStyle::State_MouseOver) {
+		pintor->fillRect(opcion.rect, QBrush(opcion.palette.highlight().color().darker()));
+	} else {
+		drawBackground(pintor, opcion, indice);
+	}
+*/
+	if (opcion.state & QStyle::State_HasFocus) {
+		drawFocus(pintor, opcion, opcion.rect);
+	}
 	qApp->style()->drawControl(QStyle::CE_ProgressBar, &elemento, pintor);
 #endif
 #ifdef Q_OS_WIN
@@ -31,7 +40,16 @@ void DelegacionBarraProgreso::paint(QPainter *pintor, const QStyleOptionViewItem
 	o.displayAlignment = Qt::AlignCenter;
 
 	drawBackground(pintor, o, indice);
-	drawFocus(pintor, o, o.rect);
+/*
+	if (opcion.state & QStyle::State_MouseOver) {
+		pintor->fillRect(o.rect, QBrush(o.palette.highlight().color().darker()));
+	} else {
+		drawBackground(pintor, o, indice);
+	}
+*/
+	if (o.state & QStyle::State_HasFocus) {
+		drawFocus(pintor, o, o.rect);
+	}
 	drawDisplay(pintor, o, o.rect, QString("%1%").arg(indice.data().toInt()));
 #endif
 }

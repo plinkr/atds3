@@ -25,15 +25,17 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 			icono = QIcon(obtenerRutaIcono() + "finalizado.svg");
 			break;
 	}
-/*
-	if (opcion.state & QStyle::State_Selected) {
-		pintor->fillRect(opcion.rect, opcion.palette.highlight());
-	}
 
-	qApp->style()->drawItemPixmap(pintor, opcion.rect, Qt::AlignCenter, icono.pixmap(QSize(24, 24)));
-*/
-	//pintor->drawPixmap(QRect(opcion.rect.center() - QPoint(12, 12), opcion.rect.center() + QPoint(12, 12)), icono.pixmap(QSize(24, 24)));
 	drawBackground(pintor, opcion, indice);
-	drawFocus(pintor, opcion, opcion.rect);
+/*
+	if (opcion.state & QStyle::State_MouseOver) {
+		pintor->fillRect(opcion.rect, QBrush(opcion.palette.highlight().color().darker()));
+	} else {
+		drawBackground(pintor, opcion, indice);
+	}
+*/
+	if (opcion.state & QStyle::State_HasFocus) {
+		drawFocus(pintor, opcion, opcion.rect);
+	}
 	drawDecoration(pintor, opcion, opcion.rect, icono.pixmap(QSize(24, 24)));
 }

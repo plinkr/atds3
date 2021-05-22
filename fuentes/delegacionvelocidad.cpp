@@ -23,6 +23,15 @@ void DelegacionVelocidad::paint(QPainter *pintor, const QStyleOptionViewItem &op
 	}
 
 	drawBackground(pintor, opcion, indice);
-	drawFocus(pintor, opcion, opcion.rect);
+/*
+	if (opcion.state & QStyle::State_MouseOver) {
+		pintor->fillRect(opcion.rect, QBrush(opcion.palette.highlight().color().darker()));
+	} else {
+		drawBackground(pintor, opcion, indice);
+	}
+*/
+	if (opcion.state & QStyle::State_HasFocus) {
+		drawFocus(pintor, opcion, opcion.rect);
+	}
 	drawDisplay(pintor, opcion, opcion.rect, velocidadTexto);
 }
