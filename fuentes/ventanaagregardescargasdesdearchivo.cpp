@@ -10,7 +10,6 @@
 #include <QPushButton>
 #include <QTreeView>
 #include <QHeaderView>
-#include <QFileDialog>
 #include <QFile>
 #include <QStandardItemModel>
 
@@ -62,28 +61,34 @@ void VentanaAgregarDescargasDesdeArchivos::eventoAgregarDescargas() {
  * @brief Evento que se dispara cuando se hace clic en el botón 'Seleccionar archivos y procesarlos'
  */
 void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() {
-	QFileDialog dialogoSeleccion(this);
-	QStringList listadoArchivos;
+	_dialogoSeleccion = new QFileDialog(this);
 
 	// Restaurar la última ruta utilizada
-	dialogoSeleccion.setDirectory(_configuracion.value("atds3/ultimaRutaAgregarDescarga", QDir::homePath()).toString());
-	dialogoSeleccion.setFileMode(QFileDialog::ExistingFiles);
-	dialogoSeleccion.setNameFilter(tr("Archivos de texto(*.txt)"));
-	if (dialogoSeleccion.exec() == QFileDialog::Accepted) {
-		QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	_dialogoSeleccion->setDirectory(_configuracion.value("atds3/ultimaRutaAgregarDescarga", QDir::homePath()).toString());
+	_dialogoSeleccion->setFileMode(QFileDialog::ExistingFiles);
+	_dialogoSeleccion->setNameFilter(tr("Archivos de texto(*.txt)"));
+	connect(_dialogoSeleccion, &QFileDialog::finished, this, &VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos);
+	_dialogoSeleccion->show();
+}
 
-		listadoArchivos = dialogoSeleccion.selectedFiles();
+void VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos(int resultado) {
+	QStringList listadoArchivos;
+	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+
+	if (resultado == QDialog::Accepted) {
+		listadoArchivos = _dialogoSeleccion->selectedFiles();
 
 		// Guarda la ruta
-		_configuracion.setValue("atds3/ultimaRutaAgregarDescarga", dialogoSeleccion.directory().absolutePath());
+		_configuracion.setValue("atds3/ultimaRutaAgregarDescarga", _dialogoSeleccion->directory().absolutePath());
 
 		// Procesar los archivos seleccionados
 		for (const auto &archivo : listadoArchivos) {
 			procesarArchivo(archivo);
 		}
-
-		QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 	}
+
+	delete _dialogoSeleccion;
+	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
 /**

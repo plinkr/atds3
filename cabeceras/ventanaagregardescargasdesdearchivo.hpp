@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QSettings>
+#include <QFileDialog>
 
 
 class VentanaAgregarDescargasDesdeArchivos : public QDialog
@@ -45,6 +46,8 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		 */
 		void eventoSeleccionarArchivosAProcesar();
 
+		void eventoProcesarArchivos(int resultado);
+
 	private:
 		QSettings _configuracion;
 
@@ -77,6 +80,8 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		 * Iniciar la descarga inmediatamente?
 		 */
 		QPointer<QCheckBox> _iniciar;
+
+		QFileDialog *_dialogoSeleccion;
 
 		/**
 		 * @brief Construye la interfaz de usuario
