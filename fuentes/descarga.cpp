@@ -89,9 +89,6 @@ void Descarga::eventoError(QNetworkReply::NetworkError codigo) {
 			_error = true;
 			break;
 	}
-
-	_modelo->submitAll();
-	_modeloDescargas->select();
 }
 
 void Descarga::descargaTerminada() {
@@ -146,8 +143,6 @@ void Descarga::detener() {
 
 	_modelo->setData(_modelo->index(_filaModelo, 1), _ListadoEstados::Pausada);
 	_modelo->setData(_modelo->index(_filaModelo, 4), 0);
-	//_modelo->submitAll();
-	//_modeloDescargas->select();
 }
 
 int Descarga::fila() {

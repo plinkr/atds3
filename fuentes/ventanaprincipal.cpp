@@ -72,12 +72,6 @@ void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
 	// Oculta la ventana
 	hide();
 
-	// Guarda los cambios pendientes a la base de datos
-	_modeloCategoriaProgramas->submitAll();
-	_modeloCategoriaMusica->submitAll();
-	_modeloCategoriaVideos->submitAll();
-	_modeloCategoriaOtros->submitAll();
-
 	// Desconecta la actualización del estado de la sesión toDus
 	disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 
@@ -186,9 +180,7 @@ void VentanaPrincipal::agregarDescarga() {
 
 	modelo->insertRecord(-1, registro);
 
-	modelo->submitAll();
 	_modeloCategoriaDescargas->select();
-	qApp->processEvents();
 
 	if (datos.iniciar == true) {
 		_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
@@ -238,7 +230,6 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 
 		modelo->insertRecord(-1, registro);
 
-		modelo->submitAll();
 		_modeloCategoriaDescargas->select();
 		qApp->processEvents();
 
@@ -372,7 +363,6 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 			modelo->removeRow(i.row());
 			qApp->processEvents();
 		}
-		modelo->submitAll();
 	}
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
@@ -411,7 +401,6 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 		qApp->processEvents();
 	}
 	modelo->removeRows(0, modelo->rowCount());
-	modelo->submitAll();
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -491,7 +480,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 		}
 	}
 
-	_modeloCategoriaDescargas->select();
+	//_modeloCategoriaDescargas->select();
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -528,8 +517,6 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 		}
 	}
 
-	_modeloCategoriaDescargas->select();
-
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
 }
 
@@ -540,13 +527,6 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
 	_gestorDescargas->detenerDescargas();
-
-	_modeloCategoriaProgramas->submitAll();
-	_modeloCategoriaMusica->submitAll();
-	_modeloCategoriaVideos->submitAll();
-	_modeloCategoriaOtros->submitAll();
-	_modeloCategoriaDescargas->select();
-
 	centralWidget()->update();
 
 	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
@@ -593,11 +573,6 @@ void VentanaPrincipal::eventoAcerca() {}
  */
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 	QSharedPointer<ModeloEntradas> modeloActivo;
-
-	_modeloCategoriaProgramas->submitAll();
-	_modeloCategoriaMusica->submitAll();
-	_modeloCategoriaVideos->submitAll();
-	_modeloCategoriaOtros->submitAll();
 
 	_configuracion.setValue("atds3/ultimaCategoria", indice.row());
 
@@ -921,7 +896,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
 	_modeloCategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaDescargas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaDescargas->setFilter(QString("categoria != %1").arg(_ListadoCategorias::Subidas));
 	_modeloCategoriaDescargas->select();
 
@@ -929,7 +903,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Finalizadas'
 	 */
 	_modeloCategoriaFinalizadas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaFinalizadas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaFinalizadas->setFilter(QString("estado = %1").arg(_ListadoEstados::Finalizada));
 	_modeloCategoriaFinalizadas->select();
 
@@ -937,7 +910,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Programas'
 	 */
 	_modeloCategoriaProgramas = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaProgramas->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaProgramas->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Programas));
 	_modeloCategoriaProgramas->select();
 
@@ -945,7 +917,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Música'
 	 */
 	_modeloCategoriaMusica = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaMusica->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaMusica->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Musica));
 	_modeloCategoriaMusica->select();
 
@@ -953,7 +924,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Videos'
 	 */
 	_modeloCategoriaVideos = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaVideos->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaVideos->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Videos));
 	_modeloCategoriaVideos->select();
 
@@ -961,7 +931,6 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	 * Modelo del listado de la categoría 'Otros'
 	 */
 	_modeloCategoriaOtros = QSharedPointer<ModeloEntradas>(new ModeloEntradas());
-	_modeloCategoriaOtros->setEditStrategy(QSqlTableModel::OnManualSubmit);
 	_modeloCategoriaOtros->setFilter(QString("categoria = %1").arg(_ListadoCategorias::Otros));
 	_modeloCategoriaOtros->select();
 

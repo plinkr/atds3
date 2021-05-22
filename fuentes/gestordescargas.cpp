@@ -92,10 +92,8 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 			}*/
 			if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
 				_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
+				_descargasActivas[id]->modeloDescargas()->select();
 			}
-
-			_descargasActivas[id]->modelo()->submitAll();
-			_descargasActivas[id]->modeloDescargas()->select();
 
 			_descargasActivas.remove(id);
 		}

@@ -21,16 +21,11 @@ void DelegacionBarraProgreso::paint(QPainter *pintor, const QStyleOptionViewItem
 	elemento.textAlignment = Qt::AlignCenter;
 	elemento.textVisible = true;
 
+	drawBackground(pintor, opcion, indice);
+	drawFocus(pintor, opcion, opcion.rect);
 	qApp->style()->drawControl(QStyle::CE_ProgressBar, &elemento, pintor);
 #endif
 #ifdef Q_OS_WIN
-/*
-	if (opcion.state & QStyle::State_Selected) {
-		pintor->fillRect(opcion.rect, opcion.palette.highlight());
-	}
-
-	qApp->style()->drawItemText(pintor, opcion.rect, Qt::AlignCenter, opcion.palette, true, QString("%1%").arg(indice.data().toInt()));
-*/
 	QStyleOptionViewItem o = opcion;
 
 	o.displayAlignment = Qt::AlignCenter;
