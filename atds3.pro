@@ -14,7 +14,7 @@ windows: QMAKE_TARGET_COMPANY = ATDS3
 windows: QMAKE_TARGET_DESCRIPTION = Administrador de Transferencias para toDus (S3)
 windows: QMAKE_TARGET_COPYRIGHT = Todos los derechos reservados.
 windows: QMAKE_TARGET_PRODUCT = ATDS3.EXE
-windows: RC_LANG = es
+windows: RC_LANG = es_ES
 
 unix: SOURCES += fuentes/todus_unix.pb.cc
 windows: SOURCES += fuentes/todus_windows.pb.cc
@@ -64,15 +64,31 @@ windows: INCLUDEPATH += C:\\Qt\\vcpkg\\packages\\openssl_x64-windows\\include \
 INCLUDEPATH += cabeceras
 
 unix: LIBS += -lssl -lcrypto -lprotobuf
-windows:contains(QMAKE_HOST.arch, x86): {
-	LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x86-windows\\lib \
-			-LC:\\Qt\\vcpkg\\packages\\protobuf_x86-windows\\lib
+windows:isEqual(QMAKE_HOST.arch, x86): {
+	contains(CONFIG, debug): {
+		LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x86-windows\\debug\\lib \
+				-LC:\\Qt\\vcpkg\\packages\\protobuf_x86-windows\\debug\\lib \
+				-llibprotobufd
+	}
+	contains(CONFIG, release): {
+		LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x86-windows\\lib \
+				-LC:\\Qt\\vcpkg\\packages\\protobuf_x86-windows\\lib \
+				-llibprotobuf
+	}
 }
-windows:contains(QMAKE_HOST.arch, x86_64): {
-	LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x64-windows\\lib \
-			-LC:\\Qt\\vcpkg\\packages\\protobuf_x64-windows\\lib
+windows:isEqual(QMAKE_HOST.arch, x86_64): {
+	contains(CONFIG, debug): {
+		LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x64-windows\\debug\\lib \
+				-LC:\\Qt\\vcpkg\\packages\\protobuf_x64-windows\\debug\\lib \
+				-llibprotobufd
+	}
+	contains(CONFIG, release): {
+		LIBS +=	-LC:\\Qt\\vcpkg\\packages\\openssl_x64-windows\\lib \
+				-LC:\\Qt\\vcpkg\\packages\\protobuf_x64-windows\\lib \
+				-llibprotobuf
+	}
 }
-windows: LIBS += -llibssl -llibcrypto -llibprotobuf
+windows: LIBS += -llibssl -llibcrypto
 
 unix: unix_desktop_icon.path = /usr/local/share/pixmaps
 unix:linux: unix_desktop_icon.path = /usr/share/pixmaps
