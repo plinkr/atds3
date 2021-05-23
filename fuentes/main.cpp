@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
 	_aplicacionNombreCorto = "atds3";
-	_aplicacionVersion = "0.2.0";
+	_aplicacionVersion = "0.3.0";
 	_agenteUsuarioTodus = "ToDus 0.38.35";
 
 	app.setOrganizationName(_aplicacionNombreCorto);

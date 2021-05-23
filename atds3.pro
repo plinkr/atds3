@@ -8,7 +8,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 0.2.0
+VERSION = 0.3.0
 windows: RC_ICONS = recursos/iconos/atds3.ico
 windows: QMAKE_TARGET_COMPANY = ATDS3
 windows: QMAKE_TARGET_DESCRIPTION = Administrador de Transferencias para toDus (S3)
