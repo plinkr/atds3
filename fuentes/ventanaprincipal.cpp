@@ -33,12 +33,19 @@
 #include <QMimeData>
 #include <QUrl>
 #include <QScreen>
-#include <iostream>
+#include <QTimer>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	: QMainWindow(parent), _categoriaActiva(0) {
 	Q_INIT_RESOURCE(iconos);
+
+	{
+		QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
+		configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
+		configuracionSSL.setProtocol(QSsl::TlsV1_2);
+		QSslConfiguration::setDefaultConfiguration(configuracionSSL);
+	}
 
 	setAcceptDrops(true);
 
@@ -49,9 +56,16 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 
 	_toDus = QSharedPointer<toDus>(new toDus());
 	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+	QTimer::singleShot(0, _toDus.get(), &toDus::iniciar);
+
+	if (_configuracion.value("todus/fichaAcceso").toString().size() > 0 || _configuracion.value("todus/telefono").toString().size() > 0) {
+		QTimer::singleShot(100, _toDus.get(), &toDus::iniciarSesion);
+	} else {
+		eventoConfiguracion();
+	}
 
 	_gestorDescargas = new GestorDescargas(this);
-	_gestorDescargas->start();
+	QTimer::singleShot(0, _gestorDescargas, &GestorDescargas::iniciar);
 
 	QList<QSharedPointer<ModeloEntradas>> modelos {_modeloCategoriaProgramas, _modeloCategoriaMusica, _modeloCategoriaVideos, _modeloCategoriaOtros};
 	int estado = 0;
@@ -59,10 +73,11 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 		for (int f = 0; f < modelo->rowCount(); f++) {
 			estado = modelo->data(modelo->index(f, 1)).toInt();
 			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
-				_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
+				QTimer::singleShot(100, std::bind(&GestorDescargas::agregarDescarga, _gestorDescargas, f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas));
 			}
 		}
 	}
+
 	_modeloCategoriaDescargas->select();
 }
 VentanaPrincipal::~VentanaPrincipal() {
@@ -75,15 +90,15 @@ void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
 	hide();
 
 	// Desconecta la actualización del estado de la sesión toDus
-	disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+	//disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
 
 	// Detiene adecuadamente todas las descargas activas
 	_gestorDescargas->requestInterruption();
 	_gestorDescargas->wait();
 
 	// Desconecta la sesión toDus
-	_toDus->desconectar();
-	_toDus.clear();
+	_toDus->requestInterruption();
+	_toDus->wait();
 
 	// Guarda la geometría de la ventana en las configuraciones
 	_configuracion.setValue("atds3/geometria", saveGeometry());
@@ -150,7 +165,7 @@ void VentanaPrincipal::agregarDescarga() {
 	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
 	QSqlQuery solicitudSQL;
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	switch (datos.categoria) {
 		case _ListadoCategorias::Programas:
@@ -200,7 +215,7 @@ void VentanaPrincipal::agregarDescarga() {
 		_gestorDescargas->agregarDescarga(modelo->rowCount() - 1, modelo->data(modelo->index(modelo->rowCount() - 1, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -215,7 +230,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QSqlQuery solicitudSQL;
 	int filaModelo = 0;
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	switch (listadoDescargas[0].categoria) {
 		case _ListadoCategorias::Programas:
@@ -265,7 +280,7 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	}
 
 	_modeloCategoriaDescargas->select();
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -364,7 +379,7 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 	QSqlQuery solicitudSQL;
 	unsigned int id = 0;
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -392,12 +407,12 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 			_gestorDescargas->detenerDescarga(id);
 			solicitudSQL.exec("DELETE FROM entradas WHERE (id = " + QString::number(id) + ")");
 			//modelo->removeRow(i.row());
-			//qApp->processEvents();
+			qApp->processEvents();
 		}
 		modelo->select();
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -426,17 +441,19 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
-		//qApp->processEvents();
+		qApp->processEvents();
 	}
 	QSqlQuery solicitudSQL("DELETE FROM entradas WHERE (" + modelo->filter() + ")");
 	modelo->select();
-	//_modeloCategoriaDescargas->select();
+	if (modelo != _modeloCategoriaDescargas) {
+		_modeloCategoriaDescargas->select();
+	}
 
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 void VentanaPrincipal::eventoSubir() {
@@ -469,7 +486,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
@@ -478,7 +495,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 			}
 		}
 	}
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -487,7 +504,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 void VentanaPrincipal::eventoPausarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -515,8 +532,11 @@ void VentanaPrincipal::eventoPausarDescarga() {
 		}
 	}
 
-	//_modeloCategoriaDescargas->select();
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	modelo->select();
+	if (modelo != _modeloCategoriaDescargas) {
+		_modeloCategoriaDescargas->select();
+	}
+	unsetCursor();
 }
 
 /**
@@ -544,7 +564,7 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
 		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
@@ -553,7 +573,7 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	}
 
 	QTimer::singleShot(100, modelo.get(), &ModeloEntradas::select);
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -581,12 +601,17 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 			modelo = _modeloCategoriaOtros;
 	}
 
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
-	_gestorDescargas->detenerDescargas();
+	for (int f = 0; f < modelo->rowCount(); f++) {
+		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::EnEsperaIniciar || modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Iniciada) {
+			_gestorDescargas->detenerDescarga(modelo->data(modelo->index(f, 0)).toUInt());
+		}
+	}
+
 	QTimer::singleShot(100, modelo.get(), &ModeloEntradas::select);
 
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**
@@ -1009,7 +1034,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setSortingEnabled(false);
 	_listadoDescargas->setStyleSheet("QTreeView::item { height: 28px; }");
 	_listadoDescargas->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-	//_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+	_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 
 	_listadoDescargas->hideColumn(0);
@@ -1095,15 +1120,11 @@ void VentanaPrincipal::actualizarAvatar() {
 	int puertoServidorS3 = _configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
 	QUrl url = QUrl(enlaceAvatar);
 	QNetworkRequest solicitud;
-	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	QString autorizacion = "Bearer " + _configuracion.value("todus/fichaAcceso").toString();
 
 	_rutaAvatarTodus = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/" + _aplicacionNombreCorto + "_avatar.jpg";
 
-	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
-	solicitud.setSslConfiguration(configuracionSSL);
 	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorS3.size() > 0) {

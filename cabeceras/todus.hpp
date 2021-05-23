@@ -1,7 +1,7 @@
 #ifndef TODUS_HPP
 #define TODUS_HPP
 
-#include <QObject>
+#include <QThread>
 #include <QPointer>
 #include <QSslSocket>
 #include <QTimer>
@@ -10,7 +10,7 @@
 #include <functional>
 
 
-class toDus : public QObject {
+class toDus : public QThread {
 	Q_OBJECT
 
 	public:
@@ -26,6 +26,9 @@ class toDus : public QObject {
 
 		toDus(QObject *padre = nullptr);
 		~toDus();
+
+		void iniciar();
+		void run() override;
 
 		/**
 		 * @brief Obtiene el estado de la sesión toDus

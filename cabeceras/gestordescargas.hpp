@@ -3,7 +3,13 @@
 
 #include <QThread>
 #include <QPointer>
+#include <QSharedPointer>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QUrl>
 #include <QReadWriteLock>
+#include <QSettings>
 #include "descarga.hpp"
 
 
@@ -13,8 +19,11 @@ class GestorDescargas : public QThread {
 	Q_OBJECT
 
 	public:
+		QPointer<QNetworkAccessManager> _administradorAccesoRed;
+
 		GestorDescargas(VentanaPrincipal *padre = nullptr);
 
+		void iniciar();
 		void run() override;
 
 		void agregarDescarga(int fila, unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
@@ -26,6 +35,8 @@ class GestorDescargas : public QThread {
 
 	private:
 		VentanaPrincipal *_padre;
+
+		QSettings _configuracion;
 
 		/**
 		 * @brief Configuracion: Total de descargas paralelas

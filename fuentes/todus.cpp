@@ -22,24 +22,35 @@
 
 
 toDus::toDus(QObject *padre)
-	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
+	: QThread(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
+}
+toDus::~toDus() {
+	google::protobuf::ShutdownProtobufLibrary();
+}
+
+void toDus::iniciar() {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+	_idSesion = generarIDSesion(5);
 	_administradorAccesoRed = new QNetworkAccessManager(this);
 	_socaloSSL = new QSslSocket(this);
-	_idSesion = generarIDSesion(5);
 	_socaloSSL->setPeerVerifyMode(QSslSocket::VerifyNone);
+	_socaloSSL->setProtocol(QSsl::TlsV1_3OrLater);
 	_temporizadorMantenerSesionActiva.setInterval(60000);
 
 	connect(_socaloSSL, &QSslSocket::stateChanged, this, &toDus::eventoCambiarEstado);
 	connect(_socaloSSL, &QSslSocket::encrypted, this, &toDus::eventoConexionLista);
 	connect(_socaloSSL, &QSslSocket::readyRead, this, &toDus::eventoDatosRecibidos);
 	connect(&_temporizadorMantenerSesionActiva, &QTimer::timeout, this, &toDus::xmppMantenerSesionActiva);
-}
-toDus::~toDus() {
-	google::protobuf::ShutdownProtobufLibrary();
+
+	start();
 }
 
+void toDus::run() {
+	while (isInterruptionRequested() == false) {
+		sleep(2);
+	}
+}
 /**
  * @brief Obtiene el estado de la sesión toDus
  * @return Devuelve el estado de la sesión toDus
@@ -345,7 +356,6 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.reserve");
 	QNetworkRequest solicitud;
-	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	std::string datos;
 	toDusPB::SolicitudSMS pbSolicitudSMS;
 
@@ -353,10 +363,7 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	pbSolicitudSMS.set_id(_idInicioSesion.toStdString());
 	pbSolicitudSMS.SerializeToString(&datos);
 
-	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
-	solicitud.setSslConfiguration(configuracionSSL);
 	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
@@ -383,7 +390,6 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.register");
 	QNetworkRequest solicitud;
-	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	std::string datos;
 	toDusPB::SolicitudFichaSolicitud pbSolicitudFichaSolicitud;
 
@@ -393,10 +399,7 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	pbSolicitudFichaSolicitud.set_codigo(codigo.toStdString());
 	pbSolicitudFichaSolicitud.SerializeToString(&datos);
 
-	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
-	solicitud.setSslConfiguration(configuracionSSL);
 	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
@@ -431,7 +434,6 @@ void toDus::solicitarFichaAcceso() {
 	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/token");
 	QNetworkRequest solicitud;
-	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
 	std::string datos;
 	toDusPB::SolicitudFichaAcceso pbSolicitudFichaAcceso;
 
@@ -441,10 +443,7 @@ void toDus::solicitarFichaAcceso() {
 	pbSolicitudFichaAcceso.set_numeroversion(numeroVersion.toStdString());
 	pbSolicitudFichaAcceso.SerializeToString(&datos);
 
-	configuracionSSL.setPeerVerifyMode(QSslSocket::VerifyNone);
-	solicitud.setSslConfiguration(configuracionSSL);
 	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {

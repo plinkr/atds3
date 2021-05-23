@@ -73,7 +73,7 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 
 void VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos(int resultado) {
 	QStringList listadoArchivos;
-	QGuiApplication::setOverrideCursor(Qt::WaitCursor);
+	setCursor(Qt::WaitCursor);
 
 	if (resultado == QDialog::Accepted) {
 		listadoArchivos = _dialogoSeleccion->selectedFiles();
@@ -88,7 +88,7 @@ void VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos(int resultado)
 	}
 
 	delete _dialogoSeleccion;
-	QGuiApplication::setOverrideCursor(Qt::ArrowCursor);
+	unsetCursor();
 }
 
 /**

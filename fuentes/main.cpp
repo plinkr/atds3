@@ -129,14 +129,6 @@ int main(int argc, char *argv[])
 	VentanaPrincipal ventanaPrincipal;
 	ventanaPrincipal.show();
 
-	QSettings configuracion;
-
-	if (configuracion.value("todus/fichaAcceso").toString().size() > 0 || configuracion.value("todus/telefono").toString().size() > 0) {
-		_toDus->iniciarSesion();
-	} else {
-		ventanaPrincipal.eventoConfiguracion();
-	}
-
 	return app.exec();
 }
 

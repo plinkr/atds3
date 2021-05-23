@@ -5,7 +5,7 @@
 
 ModeloEntradas::ModeloEntradas(QObject *padre, const QSqlDatabase &baseDatos)
 	: QSqlTableModel(padre, baseDatos) {
-	setEditStrategy(QSqlTableModel::OnFieldChange);
+	setEditStrategy(QSqlTableModel::OnManualSubmit);
 	setTable("entradas");
 	setHeaderData(1, Qt::Horizontal, "Estado");
 	setHeaderData(2, Qt::Horizontal, "Nombre");

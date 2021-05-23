@@ -4,10 +4,16 @@
 #include "main.hpp"
 #include <QSettings>
 #include <QSharedPointer>
+#include <QSqlQuery>
 
 
 GestorDescargas::GestorDescargas(VentanaPrincipal *padre)
 	: QThread(padre), _padre(padre), _configuracionTotalDescargasParalelas(0), _totalDescargasActivas(0), _deteniendoDescargas(false) {
+}
+
+void GestorDescargas::iniciar() {
+	_administradorAccesoRed = new QNetworkAccessManager(this);
+	start();
 }
 
 void GestorDescargas::run() {
@@ -20,6 +26,8 @@ void GestorDescargas::run() {
 		}
 		sleep(2);
 	}
+
+	detenerDescargas();
 }
 
 void GestorDescargas::agregarDescarga(int fila, unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando) {
@@ -28,6 +36,7 @@ void GestorDescargas::agregarDescarga(int fila, unsigned int id, QSharedPointer<
 		_descargaEnCola descargaEnCola {fila, modelo, modeloDescargando};
 
 		modelo->setData(modelo->index(fila, 1), _ListadoEstados::EnEsperaIniciar);
+		modelo->submitAll();
 		_descargasEnCola[id] = std::move(descargaEnCola);
 	}
 	//_mutexDescargasEnCola.unlock();
@@ -44,6 +53,7 @@ void GestorDescargas::detenerDescarga(unsigned int id) {
 	//_mutexDescargasEnCola.lockForWrite();
 	if (_descargasEnCola.find(id) != _descargasEnCola.end()) {
 		_descargasEnCola[id].modelo->setData(_descargasEnCola[id].modelo->index(_descargasEnCola[id].fila, 1), _ListadoEstados::Pausada);
+		_descargasEnCola[id].modelo->submitAll();
 		_descargasEnCola.remove(id);
 	}
 	//_mutexDescargasEnCola.unlock();
@@ -91,7 +101,10 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 				}
 			}*/
 			if (configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
-				_descargasActivas[id]->modelo()->removeRow(_descargasActivas[id]->fila());
+				QSqlQuery solicitudSQL;
+
+				solicitudSQL.exec("DELETE FROM entradas WHERE (id = " + QString::number(_descargasActivas[id]->modelo()->data(_descargasActivas[id]->modelo()->index(_descargasActivas[id]->fila(), 0)).toUInt()) + ")");
+
 				_descargasActivas[id]->modelo()->select();
 				_descargasActivas[id]->modeloDescargas()->select();
 			}
@@ -112,7 +125,7 @@ void GestorDescargas::iniciarProximaDescargaDisponible() {
 				_descargasActivas[it.key()] = new Descarga(it.key(), it.value().modelo, it.value().modeloDescargando, this);
 				connect(_descargasActivas[it.key()], &Descarga::terminada, this, &GestorDescargas::procesarTerminacionDescarga);
 
-				_descargasActivas[it.key()]->iniciar();
+				QTimer::singleShot(0, _descargasActivas[it.key()], &Descarga::iniciar);
 
 				it = _descargasEnCola.erase(it);
 

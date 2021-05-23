@@ -2,6 +2,7 @@
 #define DESCARGA_HPP
 
 #include <ctime>
+#include <QObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QPointer>
@@ -9,15 +10,16 @@
 #include <QFile>
 
 
+class GestorDescargas;
 class ModeloEntradas;
 class VentanaPrincipal;
 class QSslError;
 
-class Descarga : public QNetworkAccessManager {
+class Descarga : public QObject {
 	Q_OBJECT
 
 	public:
-		Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, QObject *padre = nullptr);
+		Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, GestorDescargas *padre = nullptr);
 
 		bool iniciado();
 
@@ -45,12 +47,14 @@ class Descarga : public QNetworkAccessManager {
 		void iniciarDescarga();
 
 	private:
+		GestorDescargas *_padre;
 		bool _iniciado;
+		bool _deteniendo;
 		bool _error;
 		unsigned int _id;
 		int _filaModelo;
 		int _filaModeloDescargando;
-		QPointer<QNetworkAccessManager> _administradorRed;
+		QPointer<QNetworkAccessManager> _administradorAccesoRed;
 		QString _enlaceNoFirmado;
 		QString _enlaceFirmado;
 		QSharedPointer<ModeloEntradas> _modelo;
