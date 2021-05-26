@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+%:
+	dh $@ 
+
+override_dh_auto_configure:
+	protoc --proto_path=$$(pwd)/documentos/protobuf --cpp_out=$$(pwd) todus.proto
+	mv $$(pwd)/todus.pb.h $$(pwd)/cabeceras/
+	mv $$(pwd)/todus.pb.cc $$(pwd)/fuentes/
+	qmake $$(pwd)/atds3.pro QMAKE_PREFIX=$$(pwd)/debian/atds3 QMAKE_CFLAGS_ISYSTEM=-I CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG-=separate_debug_info CONFIG+=release
