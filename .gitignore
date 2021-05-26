@@ -72,5 +72,7 @@ Thumbs.db
 *.dll
 *.exe
 
+cabeceras/todus.pb.h
+fuentes/todus.pb.cc
 _construccion
 paquetes/binarios
