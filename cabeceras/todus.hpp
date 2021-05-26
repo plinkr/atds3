@@ -1,14 +1,16 @@
 #ifndef TODUS_HPP
 #define TODUS_HPP
 
+#include <functional>
 #include <QThread>
 #include <QPointer>
-#include <QSslSocket>
 #include <QTimer>
-#include <QNetworkAccessManager>
+#include <QMutex>
 #include <QNetworkReply>
-#include <functional>
 
+
+class QNetworkAccessManager;
+class QSslSocket;
 
 class toDus : public QThread {
 	Q_OBJECT
@@ -90,6 +92,7 @@ class toDus : public QThread {
 		ProgresoInicioSesion _progresoInicioSesion;
 		QString _idSesion;
 		unsigned int _contadorComandos;
+		QMutex _mutexContadorComandos;
 		QString _jID;
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
@@ -100,8 +103,10 @@ class toDus : public QThread {
 		QNetworkReply *_respuestaCodigoSMS;
 		QNetworkReply *_respuestaFichaSolicitud;
 		QNetworkReply *_respuestaFichaAcceso;
+		QMutex _mutexSolicitarEnlace;
 
 		QString generarIDSesion(unsigned int totalCaracteres);
+		unsigned int obtenerProximoIDComando();
 		void solicitarCodigoSMS(const QString &telefono);
 		void solicitarFichaSolicitud(const QString &codigo);
 		void solicitarFichaAcceso();

@@ -2,15 +2,18 @@
 #define VENTANAPRINCIPAL_HPP
 
 #include "todus.hpp"
-#include <QThread>
 #include <QMainWindow>
 #include <QPointer>
 #include <QSharedPointer>
-#include <QStandardItemModel>
 #include <QFile>
 #include <QSettings>
+#include <QNetworkAccessManager>
 
 
+struct sqlite3;
+class QThread;
+class QTreeView;
+class QStandardItemModel;
 class QCloseEvent;
 class DelegacionIconoEstado;
 class DelegacionBarraProgreso;
@@ -19,12 +22,12 @@ class QStandardItemModel;
 class QListView;
 class ModeloCategorias;
 class ModeloEntradas;
-class QTreeView;
 class VentanaAgregarDescarga;
 class VentanaAgregarDescargasDesdeArchivos;
 class VentanaConfiguracion;
 class QLabel;
 class GestorDescargas;
+class QNetworkReply;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -55,6 +58,11 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Modelo del listado de la categoría 'Otros'
 		 */
 		QSharedPointer<ModeloEntradas> _modeloCategoriaOtros;
+
+		/**
+		 * @brief Listado de descargas
+		 */
+		QPointer<QTreeView> _listadoDescargas;
 
 		/**
 		 * @brief Ventana 'Configuración'
@@ -169,6 +177,7 @@ class VentanaPrincipal : public QMainWindow
 
 	private:
 		QSettings _configuracion;
+		sqlite3 *_baseDatos;
 
 		/**
 		 * @brief Modelo del listado de categorías
@@ -199,11 +208,6 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
 		 */
 		QPointer<DelegacionVelocidad> _elementoVelocidad;
-
-		/**
-		 * @brief Listado de descargas
-		 */
-		QPointer<QTreeView> _listadoDescargas;
 
 		/**
 		 * @brief Ventana 'Agregar descarga'
@@ -333,6 +337,11 @@ class VentanaPrincipal : public QMainWindow
 		void dropEvent(QDropEvent *);
 
 		/**
+		 * @brief Inicializa la base de datos
+		 */
+		void inicializarBaseDatos();
+
+		/**
 		 * @brief Construye los botones de la barra de herramientas
 		 * @param barraHerramientas Puntero al objeto de la barra de herramientas
 		 */
@@ -343,11 +352,6 @@ class VentanaPrincipal : public QMainWindow
 		 * @returns Puntero al elemento del listado de categorías
 		 */
 		QListView *construirListadoCategorias();
-
-		/**
-		 * @brief Inicializa la base de datos
-		 */
-		void inicializarBaseDatos();
 
 		/**
 		 * @brief Construye el elemento del listado de descargas
@@ -364,6 +368,8 @@ class VentanaPrincipal : public QMainWindow
 		 * @brief Descarga el avatar del usuario desde la red toDus y lo muestra en la barra de herramientas
 		 */
 		void actualizarAvatar();
+
+		QSharedPointer<ModeloEntradas> obtenerModeloDesdeCategoria(int categoria);
 };
 
 #endif // VENTANAPRINCIPAL_HPP

@@ -392,6 +392,7 @@ QWidget *VentanaConfiguracion::construirOpcionDescargas() {
 
 	_totalDescargasParalelas = new QSpinBox();
 	_totalDescargasParalelas->setAlignment(Qt::AlignRight);
+	_totalDescargasParalelas->setMinimum(1);
 	_totalDescargasParalelas->setMinimumWidth(60);
 	_totalDescargasParalelas->setValue(_configuracion.value("descargas/descargasParalelas").toInt());
 

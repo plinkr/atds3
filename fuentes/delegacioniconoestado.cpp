@@ -24,6 +24,9 @@ void DelegacionIconoEstado::paint(QPainter *pintor, const QStyleOptionViewItem &
 		case _ListadoEstados::Finalizada:
 			icono = QIcon(obtenerRutaIcono() + "finalizado.svg");
 			break;
+		case _ListadoEstados::Error:
+			icono = QIcon(obtenerRutaIcono() + "cancelar.svg");
+			break;
 	}
 
 	drawBackground(pintor, opcion, indice);

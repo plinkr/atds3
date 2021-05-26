@@ -1,7 +1,8 @@
 #include "main.hpp"
 #include "ventanaconfiguracion.hpp"
 #include "ventanaprincipal.hpp"
-#include <thread>
+#include <sqlite3.h>
+#include <openssl/evp.h>
 #include <QApplication>
 #include <QSettings>
 #include <QColor>
@@ -10,7 +11,7 @@
 #include <QLineEdit>
 #include <QStandardPaths>
 #include <QDir>
-#include <openssl/evp.h>
+#include <QNetworkProxy>
 
 
 /**
@@ -28,6 +29,8 @@ QString _aplicacionNombreCorto;
  */
 QString _aplicacionVersion;
 
+QString _rutaBaseDatos;
+
 /**
  * @brief Ruta en donde almacenar las descargas
  */
@@ -39,11 +42,22 @@ QString _rutaDescargas;
 QString _agenteUsuarioTodus;
 
 /**
+ * @brief Base de datos
+ */
+sqlite3 *_baseDatos;
+
+/**
  * @brief Sesión toDus
  */
 QSharedPointer<toDus> _toDus;
 
 bool _temaClaro = true;
+
+sqlite3 *iniciarConexionBaseDatos();
+void cerrarConexionBaseDatos(sqlite3 *baseDatos);
+void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion);
+sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion);
+void baseDatosFinalizar(sqlite3_stmt *resultados);
 
 /**
  * @brief Crea las configuraciones de la aplicación por defecto si no existen
@@ -90,17 +104,22 @@ QPalette _obtenerPaletaColoresOscuros();
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
+	int codigoSalida = 0;
 
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
 	_aplicacionNombreCorto = "atds3";
-	_aplicacionVersion = "0.3.0";
+	_aplicacionVersion = "0.4.0";
 	_agenteUsuarioTodus = "ToDus 0.38.35";
 
 	app.setOrganizationName(_aplicacionNombreCorto);
 	app.setApplicationDisplayName(_aplicacionTitulo);
 	app.setApplicationName(_aplicacionNombreCorto);
 	app.setApplicationVersion(_aplicacionVersion);
-
+/*
+	if (iniciarConexionBaseDatos() == false) {
+		return EXIT_FAILURE;
+	}
+*/
 	crearConfiguracionesDefecto();
 
 	crearDirectoriosDescargas();
@@ -129,7 +148,48 @@ int main(int argc, char *argv[])
 	VentanaPrincipal ventanaPrincipal;
 	ventanaPrincipal.show();
 
-	return app.exec();
+	codigoSalida = app.exec();
+
+//	cerrarConexionBaseDatos();
+
+	return codigoSalida;
+}
+
+sqlite3 *iniciarConexionBaseDatos() {
+	sqlite3 *baseDatos;
+	_rutaBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/" + _aplicacionNombreCorto + ".db";
+
+	sqlite3_open_v2(_rutaBaseDatos.toStdString().c_str(), &baseDatos, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL);
+
+	return baseDatos;
+}
+
+void cerrarConexionBaseDatos(sqlite3 *baseDatos) {
+	sqlite3_close_v2(baseDatos);
+}
+
+void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion) {
+	sqlite3_stmt *resultados;
+
+	if (baseDatos == NULL) {
+		baseDatos = iniciarConexionBaseDatos();
+	}
+
+	sqlite3_prepare_v2(baseDatos, instruccion.toStdString().c_str(), instruccion.size(), &resultados, NULL);
+	sqlite3_step(resultados);
+	sqlite3_finalize(resultados);
+}
+
+sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion) {
+	sqlite3_stmt *resultados;
+
+	sqlite3_prepare_v2(baseDatos, instruccion.toStdString().c_str(), instruccion.size(), &resultados, NULL);
+
+	return resultados;
+}
+
+void baseDatosFinalizar(sqlite3_stmt *resultados) {
+	sqlite3_finalize(resultados);
 }
 
 /**
@@ -137,12 +197,17 @@ int main(int argc, char *argv[])
  */
 void crearConfiguracionesDefecto() {
 	QSettings configuracion;
+	QSslConfiguration configuracionSSL = QSslConfiguration::defaultConfiguration();
+
+	configuracionSSL.setPeerVerifyMode(QSslSocket::PeerVerifyMode::VerifyNone);
+	configuracionSSL.setProtocol(QSsl::SslProtocol::TlsV1_2);
+	QSslConfiguration::setDefaultConfiguration(configuracionSSL);
 
 	if (configuracion.contains("descargas/ruta") == false) {
 		configuracion.setValue("descargas/ruta", obtenerRutaDescargas());
 	}
 	if (configuracion.contains("descargas/descargasParalelas") == false) {
-		configuracion.setValue("descargas/descargasParalelas", 2);
+		configuracion.setValue("descargas/descargasParalelas", 3);
 	}
 	if (configuracion.contains("descargas/descomprimirAlFinalizar") == false) {
 		configuracion.setValue("descargas/descomprimirAlFinalizar", true);

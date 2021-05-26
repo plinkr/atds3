@@ -12,6 +12,10 @@
 #include <QHeaderView>
 #include <QFile>
 #include <QStandardItemModel>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QSettings>
+#include <QFileDialog>
 
 
 VentanaAgregarDescargasDesdeArchivos::VentanaAgregarDescargasDesdeArchivos(QWidget *parent)
@@ -66,28 +70,27 @@ void VentanaAgregarDescargasDesdeArchivos::eventoSeleccionarArchivosAProcesar() 
 	// Restaurar la última ruta utilizada
 	_dialogoSeleccion->setDirectory(_configuracion.value("atds3/ultimaRutaAgregarDescarga", QDir::homePath()).toString());
 	_dialogoSeleccion->setFileMode(QFileDialog::ExistingFiles);
-	_dialogoSeleccion->setNameFilter(tr("Archivos de texto(*.txt)"));
-	connect(_dialogoSeleccion, &QFileDialog::finished, this, &VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos);
+	_dialogoSeleccion->setNameFilters(QStringList({"Archivos de descarga soportados (*.txt *.s3p)", "Archivos de texto (*.txt)", "Archivos de descargas S3 Plano (*.s3p)"}));
+	connect(_dialogoSeleccion, &QFileDialog::accepted, this, &VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos);
+	connect(_dialogoSeleccion, &QFileDialog::finished, _dialogoSeleccion, &QFileDialog::deleteLater);
 	_dialogoSeleccion->show();
 }
 
-void VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos(int resultado) {
+void VentanaAgregarDescargasDesdeArchivos::eventoProcesarArchivos() {
 	QStringList listadoArchivos;
+
 	setCursor(Qt::WaitCursor);
 
-	if (resultado == QDialog::Accepted) {
-		listadoArchivos = _dialogoSeleccion->selectedFiles();
+	listadoArchivos = _dialogoSeleccion->selectedFiles();
 
-		// Guarda la ruta
-		_configuracion.setValue("atds3/ultimaRutaAgregarDescarga", _dialogoSeleccion->directory().absolutePath());
+	// Guarda la ruta
+	_configuracion.setValue("atds3/ultimaRutaAgregarDescarga", _dialogoSeleccion->directory().absolutePath());
 
-		// Procesar los archivos seleccionados
-		for (const auto &archivo : listadoArchivos) {
-			procesarArchivo(archivo);
-		}
+	// Procesar los archivos seleccionados
+	for (const auto &archivo : listadoArchivos) {
+		procesarArchivo(archivo);
 	}
 
-	delete _dialogoSeleccion;
 	unsetCursor();
 }
 
@@ -103,30 +106,32 @@ QVector<_NuevaDescarga> VentanaAgregarDescargasDesdeArchivos::obtenerDatosDescar
  * @brief Procesa un archivo en búsqueda de entradas compatibles
  */
 void VentanaAgregarDescargasDesdeArchivos::procesarArchivo(const QString &archivo) {
-	QFile lector(archivo);
+	if (archivo.endsWith(".txt") == true || archivo.endsWith(".s3p") == true) {
+		QFile lector(archivo);
 
-	if (lector.open(QIODevice::ReadOnly | QIODevice::Text) == false) {
-		return;
-	}
+		if (lector.open(QIODevice::ReadOnly | QIODevice::Text) == false) {
+			return;
+		}
 
-	while (lector.atEnd() == false) {
-		QList<QByteArray> campos = lector.readLine().split('\t');
-		QString nombre, enlace;
+		while (lector.atEnd() == false) {
+			QList<QByteArray> campos = lector.readLine().split('\t');
+			QString nombre, enlace;
 
-		if (campos.size() > 0) {
-			if (campos[0].startsWith("https://s3.todus.cu/") == true) {
-				_NuevaDescarga nuevaDescarga;
+			if (campos.size() > 0) {
+				if (campos[0].startsWith("https://s3.todus.cu/") == true) {
+					_NuevaDescarga nuevaDescarga;
 
-				if (campos.size() > 1) {
-					nuevaDescarga.nombre = QString::fromLocal8Bit(campos[1]).trimmed();
-					nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
-				} else {
-					nuevaDescarga.nombre = QString::fromLocal8Bit(campos[0]).trimmed();
-					nuevaDescarga.nombre.remove(0, campos[0].lastIndexOf("/") + 1);
-					nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
+					if (campos.size() > 1) {
+						nuevaDescarga.nombre = QString::fromLocal8Bit(campos[1]).trimmed();
+						nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
+					} else {
+						nuevaDescarga.nombre = QString::fromLocal8Bit(campos[0]).trimmed();
+						nuevaDescarga.nombre.remove(0, campos[0].lastIndexOf("/") + 1);
+						nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
+					}
+					_modeloElementosProcesados->appendRow(QList<QStandardItem *>{new QStandardItem(nuevaDescarga.nombre), new QStandardItem(nuevaDescarga.enlace)});
+					_listadoElementosProcesados.push_back(nuevaDescarga);
 				}
-				_modeloElementosProcesados->appendRow(QList<QStandardItem *>{new QStandardItem(nuevaDescarga.nombre), new QStandardItem(nuevaDescarga.enlace)});
-				_listadoElementosProcesados.push_back(nuevaDescarga);
 			}
 		}
 	}

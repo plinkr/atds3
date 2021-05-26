@@ -13,3 +13,11 @@ ModeloEntradas::ModeloEntradas(QObject *padre, const QSqlDatabase &baseDatos)
 	setHeaderData(4, Qt::Horizontal, "Velocidad");
 	setHeaderData(5, Qt::Horizontal, "Ruta de guardado");
 }
+
+void ModeloEntradas::eliminarFila(int fila) {
+	emit layoutAboutToBeChanged();
+	beginRemoveRows(index(fila, 0).parent(), fila, fila);
+	removeRows(fila, 1, index(fila, 0).parent());
+	endRemoveRows();
+	emit layoutChanged();
+}

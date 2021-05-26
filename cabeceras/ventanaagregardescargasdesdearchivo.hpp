@@ -4,13 +4,14 @@
 #include "main.hpp"
 #include <QDialog>
 #include <QPointer>
-#include <QStandardItemModel>
-#include <QPushButton>
-#include <QComboBox>
-#include <QCheckBox>
 #include <QSettings>
-#include <QFileDialog>
 
+
+class QStandardItemModel;
+class QPushButton;
+class QComboBox;
+class QCheckBox;
+class QFileDialog;
 
 class VentanaAgregarDescargasDesdeArchivos : public QDialog
 {
@@ -46,7 +47,7 @@ class VentanaAgregarDescargasDesdeArchivos : public QDialog
 		 */
 		void eventoSeleccionarArchivosAProcesar();
 
-		void eventoProcesarArchivos(int resultado);
+		void eventoProcesarArchivos();
 
 	private:
 		QSettings _configuracion;

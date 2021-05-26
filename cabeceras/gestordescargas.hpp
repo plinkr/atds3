@@ -4,26 +4,26 @@
 #include <QThread>
 #include <QPointer>
 #include <QSharedPointer>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QUrl>
-#include <QReadWriteLock>
 #include <QSettings>
-#include "descarga.hpp"
+#include <QMutex>
 
 
 class VentanaPrincipal;
+class ModeloEntradas;
+class Descarga;
+struct sqlite3;
 
 class GestorDescargas : public QThread {
 	Q_OBJECT
 
 	public:
-		QPointer<QNetworkAccessManager> _administradorAccesoRed;
+		/**
+		 * @brief Inidica si se están deteniendo todas las descargas
+		 */
+		bool _deteniendoDescargas;
 
 		GestorDescargas(VentanaPrincipal *padre = nullptr);
 
-		void iniciar();
 		void run() override;
 
 		void agregarDescarga(int fila, unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando);
@@ -35,6 +35,7 @@ class GestorDescargas : public QThread {
 
 	private:
 		VentanaPrincipal *_padre;
+		sqlite3 *_baseDatos;
 
 		QSettings _configuracion;
 
@@ -47,7 +48,6 @@ class GestorDescargas : public QThread {
 		 * @brief Total de descargas activas
 		 */
 		int _totalDescargasActivas;
-		QReadWriteLock _mutexTotalDescargasActivas;
 
 		/**
 		 * @brief Descargas activas
@@ -56,6 +56,7 @@ class GestorDescargas : public QThread {
 
 		struct _descargaEnCola {
 				int fila;
+				unsigned int id;
 				QSharedPointer<ModeloEntradas> modelo;
 				QSharedPointer<ModeloEntradas> modeloDescargando;
 		};
@@ -63,12 +64,7 @@ class GestorDescargas : public QThread {
 		 * @brief Descargas en cola
 		 */
 		QMap<unsigned int, _descargaEnCola> _descargasEnCola;
-		QReadWriteLock _mutexDescargasEnCola;
-
-		/**
-		 * @brief Inidica si se están deteniendo todas las descargas
-		 */
-		bool _deteniendoDescargas;
+		QMutex _mutexDescargasEnCola;
 
 		void iniciarProximaDescargaDisponible();
 

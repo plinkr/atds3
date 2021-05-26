@@ -1,13 +1,12 @@
 #include "todus.hpp"
 #ifdef Q_OS_UNIX
-#include "todus_unix.pb.h"
+#include "todus.pb.h"
 #endif
 #ifdef Q_OS_WIN
 #include "todus_windows.pb.h"
 #endif
 #include "main.hpp"
 #include <ctime>
-#include <QTimer>
 #include <QByteArray>
 #include <QSettings>
 #include <QRegularExpression>
@@ -15,14 +14,18 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QRandomGenerator>
-#include <QNetworkRequest>
 #include <QSslConfiguration>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QNetworkProxy>
+#include <QSslSocket>
 #include <QInputDialog>
+#include <QMutexLocker>
 
 
 toDus::toDus(QObject *padre)
-	: QThread(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(1), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
+	: QThread(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(0), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
 }
 toDus::~toDus() {
 	google::protobuf::ShutdownProtobufLibrary();
@@ -33,9 +36,12 @@ void toDus::iniciar() {
 
 	_idSesion = generarIDSesion(5);
 	_administradorAccesoRed = new QNetworkAccessManager(this);
+#if QT_VERSION >= 0x050e00
+	_administradorAccesoRed->setAutoDeleteReplies(true);
+	_administradorAccesoRed->setTransferTimeout(10000);
+#endif
 	_socaloSSL = new QSslSocket(this);
 	_socaloSSL->setPeerVerifyMode(QSslSocket::VerifyNone);
-	_socaloSSL->setProtocol(QSsl::TlsV1_3OrLater);
 	_temporizadorMantenerSesionActiva.setInterval(60000);
 
 	connect(_socaloSSL, &QSslSocket::stateChanged, this, &toDus::eventoCambiarEstado);
@@ -270,14 +276,20 @@ void toDus::eventoDatosRecibidos() {
 						desconectar();
 
 						if (_fichaAccesoRenovada == false) {
+							QSettings configuracion;
+							QString telefono = configuracion.value("todus/telefono").toString();
+
 							_fichaAccesoRenovada = true;
-							solicitarFichaAcceso();
+							if (telefono.size() > 0) {
+								telefono.remove(0, 1);
+								solicitarCodigoSMS(telefono);
+							}
 						}
 					}
 				}
 				break;
 			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
-				re = QRegularExpression("<iq t='result' i='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos - 1)) + "'>.+<jid>(.+)</jid>.+</iq>");
+				re = QRegularExpression("<iq t='result' i='" + _idSesion + "-" + QString::number(_contadorComandos) + "'>.+<jid>(.+)</jid>.+</iq>");
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::SesionIniciada;
@@ -349,6 +361,14 @@ QString toDus::generarIDSesion(unsigned int totalCaracteres) {
 	return idSesion;
 }
 
+unsigned int toDus::obtenerProximoIDComando() {
+	_mutexContadorComandos.lock();
+	_contadorComandos++;
+	_mutexContadorComandos.unlock();
+
+	return _contadorComandos;
+}
+
 void toDus::solicitarCodigoSMS(const QString &telefono) {
 	QSettings configuracion;
 	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
@@ -363,7 +383,9 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	pbSolicitudSMS.set_id(_idInicioSesion.toStdString());
 	pbSolicitudSMS.SerializeToString(&datos);
 
-	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+#if QT_VERSION >= 0x050e00
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+#endif
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
@@ -378,7 +400,11 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
 
 	_respuestaCodigoSMS = _administradorAccesoRed->post(solicitud, datos.c_str());
+#if QT_VERSION >= 0x050e00
 	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#else
+	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
+#endif
 	connect(_respuestaCodigoSMS, &QNetworkReply::finished, this, &toDus::eventoFinalizadaCodigoSMS);
 }
 
@@ -399,7 +425,9 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	pbSolicitudFichaSolicitud.set_codigo(codigo.toStdString());
 	pbSolicitudFichaSolicitud.SerializeToString(&datos);
 
-	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+#if QT_VERSION >= 0x050e00
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+#endif
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
@@ -420,7 +448,11 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 
 	_respuestaFichaSolicitud = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaSolicitud, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaSolicitud);
-	connect(_respuestaFichaSolicitud, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#if QT_VERSION >= 0x050e00
+	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#else
+	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
+#endif
 	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaSolicitud);
 }
 
@@ -443,7 +475,9 @@ void toDus::solicitarFichaAcceso() {
 	pbSolicitudFichaAcceso.set_numeroversion(numeroVersion.toStdString());
 	pbSolicitudFichaAcceso.SerializeToString(&datos);
 
-	solicitud.setAttribute(QNetworkRequest::AutoDeleteReplyOnFinishAttribute, true);
+#if QT_VERSION >= 0x050e00
+	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+#endif
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 
 	if (ipServidorAutentificacion.size() > 0) {
@@ -463,7 +497,11 @@ void toDus::solicitarFichaAcceso() {
 
 	_respuestaFichaAcceso = _administradorAccesoRed->post(solicitud, datos.c_str());
 	connect(_respuestaFichaAcceso, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaAcceso);
-	connect(_respuestaFichaAcceso, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#if QT_VERSION >= 0x050e00
+	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
+#else
+	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
+#endif
 	connect(_respuestaFichaAcceso, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaAcceso);
 }
 
@@ -503,19 +541,20 @@ void toDus::xmppIniciarSesion() {
 }
 
 void toDus::xmppEstablecerSesion() {
-	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::fromStdString(std::to_string(_contadorComandos++)) + "' t='set'><b1 xmlns='x4'></b1></iq>\n";
+	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='set'><b1 xmlns='x4'></b1></iq>\n";
 
 	_socaloSSL->write(buferAEnviar);
 }
 
 void toDus::xmppMantenerSesionActiva() {
-	QString buferAEnviar = "<iq from='" + _jID + "' to='" + _dominioJID + "' id='" + _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++)) + "' type='get'><ping xmlns='urn:xmpp:ping'/></iq>\n";
+	QString buferAEnviar = "<iq from='" + _jID + "' to='" + _dominioJID + "' id='" + _idSesion + "-" + QString::number(obtenerProximoIDComando()) + "' type='get'><ping xmlns='urn:xmpp:ping'/></iq>\n";
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }
 
 void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void (const QString &)> retroalimentador) {
-	QString idSesion = _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++));
+	QMutexLocker b(&_mutexSolicitarEnlace);
+	QString idSesion = _idSesion + "-" + QString::number(obtenerProximoIDComando());
 	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:gurl' url='" + enlace + "'></query></iq>\n";
 
 	_listadoRetroalimentadores[idSesion] = std::move(retroalimentador);
@@ -524,7 +563,8 @@ void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<voi
 }
 
 void toDus::xmppSolicitarEnlaceSubida() {
-	QString idSesion = _idSesion + "-" + QString::fromStdString(std::to_string(_contadorComandos++));
+	QMutexLocker b(&_mutexSolicitarEnlace);
+	QString idSesion = _idSesion + "-" + QString::number(obtenerProximoIDComando());
 	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:purl' persistent='false' room='' type='0' size='52428800'></query></iq>\n";
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());

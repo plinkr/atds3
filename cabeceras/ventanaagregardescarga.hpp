@@ -3,13 +3,13 @@
 
 #include <QDialog>
 #include <QPointer>
-#include <QLineEdit>
-#include <QComboBox>
-#include <QCheckBox>
 #include <QSettings>
 
 
 struct _NuevaDescarga;
+class QLineEdit;
+class QComboBox;
+class QCheckBox;
 
 class VentanaAgregarDescarga : public QDialog
 {

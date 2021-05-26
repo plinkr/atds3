@@ -1,11 +1,15 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-#include <QString>
 #include <QSharedPointer>
-#include <QNetworkProxy>
-#include "gestordescargas.hpp"
-#include "todus.hpp"
+#include <QSharedPointer>
+
+
+struct sqlite3;
+struct sqlite3_stmt;
+class QNetworkProxy;
+class QPalette;
+class toDus;
 
 
 /**
@@ -22,6 +26,8 @@ extern QString _aplicacionNombreCorto;
  * @brief Versión de la aplicación
  */
 extern QString _aplicacionVersion;
+
+extern QString _rutaBaseDatos;
 
 /**
  * @brief Ruta en donde almacenar las descargas
@@ -57,7 +63,8 @@ enum _ListadoEstados {
 	Pausada = 0x02,
 	EnEsperaIniciar = 0x03,
 	Iniciada = 0x04,
-	Finalizada = 0x05
+	Finalizada = 0x05,
+	Error = 0x06
 };
 
 struct _NuevaDescarga {
@@ -66,6 +73,12 @@ struct _NuevaDescarga {
 	int categoria;
 	bool iniciar;
 };
+
+extern sqlite3 *iniciarConexionBaseDatos();
+extern void cerrarConexionBaseDatos(sqlite3 *baseDatos);
+extern void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion);
+extern sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion);
+extern void baseDatosFinalizar(sqlite3_stmt *resultados);
 
 /**
  * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo

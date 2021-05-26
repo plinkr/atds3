@@ -1,31 +1,31 @@
 #ifndef DESCARGA_HPP
 #define DESCARGA_HPP
 
-#include <ctime>
-#include <QObject>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QPointer>
 #include <QSharedPointer>
+#include <QNetworkReply>
 #include <QFile>
 
 
-class GestorDescargas;
 class ModeloEntradas;
-class VentanaPrincipal;
-class QSslError;
+class GestorDescargas;
+class QNetworkAccessManager;
+struct sqlite3;
 
 class Descarga : public QObject {
 	Q_OBJECT
 
 	public:
-		Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando, GestorDescargas *padre = nullptr);
+		Descarga(unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargas, GestorDescargas *padre = nullptr);
+		~Descarga();
 
 		bool iniciado();
 
 		void detener();
 
+		unsigned int id();
 		int fila();
+		int filaDescargas();
 		QSharedPointer<ModeloEntradas> modelo();
 		QSharedPointer<ModeloEntradas> modeloDescargas();
 
@@ -48,12 +48,13 @@ class Descarga : public QObject {
 
 	private:
 		GestorDescargas *_padre;
+		sqlite3 *_baseDatos;
 		bool _iniciado;
 		bool _deteniendo;
 		bool _error;
 		unsigned int _id;
 		int _filaModelo;
-		int _filaModeloDescargando;
+		int _filaModeloDescargas;
 		QPointer<QNetworkAccessManager> _administradorAccesoRed;
 		QString _enlaceNoFirmado;
 		QString _enlaceFirmado;
@@ -65,7 +66,7 @@ class Descarga : public QObject {
 		quint32 _ultimoTamanoRecibido;
 		quint64 _tamanoPrevio;
 
-		bool modelosValido();
+		void corregirFilaModelos();
 		unsigned int encontrarFilaDesdeId(QSharedPointer<ModeloEntradas> modelo);
 };
 

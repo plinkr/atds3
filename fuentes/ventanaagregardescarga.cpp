@@ -1,6 +1,6 @@
 #include "ventanaagregardescarga.hpp"
-#include "ventanaprincipal.hpp"
 #include "main.hpp"
+#include "ventanaprincipal.hpp"
 #include <QDialog>
 #include <QIcon>
 #include <QVBoxLayout>
@@ -8,6 +8,10 @@
 #include <QGroupBox>
 #include <QFormLayout>
 #include <QPushButton>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QSettings>
 
 
 VentanaAgregarDescarga::VentanaAgregarDescarga(QWidget *padre)
