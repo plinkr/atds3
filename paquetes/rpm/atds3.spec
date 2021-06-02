@@ -1,17 +1,17 @@
 Name:			atds3
-Version:		0.4.0
+Version:		0.7.0
 Release:		1%{?dist}
 Summary:		Administrador de Transferencias para toDus (S3)
 
 License:		BSD
 
-Source0:		atds3-0.4.0.tar.gz
+Source0:		atds3-0.7.0.tar.gz
 
 BuildArch:		x86_64
 
-BuildRequires:	rpm-build rpm-devel rpmlint rpmdevtools coreutils diffutils patch gcc make openssl-devel protobuf-devel protobuf-compiler sqlite-devel qt5-qtbase-devel qt5-qtsvg-devel qt5-qtbase qt5-qtbase-gui qt5-qtsvg
+BuildRequires:	rpm-build rpm-devel rpmlint rpmdevtools coreutils diffutils patch gcc make openssl-devel protobuf-devel protobuf-compiler qt5-qtbase-devel qt5-qtsvg-devel qt5-qtbase qt5-qtbase-gui qt5-qtsvg
 
-Requires:		openssl-libs protobuf-devel sqlite-libs qt5-qtbase qt5-qtbase-gui qt5-qtsvg
+Requires:		openssl-libs protobuf-devel qt5-qtbase qt5-qtbase-gui qt5-qtsvg
 
 %description
 ATDS3 es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
@@ -30,7 +30,7 @@ ATDS3 posee las siguientes características:
 protoc --proto_path=%{_builddir}/%{name}-%{version}/documentos/protobuf --cpp_out=%{_builddir}/%{name}-%{version} todus.proto
 mv %{_builddir}/%{name}-%{version}/todus.pb.h %{_builddir}/%{name}-%{version}/cabeceras/
 mv %{_builddir}/%{name}-%{version}/todus.pb.cc %{_builddir}/%{name}-%{version}/fuentes/
-qmake-qt5 %{_builddir}/%{name}-%{version}/%{name}.pro QMAKE_PREFIX=%{buildroot} QMAKE_CFLAGS_ISYSTEM=-I QMAKE_CXXFLAGS+=-g CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG+=release
+qmake-qt5 %{_builddir}/%{name}-%{version}/%{name}.pro QMAKE_PREFIX=%{buildroot} QMAKE_CFLAGS_ISYSTEM=-I QMAKE_CXXFLAGS+=-g CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG+=release CONFIG+=protobuf
 
 %build
 make %{?_smp_mflags}
@@ -51,6 +51,37 @@ strip %{buildroot}%{_bindir}/%{name}
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Wed Jun 02 2021 No maintainer <no@maintain.er> - 0.7.0-1
+- Reemplazado código base de comunicación HTTP con los servidores de la red toDus. Ahora es más sólido y eficiente.
+- Incrustada la librería Protocol Buffers en los binarios para Windows.
+- Mejorado el gestor de descargas.
+- Mejoradas las descargas.
+- Mejorada la reanudación de la descarga cuando se congela.
+- Agregada la habilidad de agrupar en una carpeta las descargas que conforman un conjunto de archivos compromidos por volúmenes.
+- Actualizado agente de usuario utilizado en las peticiones HTTP hacia los servidores de la red toDus.
+- Actualizado el número de versión utilizado en las peticiones HTTP hacia los servidores de la red toDus.
+* Fri May 28 2021 No maintainer <no@maintain.er> - 0.6.1-1
+- Corregido un error en la sección de reanudación automática de las descargas que provocaba que las descargas se iniciaran múltipleces veces.
+* Fri May 28 2021 No maintainer <no@maintain.er> - 0.6.0-1
+- Corrigido un error en el módulo de inicio de sesión de toDus.
+- Corrigido un error en hacia fallar al programa cuando se cambiaba el número de teléfono y/o la ficha de acceso.
+- Mejorado el módulo de descargas.
+- Se detecta correctamente cuando se queda colgada una descarga.
+- Se reanudan las descargas automáticamente si se quedan colgadas o si no obtuvieron correctamente el enlace firmado de la red toDus.
+- Mejorada el mecanismo del gestor de descargas para ofrecer descargas contínuas sin interrupciones.
+- Incrustada la dependencia 'Google Protocol Buffers' al binario para FreeBSD y Linux (solo derivados de Debian GNU/Linux).
+- Eliminada la dependencia de 'Google Protocol Buffers' de los paquetes FreeBSD y DEB.
+* Wed May 26 2021 No maintainer <no@maintain.er> - 0.5.0-1
+- Elimina la dependencia de la librería SQLite3.
+- Mejorado el rendimiento de la aplicación considerablemente. Ahora todo es más fluido.
+- Mejorad el proceso de actualización y visualización de los campos de las descargas. Ahora todo es más fluido.
+- Agregado soporte Unicode al procesado de los archivos de descargas.
+- Agregado el icono del sistema a la barra de herramientas del sistema.
+- La aplicación continúa corriendo en segundo plano al cerrarse si existen descargas activas.
+- La aplicación se cierra completamente al cerrarse si no existen descargas activas.
+- Corrigidas las operaciones a ejecutar cuando se cambia de número de teléfono o ficha de acceso.
+- Cambiada la clave de cifrado para proteger la contraseña del proxy.
+- Cambiado el tamaño mínimo de la aplicación a 705x430 píxeles.
 * Mon May 24 2021 No maintainer <no@maintain.er> - 0.4.0-1
 - Se agrega una nueva dependencia: SQLite3.
 - Se maneja el acceso a la base de datos del programa a bajo nivel para obtener mayor rendimiento.

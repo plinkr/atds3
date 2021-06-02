@@ -1,3 +1,50 @@
+atds3 (0.7.0-1) stable; urgency=low
+
+  * Reemplazado código base de comunicación HTTP con los servidores de la red toDus. Ahora es más sólido y eficiente.
+  * Incrustada la librería Protocol Buffers en los binarios para Windows.
+  * Mejorado el gestor de descargas.
+  * Mejoradas las descargas.
+  * Mejorada la reanudación de la descarga cuando se congela.
+  * Agregada la habilidad de agrupar en una carpeta las descargas que conforman un conjunto de archivos compromidos por volúmenes.
+  * Actualizado agente de usuario utilizado en las peticiones HTTP hacia los servidores de la red toDus.
+  * Actualizado el número de versión utilizado en las peticiones HTTP hacia los servidores de la red toDus.
+
+ -- No maintainer <no@maintain.er>  Wed, 02 Jun 2021 14:14:00 -0500
+
+atds3 (0.6.1-1) stable; urgency=low
+
+  * Corregido un error en la sección de reanudación automática de las descargas que provocaba que las descargas se iniciaran múltipleces veces.
+
+ -- No maintainer <no@maintain.er>  Fri, 28 May 2021 17:35:00 -0500
+
+atds3 (0.6.0-1) stable; urgency=low
+
+  * Corrigido un error en el módulo de inicio de sesión de toDus.
+  * Corrigido un error en hacia fallar al programa cuando se cambiaba el número de teléfono y/o la ficha de acceso.
+  * Mejorado el módulo de descargas.
+  * Se detecta correctamente cuando se queda colgada una descarga.
+  * Se reanudan las descargas automáticamente si se quedan colgadas o si no obtuvieron correctamente el enlace firmado de la red toDus.
+  * Mejorada el mecanismo del gestor de descargas para ofrecer descargas contínuas sin interrupciones.
+  * Incrustada la dependencia 'Google Protocol Buffers' al binario para FreeBSD y Linux (solo derivados de Debian GNU/Linux).
+  * Eliminada la dependencia de 'Google Protocol Buffers' de los paquetes FreeBSD y DEB.
+
+ -- No maintainer <no@maintain.er>  Fri, 28 May 2021 12:09:00 -0500
+
+atds3 (0.5.0-1) stable; urgency=low
+
+  * Elimina la dependencia de la librería SQLite3.
+  * Mejorado el rendimiento de la aplicación considerablemente. Ahora todo es más fluido.
+  * Mejorad el proceso de actualización y visualización de los campos de las descargas. Ahora todo es más fluido.
+  * Agregado soporte Unicode al procesado de los archivos de descargas.
+  * Agregado el icono del sistema a la barra de herramientas del sistema.
+  * La aplicación continúa corriendo en segundo plano al cerrarse si existen descargas activas.
+  * La aplicación se cierra completamente al cerrarse si no existen descargas activas.
+  * Corrigidas las operaciones a ejecutar cuando se cambia de número de teléfono o ficha de acceso.
+  * Cambiada la clave de cifrado para proteger la contraseña del proxy.
+  * Cambiado el tamaño mínimo de la aplicación a 705x430 píxeles.
+
+ -- No maintainer <no@maintain.er>  Wed, 26 May 2021 22:36:00 -0500
+
 atds3 (0.4.0-1) stable; urgency=low
 
   * Se agrega una nueva dependencia: SQLite3.

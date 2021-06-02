@@ -1,6 +1,6 @@
 # Maintainer: No maintainer <no@maintain.er>
 pkgname=atds3
-pkgver=0.4.0
+pkgver=0.7.0
 pkgrel=1
 pkgdesc="ATDS3 es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
 
@@ -15,13 +15,11 @@ ATDS3 posee las siguientes características:
 arch=('x86_64')
 license=('BSD')
 groups=('s3')
-depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'sqlite>=3.35.5' 'qt5-base>=5.15.2' 'qt5-svg>=5.15.2')
+depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'qt5-base>=5.15.2' 'qt5-svg>=5.15.2')
 provides=('atds3')
 changelog='changelog'
 source=("$pkgname-$pkgver.tar.gz")
-md5sums=('dbe045425dc0c1674c4457ff1e4fcacf')
-sha1sums=('31f4089ce7321c282116f67dacba568c191ea314')
-sha256sums=('42304cda0a3c24440004cbf13f852db0bc019a6e86a5b4223b4acf84b4c30bf0')
+sha256sums=('e36a8136964a6b895d226481e5703e9dbd41d3c298d5c22983c5477fe8907ada')
 
 prepare() {
 	cd "$pkgname-$pkgver"
@@ -34,16 +32,12 @@ build() {
 	cd "$pkgname-$pkgver"
 	mkdir -p _construccion
 	cd _construccion
-	qmake "$srcdir/$pkgname-$pkgver/$pkgname.pro" QMAKE_PREFIX="$pkgdir" QMAKE_CFLAGS_ISYSTEM=-I CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG-=separate_debug_info CONFIG+=release
+	qmake "$srcdir/$pkgname-$pkgver/$pkgname.pro" QMAKE_PREFIX="$pkgdir" QMAKE_CFLAGS_ISYSTEM=-I CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG-=separate_debug_info CONFIG+=release CONFIG+=protobuf
 	make -j1
 }
 
 package() {
 	cd "$pkgname-$pkgver"
 	cd _construccion
-	mkdir -p "$pkgdir/usr/bin" "$pkgdir/usr/share/applications" "$pkgdir/usr/share/pixmaps"
-	install -m 0755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
-	strip "$pkgdir/usr/bin/$pkgname"
-	install -m 0644 "$srcdir/$pkgname-$pkgver/recursos/iconos/$pkgname.svg" "$pkgdir/usr/share/pixmaps/$pkgname.svg"
-	install -m 0644 "$srcdir/$pkgname-$pkgver/$pkgname.desktop" "$pkgdir/usr/share/applications/$pkgname.desktop"
+	make install
 }
