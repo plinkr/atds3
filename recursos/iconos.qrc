@@ -48,5 +48,7 @@
         <file>iconos/oscuro/seleccionar-directorio.svg</file>
         <file>iconos/oscuro/subida.svg</file>
         <file>iconos/oscuro/usuario.svg</file>
+        <file>iconos/terminar.svg</file>
+        <file>iconos/atds3.png</file>
     </qresource>
 </RCC>
