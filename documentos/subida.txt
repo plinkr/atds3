@@ -3,4 +3,4 @@
 3- se sube con PUT
 
 
-curl --progress-bar --http2 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjA0Mjc4OTgsInVzZXJuYW1lIjoiNTM1NTEzODk4OSIsInZlcnNpb24iOiIyMTgwNiJ9.FiOmXysejRi5AT3eGK_zS-Oueqh2Wbd_l8kX_LUlXuQ' --request put --tcp-nodelay --tlsv1 --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file 'archivo' 'enlace'
+curl --progress-bar --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjIyOTM3NTEsInVzZXJuYW1lIjoiNTM1NTEzODk4OSIsInZlcnNpb24iOiIyMTgwNiJ9.WZxzVOpHIcGL9amZmWeR0r-cDLxqB3w3KRp3qZoue6I' --request PUT --tcp-nodelay --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file 'tsetup-x64.2.7.4.7z' 'https://s3.todus.cu/todus/file/2021-05-29/839/8397e5bbaa202dedf0b6910bc77c6206b5e247d81cd76157ef57a4b82da0be71?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=YICSWAWTA0DXZ7C4K7WJ%2F20210529%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20210529T021002Z&X-Amz-Expires=120&X-Amz-SignedHeaders=host&X-Amz-Signature=3837e067c383403b0d5a4b7453d6c094c257f4bd35176e5625899414475a421d'

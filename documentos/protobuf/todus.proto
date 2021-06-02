@@ -10,17 +10,17 @@ message SolicitudSMS {
 message SolicitudFichaSolicitud {
 	required string telefono = 1;
 	required string id = 2;
-	required string codigo = 3;	
+	required string codigo = 3;
 }
 
 message RecepcionFichaSolicitud {
-	required string fichaSolicitud = 1;
+	required bytes fichaSolicitud = 1;
 	message DatosUsuario {
 		required string telefono = 1;
 		optional string nombre = 2;
 		optional string enlaceFoto = 3;
-		optional string reservado1 = 4;
-		optional string reservado2 = 5;
+		optional string biografia = 4;
+		optional string reservado1 = 5;
 	}
 	required DatosUsuario usuario = 2;
 }
@@ -33,6 +33,6 @@ message SolicitudFichaAcceso {
 
 message RecepcionFichaAcceso {
 	required int32 reservado1 = 1;
-	required string fichaAcceso = 2;
+	required bytes fichaAcceso = 2;
 	required int32 tiempoExpiracion = 3;
 }
