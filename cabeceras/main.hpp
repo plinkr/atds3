@@ -1,12 +1,10 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
-#include <QSharedPointer>
+#include <QPointer>
 #include <QSharedPointer>
 
 
-struct sqlite3;
-struct sqlite3_stmt;
 class QNetworkProxy;
 class QPalette;
 class toDus;
@@ -40,9 +38,14 @@ extern QString _rutaDescargas;
 extern QString _agenteUsuarioTodus;
 
 /**
+ * @brief Número de versión de toDus
+ */
+extern QString _numeroVersionTodus;
+
+/**
  * @brief Sesión toDus
  */
-extern QSharedPointer<toDus> _toDus;
+extern QPointer<toDus> _toDus;
 
 /**
  * @brief Listado de categorías
@@ -73,12 +76,6 @@ struct _NuevaDescarga {
 	int categoria;
 	bool iniciar;
 };
-
-extern sqlite3 *iniciarConexionBaseDatos();
-extern void cerrarConexionBaseDatos(sqlite3 *baseDatos);
-extern void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion);
-extern sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion);
-extern void baseDatosFinalizar(sqlite3_stmt *resultados);
 
 /**
  * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo

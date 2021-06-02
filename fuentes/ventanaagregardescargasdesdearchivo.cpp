@@ -16,6 +16,7 @@
 #include <QCheckBox>
 #include <QSettings>
 #include <QFileDialog>
+#include <QTextStream>
 
 
 VentanaAgregarDescargasDesdeArchivos::VentanaAgregarDescargasDesdeArchivos(QWidget *parent)
@@ -113,21 +114,23 @@ void VentanaAgregarDescargasDesdeArchivos::procesarArchivo(const QString &archiv
 			return;
 		}
 
-		while (lector.atEnd() == false) {
-			QList<QByteArray> campos = lector.readLine().split('\t');
-			QString nombre, enlace;
+		QTextStream flujo(&lector);
+		flujo.setAutoDetectUnicode(true);
+
+		while (flujo.atEnd() == false) {
+			QList<QString> campos = flujo.readLine().split('\t');
 
 			if (campos.size() > 0) {
 				if (campos[0].startsWith("https://s3.todus.cu/") == true) {
 					_NuevaDescarga nuevaDescarga;
 
 					if (campos.size() > 1) {
-						nuevaDescarga.nombre = QString::fromLocal8Bit(campos[1]).trimmed();
-						nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
+						nuevaDescarga.nombre = campos[1].trimmed();
+						nuevaDescarga.enlace = campos[0].trimmed();
 					} else {
-						nuevaDescarga.nombre = QString::fromLocal8Bit(campos[0]).trimmed();
+						nuevaDescarga.nombre = campos[0].trimmed();
 						nuevaDescarga.nombre.remove(0, campos[0].lastIndexOf("/") + 1);
-						nuevaDescarga.enlace = QString::fromLocal8Bit(campos[0]).trimmed();
+						nuevaDescarga.enlace = campos[0].trimmed();
 					}
 					_modeloElementosProcesados->appendRow(QList<QStandardItem *>{new QStandardItem(nuevaDescarga.nombre), new QStandardItem(nuevaDescarga.enlace)});
 					_listadoElementosProcesados.push_back(nuevaDescarga);

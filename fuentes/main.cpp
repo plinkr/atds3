@@ -1,7 +1,6 @@
 #include "main.hpp"
 #include "ventanaconfiguracion.hpp"
 #include "ventanaprincipal.hpp"
-#include <sqlite3.h>
 #include <openssl/evp.h>
 #include <QApplication>
 #include <QSettings>
@@ -29,6 +28,9 @@ QString _aplicacionNombreCorto;
  */
 QString _aplicacionVersion;
 
+/**
+ * @brief Ruta del archivo de la base de datos
+ */
 QString _rutaBaseDatos;
 
 /**
@@ -42,22 +44,16 @@ QString _rutaDescargas;
 QString _agenteUsuarioTodus;
 
 /**
- * @brief Base de datos
+ * @brief Número de versión de toDus
  */
-sqlite3 *_baseDatos;
+QString _numeroVersionTodus;
 
 /**
  * @brief Sesión toDus
  */
-QSharedPointer<toDus> _toDus;
+QPointer<toDus> _toDus;
 
 bool _temaClaro = true;
-
-sqlite3 *iniciarConexionBaseDatos();
-void cerrarConexionBaseDatos(sqlite3 *baseDatos);
-void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion);
-sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion);
-void baseDatosFinalizar(sqlite3_stmt *resultados);
 
 /**
  * @brief Crea las configuraciones de la aplicación por defecto si no existen
@@ -108,18 +104,18 @@ int main(int argc, char *argv[])
 
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
 	_aplicacionNombreCorto = "atds3";
-	_aplicacionVersion = "0.4.0";
-	_agenteUsuarioTodus = "ToDus 0.38.35";
+	_aplicacionVersion = "0.7.0";
+	_agenteUsuarioTodus = "ToDus 0.39.4";
+	_numeroVersionTodus = "21808";
 
 	app.setOrganizationName(_aplicacionNombreCorto);
 	app.setApplicationDisplayName(_aplicacionTitulo);
 	app.setApplicationName(_aplicacionNombreCorto);
 	app.setApplicationVersion(_aplicacionVersion);
-/*
-	if (iniciarConexionBaseDatos() == false) {
-		return EXIT_FAILURE;
-	}
-*/
+	app.setQuitOnLastWindowClosed(false);
+
+	_rutaBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/" + _aplicacionNombreCorto + ".db";
+
 	crearConfiguracionesDefecto();
 
 	crearDirectoriosDescargas();
@@ -150,46 +146,7 @@ int main(int argc, char *argv[])
 
 	codigoSalida = app.exec();
 
-//	cerrarConexionBaseDatos();
-
 	return codigoSalida;
-}
-
-sqlite3 *iniciarConexionBaseDatos() {
-	sqlite3 *baseDatos;
-	_rutaBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/" + _aplicacionNombreCorto + ".db";
-
-	sqlite3_open_v2(_rutaBaseDatos.toStdString().c_str(), &baseDatos, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL);
-
-	return baseDatos;
-}
-
-void cerrarConexionBaseDatos(sqlite3 *baseDatos) {
-	sqlite3_close_v2(baseDatos);
-}
-
-void baseDatosEjecutar(sqlite3 *baseDatos, const QString instruccion) {
-	sqlite3_stmt *resultados;
-
-	if (baseDatos == NULL) {
-		baseDatos = iniciarConexionBaseDatos();
-	}
-
-	sqlite3_prepare_v2(baseDatos, instruccion.toStdString().c_str(), instruccion.size(), &resultados, NULL);
-	sqlite3_step(resultados);
-	sqlite3_finalize(resultados);
-}
-
-sqlite3_stmt *baseDatosPreparar(sqlite3 *baseDatos, const QString instruccion) {
-	sqlite3_stmt *resultados;
-
-	sqlite3_prepare_v2(baseDatos, instruccion.toStdString().c_str(), instruccion.size(), &resultados, NULL);
-
-	return resultados;
-}
-
-void baseDatosFinalizar(sqlite3_stmt *resultados) {
-	sqlite3_finalize(resultados);
 }
 
 /**
@@ -358,7 +315,7 @@ QNetworkProxy obtenerConfiguracionProxy() {
 		proxy.setUser(configuracion.value("proxy/usuario").toString());
 	}
 	if (configuracion.contains("proxy/contrasena") == true) {
-		proxy.setPassword(descifrarTexto(QByteArray::fromBase64(configuracion.value("proxy/contrasena").toByteArray()), proxy.user() + "@" + proxy.hostName() + ":" + QString::number(proxy.port())));
+		proxy.setPassword(descifrarTexto(QByteArray::fromBase64(configuracion.value("proxy/contrasena").toByteArray()), "821112|" + proxy.user() + "@" + proxy.hostName() + ":" + QString::number(proxy.port())));
 	}
 
 	switch (configuracion.value("proxy/tipo", 0).toInt()) {

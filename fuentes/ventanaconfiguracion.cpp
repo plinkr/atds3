@@ -62,6 +62,12 @@ void VentanaConfiguracion::guardarOpciones() {
 		_configuracion.setValue("todus/telefono", telefono);
 	} else {
 		_configuracion.remove("todus/telefono");
+		_configuracion.remove("todus/nombre");
+		_configuracion.remove("todus/enlaceAvatar");
+		_configuracion.remove("todus/biografia");
+		_configuracion.remove("todus/fichaSolicitud");
+		_configuracion.remove("todus/fichaAcceso");
+		_configuracion.remove("todus/fichaAccesoTiempoExpiracion");
 	}
 
 	if (_fichaAcceso->toPlainText().trimmed().size() > 0) {
@@ -124,7 +130,7 @@ void VentanaConfiguracion::guardarOpciones() {
 		}
 
 		if (_contrasenaServidorProxy->text().trimmed().size() > 0) {
-			_configuracion.setValue("proxy/contrasena", cifrarTexto(_contrasenaServidorProxy->text().trimmed().toLocal8Bit(), _usuarioServidorProxy->text().trimmed() + "@" + _servidorProxy->text().trimmed() + ":" + QString::number(_puertoServidorProxy->value())).toBase64());
+			_configuracion.setValue("proxy/contrasena", cifrarTexto(_contrasenaServidorProxy->text().trimmed().toLocal8Bit(), "821112|" + _usuarioServidorProxy->text().trimmed() + "@" + _servidorProxy->text().trimmed() + ":" + QString::number(_puertoServidorProxy->value())).toBase64());
 		} else {
 			_configuracion.remove("proxy/contrasena");
 		}

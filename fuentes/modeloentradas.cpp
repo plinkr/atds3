@@ -7,17 +7,25 @@ ModeloEntradas::ModeloEntradas(QObject *padre, const QSqlDatabase &baseDatos)
 	: QSqlTableModel(padre, baseDatos) {
 	setEditStrategy(QSqlTableModel::OnManualSubmit);
 	setTable("entradas");
-	setHeaderData(1, Qt::Horizontal, "Estado");
-	setHeaderData(2, Qt::Horizontal, "Nombre");
-	setHeaderData(3, Qt::Horizontal, "Completado");
-	setHeaderData(4, Qt::Horizontal, "Velocidad");
-	setHeaderData(5, Qt::Horizontal, "Ruta de guardado");
+
+	setHeaderData(2, Qt::Horizontal, "Estado");
+	setHeaderData(4, Qt::Horizontal, "Nombre");
+	setHeaderData(6, Qt::Horizontal, "Tamaño");
+	setHeaderData(7, Qt::Horizontal, "Descargado");
+	setHeaderData(8, Qt::Horizontal, "Completado");
+	setHeaderData(9, Qt::Horizontal, "Velocidad");
 }
 
-void ModeloEntradas::eliminarFila(int fila) {
-	emit layoutAboutToBeChanged();
-	beginRemoveRows(index(fila, 0).parent(), fila, fila);
-	removeRows(fila, 1, index(fila, 0).parent());
+void ModeloEntradas::eliminarFila(unsigned int id) {
+	int fila = 0;
+
+	for (fila = 0; fila < rowCount(); fila++) {
+		if (data(index(fila, 0)).toUInt() == id) {
+			break;
+		}
+	}
+
+	beginRemoveRows(QModelIndex(), fila, fila);
+	removeRow(fila, QModelIndex());
 	endRemoveRows();
-	emit layoutChanged();
 }

@@ -1,10 +1,6 @@
 #include "todus.hpp"
-#ifdef Q_OS_UNIX
 #include "todus.pb.h"
-#endif
-#ifdef Q_OS_WIN
-#include "todus_windows.pb.h"
-#endif
+#include "http1.hpp"
 #include "main.hpp"
 #include <ctime>
 #include <QByteArray>
@@ -19,13 +15,13 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QNetworkProxy>
-#include <QSslSocket>
 #include <QInputDialog>
 #include <QMutexLocker>
+#include <QFile>
 
 
 toDus::toDus(QObject *padre)
-	: QThread(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(0), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
+	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(0), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
 }
 toDus::~toDus() {
 	google::protobuf::ShutdownProtobufLibrary();
@@ -35,11 +31,6 @@ void toDus::iniciar() {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	_idSesion = generarIDSesion(5);
-	_administradorAccesoRed = new QNetworkAccessManager(this);
-#if QT_VERSION >= 0x050e00
-	_administradorAccesoRed->setAutoDeleteReplies(true);
-	_administradorAccesoRed->setTransferTimeout(10000);
-#endif
 	_socaloSSL = new QSslSocket(this);
 	_socaloSSL->setPeerVerifyMode(QSslSocket::VerifyNone);
 	_temporizadorMantenerSesionActiva.setInterval(60000);
@@ -48,15 +39,8 @@ void toDus::iniciar() {
 	connect(_socaloSSL, &QSslSocket::encrypted, this, &toDus::eventoConexionLista);
 	connect(_socaloSSL, &QSslSocket::readyRead, this, &toDus::eventoDatosRecibidos);
 	connect(&_temporizadorMantenerSesionActiva, &QTimer::timeout, this, &toDus::xmppMantenerSesionActiva);
-
-	start();
 }
 
-void toDus::run() {
-	while (isInterruptionRequested() == false) {
-		sleep(2);
-	}
-}
 /**
  * @brief Obtiene el estado de la sesión toDus
  * @return Devuelve el estado de la sesión toDus
@@ -89,13 +73,12 @@ void toDus::reconectar() {
  * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
  */
 void toDus::iniciarSesion() {
-	QSettings configuracion;
-	QString telefono = configuracion.value("todus/telefono").toString();
-	QString fichaAcceso = configuracion.value("todus/fichaAcceso").toString();
-	qint32 fichaAccesoTiempoExpiracion = configuracion.value("todus/fichaAccesoTiempoExpiracion").toInt();
+	QString telefono = _configuracion.value("todus/telefono").toString();
+	QString fichaSolicitud = _configuracion.value("todus/fichaSolicitud").toString();
+	QString fichaAcceso = _configuracion.value("todus/fichaAcceso").toString();
 	std::time_t tiempoActual = std::time(nullptr);
+	qint32 fichaAccesoTiempoExpiracion = _configuracion.value("todus/fichaAccesoTiempoExpiracion", (long long)tiempoActual).toInt();
 
-	_administradorAccesoRed->setProxy(obtenerConfiguracionProxy());
 	_socaloSSL->setProxy(obtenerConfiguracionProxy());
 
 	_idInicioSesion = generarIDSesion(150);
@@ -108,6 +91,8 @@ void toDus::iniciarSesion() {
 		} else {
 			iniciarSesionConFichaAcceso();
 		}
+	} else if (fichaSolicitud.size() > 0) {
+		solicitarFichaAcceso();
 	} else if (telefono.size() > 0) {
 		telefono.remove(0, 1);
 		solicitarCodigoSMS(telefono);
@@ -124,87 +109,90 @@ void toDus::solicitarEnlaceFirmado(const QString &enlace, std::function<void(con
 	}
 }
 
-void toDus::solicitarEnlaceFirmadoSubida() {
+void toDus::solicitarEnlaceFirmadoSubida(const QString &tamano) {
 	if (_progresoInicioSesion == ProgresoInicioSesion::SesionIniciada) {
-		xmppSolicitarEnlaceSubida();
+		xmppSolicitarEnlaceSubida(tamano);
 	}
 }
 
 void toDus::eventoFinalizadaCodigoSMS() {
-	if (_respuestaCodigoSMS->error() == QNetworkReply::NetworkError::NoError) {
-		QSettings configuracion;
+	if (_httpCodigoSMS->codigoHTTP() == 200 || _httpCodigoSMS->codigoHTTP() == 204) {
 		bool ok = false;
 		QString codigo = QInputDialog::getText(nullptr, "Código de verificación", "Código de verificación:", QLineEdit::Normal, "", &ok);
 
 		if (ok == true) {
-			configuracion.setValue("todus/codigoVerificacion", codigo);
 			solicitarFichaSolicitud(codigo);
 		}
 	}
-
-//	_respuestaCodigoSMS->deleteLater();
-}
-
-void toDus::eventoRecepcionDatosFichaSolicitud() {
-	QSettings configuracion;
-	QByteArray fichaSolicitudCruda = configuracion.value("todus/fichaSolicitudCruda").toByteArray();
-
-	fichaSolicitudCruda += _respuestaFichaSolicitud->readAll();
-	configuracion.setValue("todus/fichaSolicitudCruda", fichaSolicitudCruda);
 }
 
 void toDus::eventoFinalizadaFichaSolicitud() {
-	if (_respuestaFichaSolicitud->error() == QNetworkReply::NetworkError::NoError) {
-		QSettings configuracion;
-		QByteArray fichaSolicitudCruda = configuracion.value("todus/fichaSolicitudCruda").toByteArray();
+	if (_httpFichaSolicitud->codigoHTTP() == 200) {
 		toDusPB::RecepcionFichaSolicitud pbRecepcionFichaSolicitud;
 
-		if (pbRecepcionFichaSolicitud.ParseFromArray(fichaSolicitudCruda.constData(), fichaSolicitudCruda.size()) == true) {
-			configuracion.setValue("todus/fichaSolicitud", pbRecepcionFichaSolicitud.fichasolicitud().c_str());
+		if (pbRecepcionFichaSolicitud.ParseFromArray(_buferDescargaFichaSolicitud.constData(), _buferDescargaFichaSolicitud.size()) == true) {
+			_configuracion.setValue("todus/fichaSolicitud", pbRecepcionFichaSolicitud.fichasolicitud().c_str());
 			if (pbRecepcionFichaSolicitud.usuario().has_nombre() == true) {
-				configuracion.setValue("todus/nombre", pbRecepcionFichaSolicitud.usuario().nombre().c_str());
+				_configuracion.setValue("todus/nombre", pbRecepcionFichaSolicitud.usuario().nombre().c_str());
 			}
 			if (pbRecepcionFichaSolicitud.usuario().has_enlacefoto() == true) {
-				configuracion.setValue("todus/enlaceAvatar", pbRecepcionFichaSolicitud.usuario().enlacefoto().c_str());
+				_configuracion.setValue("todus/enlaceAvatar", pbRecepcionFichaSolicitud.usuario().enlacefoto().c_str());
 			}
+			if (pbRecepcionFichaSolicitud.usuario().has_biografia() == true) {
+				_configuracion.setValue("todus/biografia", pbRecepcionFichaSolicitud.usuario().biografia().c_str());
+			}
+/*
+		} else {
+			int posicion = 0;
+			std::uint16_t longitud = 0;
 
-			configuracion.remove("todus/fichaSolicitudCruda");
+			if ((int)_buferDescargaFichaSolicitud[posicion] == 0x0a) {
+				longitud = (std::uint16_t)_buferDescargaFichaSolicitud[++posicion];
+				_configuracion.setValue("todus/fichaSolicitud", _buferDescargaFichaSolicitud.mid(++posicion, longitud).constData());
+				posicion += longitud;
+				if ((int)_buferDescargaFichaSolicitud[posicion] == 0x12) {
+					posicion = _buferDescargaFichaSolicitud.indexOf((char)0x0a, posicion);
+					if (posicion != -1) {
+						longitud = (std::uint16_t)_buferDescargaFichaSolicitud[++posicion];
+						posicion += longitud + 1;
+						if ((int)_buferDescargaFichaSolicitud[posicion] == 0x12) {
+							longitud = (std::uint16_t)_buferDescargaFichaSolicitud[++posicion];
+							_configuracion.setValue("todus/nombre", _buferDescargaFichaSolicitud.mid(++posicion, longitud).constData());
+							posicion += longitud;
+							if ((int)_buferDescargaFichaSolicitud[posicion] == 0x1a) {
+								longitud = (std::uint16_t)_buferDescargaFichaSolicitud[++posicion];
+								_configuracion.setValue("todus/enlaceAvatar", _buferDescargaFichaSolicitud.mid(++posicion, longitud).constData());
+							}
+						}
+					}
+				}
+			}
+*/
 			solicitarFichaAcceso();
 		}
 	}
-
-//	_respuestaFichaSolicitud->deleteLater();
-}
-
-void toDus::eventoRecepcionDatosFichaAcceso() {
-	QSettings configuracion;
-	QByteArray fichaAccesoCruda = configuracion.value("todus/fichaAccesoCruda").toByteArray();
-
-	fichaAccesoCruda += _respuestaFichaAcceso->readAll();
-	configuracion.setValue("todus/fichaAccesoCruda", fichaAccesoCruda);
 }
 
 void toDus::eventoFinalizadaFichaAcceso() {
-	if (_respuestaFichaAcceso->error() == QNetworkReply::NetworkError::NoError) {
-		QSettings configuracion;
-		QByteArray fichaAccesoCruda = configuracion.value("todus/fichaAccesoCruda").toByteArray();
+	if (_httpFichaAcceso->codigoHTTP() == 200) {
 		toDusPB::RecepcionFichaAcceso pbRecepcionFichaAcceso;
 
-		if (pbRecepcionFichaAcceso.ParseFromArray(fichaAccesoCruda.constData(), fichaAccesoCruda.size()) == true) {
-			configuracion.setValue("todus/fichaAcceso", pbRecepcionFichaAcceso.fichaacceso().c_str());
-			configuracion.setValue("todus/fichaAccesoTiempoExpiracion", pbRecepcionFichaAcceso.tiempoexpiracion());
+		if (pbRecepcionFichaAcceso.ParseFromArray(_buferDescargaFichaAcceso.constData(), _buferDescargaFichaAcceso.size()) == true) {
+			_configuracion.setValue("todus/fichaAcceso", pbRecepcionFichaAcceso.fichaacceso().c_str());
+			_configuracion.setValue("todus/fichaAccesoTiempoExpiracion", pbRecepcionFichaAcceso.tiempoexpiracion());
 
-			configuracion.remove("todus/fichaAccesoCruda");
 			iniciarSesionConFichaAcceso();
 		}
+	} else if (_httpFichaAcceso->codigoHTTP() >= 400 && _httpFichaAcceso->codigoHTTP() <= 499) {
+		_configuracion.remove("todus/codigoVerificacion");
+		_configuracion.remove("todus/fichaSolicitud");
+
+		desconectar();
+
+		_estado = Estado::Desconectado;
+
+		emit estadoCambiado(_estado);
 	}
-
-	//_respuestaFichaSolicitud->deleteLater();
-}
-
-void toDus::eventoError(QNetworkReply::NetworkError codigo) {
-	std::cout << "toDus::eventoError() - " << codigo << std::endl;
-	Q_UNUSED(codigo);
 }
 
 void toDus::eventoCambiarEstado(QAbstractSocket::SocketState estado) {
@@ -269,23 +257,10 @@ void toDus::eventoDatosRecibidos() {
 					xmppSaludar();
 					xmppEstablecerSesion();
 				} else {
-					re = QRegularExpression("<failure xmlns='x2'><not-authorized/>.+</failure>");
-					rem = re.match(bufer);
-					if (rem.hasMatch() == true) {
-						_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
-						desconectar();
+					_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
+					desconectar();
 
-						if (_fichaAccesoRenovada == false) {
-							QSettings configuracion;
-							QString telefono = configuracion.value("todus/telefono").toString();
-
-							_fichaAccesoRenovada = true;
-							if (telefono.size() > 0) {
-								telefono.remove(0, 1);
-								solicitarCodigoSMS(telefono);
-							}
-						}
-					}
+					solicitarFichaAcceso();
 				}
 				break;
 			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
@@ -324,7 +299,7 @@ void toDus::eventoDatosRecibidos() {
 							QString enlaceNoFirmadoDescarga = rem.captured(3);
 							//_listadoEnlacesFirmados.remove(idSesion);
 							//emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
-							std::cout << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << std::endl;
+							std::cout << "curl --progress-bar --header 'Authorization: Bearer " << _configuracion.value("todus/fichaAcceso").toString().toStdString() << "' --request PUT --tcp-nodelay --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file \"${archivo}\" '" << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << "'" << std::endl;
 							std::cout << enlaceNoFirmadoDescarga.toStdString() << std::endl;
 						}
 					}
@@ -362,62 +337,72 @@ QString toDus::generarIDSesion(unsigned int totalCaracteres) {
 }
 
 unsigned int toDus::obtenerProximoIDComando() {
-	_mutexContadorComandos.lock();
+	QMutexLocker b(&_mutexContadorComandos);
+
 	_contadorComandos++;
-	_mutexContadorComandos.unlock();
 
 	return _contadorComandos;
 }
 
 void toDus::solicitarCodigoSMS(const QString &telefono) {
-	QSettings configuracion;
-	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
-	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.reserve");
-	QNetworkRequest solicitud;
+	QString ipServidorAutentificacion = _configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = _configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	std::uint16_t puertoServidorAutentificacion = _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toUInt();
 	std::string datos;
 	toDusPB::SolicitudSMS pbSolicitudSMS;
+
+	_httpCodigoSMS = new HTTP1(this);
+
+	_httpCodigoSMS->establecerMetodo(HTTP1::Metodo::PUBLICAR);
+	if (ipServidorAutentificacion.size() > 0) {
+		_httpCodigoSMS->establecerAnfitrion(ipServidorAutentificacion);
+	} else {
+		_httpCodigoSMS->establecerAnfitrion(nombreDNSServidorAutentificacion);
+	}
+	_httpCodigoSMS->establecerPuerto(puertoServidorAutentificacion);
+	_httpCodigoSMS->establecerRuta("/v2/auth/users.reserve");
 
 	pbSolicitudSMS.set_telefono(telefono.toStdString());
 	pbSolicitudSMS.set_id(_idInicioSesion.toStdString());
 	pbSolicitudSMS.SerializeToString(&datos);
 
-#if QT_VERSION >= 0x050e00
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-#endif
-	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
+	_buferCargaCodigoSMS = QByteArray::fromStdString(datos);
+	_httpCodigoSMS->establecerOrigenCarga(&_buferCargaCodigoSMS);
+	_buferDescargaCodigoSMS.clear();
+	_httpCodigoSMS->establecerDestinoDescarga(&_buferDescargaCodigoSMS);
 
-	if (ipServidorAutentificacion.size() > 0) {
-		url.setHost(ipServidorAutentificacion);
-	}
-	url.setPort(puertoServidorAutentificacion);
+	_httpCodigoSMS->agregarCabeceraSolicitud("Content-Length", QString::number(datos.size()));
+	_httpCodigoSMS->agregarCabeceraSolicitud("Content-Type", "application/x-protobuf");
+	_httpCodigoSMS->agregarCabeceraSolicitud("Host", nombreDNSServidorAutentificacion);
+	_httpCodigoSMS->agregarCabeceraSolicitud("User-Agent", _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 
-	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
-	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
-	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
-	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
+	connect(_httpCodigoSMS, &HTTP1::finalizado, this, &toDus::eventoFinalizadaCodigoSMS);
 
-	_respuestaCodigoSMS = _administradorAccesoRed->post(solicitud, datos.c_str());
-#if QT_VERSION >= 0x050e00
-	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#else
-	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
-#endif
-	connect(_respuestaCodigoSMS, &QNetworkReply::finished, this, &toDus::eventoFinalizadaCodigoSMS);
+	_httpCodigoSMS->ejecutar();
 }
 
 void toDus::solicitarFichaSolicitud(const QString &codigo) {
-	QSettings configuracion;
-	QString telefono = configuracion.value("todus/telefono").toString();
-	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
-	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/users.register");
-	QNetworkRequest solicitud;
+	QString telefono = _configuracion.value("todus/telefono").toString();
+	QString ipServidorAutentificacion = _configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = _configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	std::int16_t puertoServidorAutentificacion = _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	std::string datos;
 	toDusPB::SolicitudFichaSolicitud pbSolicitudFichaSolicitud;
+
+	_httpFichaSolicitud = new HTTP1(this);
+
+	_httpFichaSolicitud->establecerMetodo(HTTP1::Metodo::PUBLICAR);
+	if (ipServidorAutentificacion.size() > 0) {
+		_httpFichaSolicitud->establecerAnfitrion(ipServidorAutentificacion);
+	} else {
+		_httpFichaSolicitud->establecerAnfitrion(nombreDNSServidorAutentificacion);
+	}
+	_httpFichaSolicitud->establecerPuerto(puertoServidorAutentificacion);
+	_httpFichaSolicitud->establecerRuta("/v2/auth/users.register");
+
+	_configuracion.remove("todus/fichaSolicitud");
+	_configuracion.remove("todus/nombre");
+	_configuracion.remove("todus/enlaceAvatar");
 
 	telefono.remove(0, 1);
 	pbSolicitudFichaSolicitud.set_telefono(telefono.toStdString());
@@ -425,49 +410,44 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	pbSolicitudFichaSolicitud.set_codigo(codigo.toStdString());
 	pbSolicitudFichaSolicitud.SerializeToString(&datos);
 
-#if QT_VERSION >= 0x050e00
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-#endif
-	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
+	_buferCargaFichaSolicitud = QByteArray::fromStdString(datos);
+	_httpFichaSolicitud->establecerOrigenCarga(&_buferCargaFichaSolicitud);
+	_buferDescargaFichaSolicitud.clear();
+	_httpFichaSolicitud->establecerDestinoDescarga(&_buferDescargaFichaSolicitud);
 
-	if (ipServidorAutentificacion.size() > 0) {
-		url.setHost(ipServidorAutentificacion);
-	}
-	url.setPort(puertoServidorAutentificacion);
+	_httpFichaSolicitud->agregarCabeceraSolicitud("Content-Length", QString::number(datos.size()));
+	_httpFichaSolicitud->agregarCabeceraSolicitud("Content-Type", "application/x-protobuf");
+	_httpFichaSolicitud->agregarCabeceraSolicitud("Host", nombreDNSServidorAutentificacion);
+	_httpFichaSolicitud->agregarCabeceraSolicitud("User-Agent", _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 
-	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
-	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
-	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
-	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
+	connect(_httpFichaSolicitud, &HTTP1::finalizado, this, &toDus::eventoFinalizadaFichaSolicitud);
 
-	configuracion.remove("todus/fichaSolicitud");
-	configuracion.remove("todus/fichaSolicitudCruda");
-	configuracion.remove("todus/nombre");
-	configuracion.remove("todus/enlaceAvatar");
-
-	_respuestaFichaSolicitud = _administradorAccesoRed->post(solicitud, datos.c_str());
-	connect(_respuestaFichaSolicitud, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaSolicitud);
-#if QT_VERSION >= 0x050e00
-	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#else
-	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
-#endif
-	connect(_respuestaFichaSolicitud, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaSolicitud);
+	_httpFichaSolicitud->ejecutar();
 }
 
 void toDus::solicitarFichaAcceso() {
-	QSettings configuracion;
-	QString telefono = configuracion.value("todus/telefono").toString();
-	QString fichaSolicitud = configuracion.value("todus/fichaSolicitud").toString();
-	QString numeroVersion = configuracion.value("todus/numeroVersion", "21806").toString();
-	QString ipServidorAutentificacion = configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
-	QString nombreDNSServidorAutentificacion = configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
-	int puertoServidorAutentificacion = configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
-	QUrl url = QUrl("https://" + nombreDNSServidorAutentificacion + "/v2/auth/token");
-	QNetworkRequest solicitud;
+	QString telefono = _configuracion.value("todus/telefono").toString();
+	QString fichaSolicitud = _configuracion.value("todus/fichaSolicitud").toString();
+	QString numeroVersion = _configuracion.value("todus/numeroVersion", _numeroVersionTodus).toString();
+	QString ipServidorAutentificacion = _configuracion.value("avanzadas/ipServidorAutentificacion", "").toString();
+	QString nombreDNSServidorAutentificacion = _configuracion.value("avanzadas/nombreDNSServidorAutentificacion", "auth.todus.cu").toString();
+	std::uint16_t puertoServidorAutentificacion = _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	std::string datos;
 	toDusPB::SolicitudFichaAcceso pbSolicitudFichaAcceso;
+
+	_httpFichaAcceso = new HTTP1(this);
+
+	_httpFichaAcceso->establecerMetodo(HTTP1::Metodo::PUBLICAR);
+	if (ipServidorAutentificacion.size() > 0) {
+		_httpFichaAcceso->establecerAnfitrion(ipServidorAutentificacion);
+	} else {
+		_httpFichaAcceso->establecerAnfitrion(nombreDNSServidorAutentificacion);
+	}
+	_httpFichaAcceso->establecerPuerto(puertoServidorAutentificacion);
+	_httpFichaAcceso->establecerRuta("/v2/auth/token");
+
+	_configuracion.remove("todus/fichaAcceso");
+	_configuracion.remove("todus/fichaAccesoTiempoExpiracion");
 
 	telefono.remove(0, 1);
 	pbSolicitudFichaAcceso.set_telefono(telefono.toStdString());
@@ -475,41 +455,25 @@ void toDus::solicitarFichaAcceso() {
 	pbSolicitudFichaAcceso.set_numeroversion(numeroVersion.toStdString());
 	pbSolicitudFichaAcceso.SerializeToString(&datos);
 
-#if QT_VERSION >= 0x050e00
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-#endif
-	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
+	_buferCargaFichaAcceso = QByteArray::fromStdString(datos);
+	_httpFichaAcceso->establecerOrigenCarga(&_buferCargaFichaAcceso);
+	_buferDescargaFichaAcceso.clear();
+	_httpFichaAcceso->establecerDestinoDescarga(&_buferDescargaFichaAcceso);
 
-	if (ipServidorAutentificacion.size() > 0) {
-		url.setHost(ipServidorAutentificacion);
-	}
-	url.setPort(puertoServidorAutentificacion);
+	_httpFichaAcceso->agregarCabeceraSolicitud("Content-Length", QString::number(datos.size()));
+	_httpFichaAcceso->agregarCabeceraSolicitud("Content-Type", "application/x-protobuf");
+	_httpFichaAcceso->agregarCabeceraSolicitud("Host", nombreDNSServidorAutentificacion);
+	_httpFichaAcceso->agregarCabeceraSolicitud("User-Agent", _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
 
-	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " Auth");
-	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-protobuf");
-	solicitud.setHeader(QNetworkRequest::ContentLengthHeader, (int)datos.size());
-	solicitud.setRawHeader("Host", nombreDNSServidorAutentificacion.toLocal8Bit());
+	connect(_httpFichaAcceso, &HTTP1::finalizado, this, &toDus::eventoFinalizadaFichaAcceso);
 
-	configuracion.remove("todus/fichaAcceso");
-	configuracion.remove("todus/fichaAccesoTiempoExpiracion");
-	configuracion.remove("todus/fichaAccesoCruda");
-
-	_respuestaFichaAcceso = _administradorAccesoRed->post(solicitud, datos.c_str());
-	connect(_respuestaFichaAcceso, &QIODevice::readyRead, this, &toDus::eventoRecepcionDatosFichaAcceso);
-#if QT_VERSION >= 0x050e00
-	connect(_respuestaCodigoSMS, &QNetworkReply::errorOccurred, this, &toDus::eventoError);
-#else
-	connect(_respuestaCodigoSMS, SIGNAL(errorOccurred), this, SLOT(eventoError));
-#endif
-	connect(_respuestaFichaAcceso, &QNetworkReply::finished, this, &toDus::eventoFinalizadaFichaAcceso);
+	_httpFichaAcceso->ejecutar();
 }
 
 void toDus::iniciarSesionConFichaAcceso() {
-	QSettings configuracion;
-	QString ipServidorSesion = configuracion.value("avanzadas/ipServidorSesion", "").toString();
-	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
-	int puertoServidorSesion = configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt();
+	QString ipServidorSesion = _configuracion.value("avanzadas/ipServidorSesion", "").toString();
+	QString nombreDNSServidorSesion = _configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
+	int puertoServidorSesion = _configuracion.value("avanzadas/puertoServidorSesion", 1756).toInt();
 
 	_dominioJID = nombreDNSServidorSesion;
 	if (ipServidorSesion.size() > 0) {
@@ -520,17 +484,14 @@ void toDus::iniciarSesionConFichaAcceso() {
 }
 
 void toDus::xmppSaludar() {
-	QSettings configuracion;
-	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
+	QString nombreDNSServidorSesion = _configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
 	QByteArray buferAEnviar = "<stream:stream xmlns='jc' o='" + nombreDNSServidorSesion.toLocal8Bit() + "' xmlns:stream='x1' v='1.0'>\n";
 
 	_socaloSSL->write(buferAEnviar);
 }
 
 void toDus::xmppIniciarSesion() {
-	QSettings configuracion;
-	QString nombreDNSServidorSesion = configuracion.value("avanzadas/nombreDNSServidorSesion", "im.todus.cu").toString();
-	QString fichaAcceso = configuracion.value("todus/fichaAcceso").toString();
+	QString fichaAcceso = _configuracion.value("todus/fichaAcceso").toString();
 	QString b64Telefono = QByteArray::fromBase64(fichaAcceso.split(".")[1].toLocal8Bit());
 	QJsonDocument json = QJsonDocument::fromJson(b64Telefono.toLocal8Bit());
 	QString telefono = json.object().value("username").toString();
@@ -562,10 +523,10 @@ void toDus::xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<voi
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }
 
-void toDus::xmppSolicitarEnlaceSubida() {
+void toDus::xmppSolicitarEnlaceSubida(const QString &tamano) {
 	QMutexLocker b(&_mutexSolicitarEnlace);
 	QString idSesion = _idSesion + "-" + QString::number(obtenerProximoIDComando());
-	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:purl' persistent='false' room='' type='0' size='52428800'></query></iq>\n";
+	QString buferAEnviar = "<iq i='" + idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "' ><query xmlns='todus:purl' persistent='false' room='' type='0' size='" + tamano + "'></query></iq>\n";
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }

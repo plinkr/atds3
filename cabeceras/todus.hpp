@@ -2,17 +2,17 @@
 #define TODUS_HPP
 
 #include <functional>
-#include <QThread>
+#include <QObject>
 #include <QPointer>
 #include <QTimer>
 #include <QMutex>
-#include <QNetworkReply>
+#include <QSettings>
+#include <QSslSocket>
 
 
-class QNetworkAccessManager;
-class QSslSocket;
+class HTTP1;
 
-class toDus : public QThread {
+class toDus : public QObject {
 	Q_OBJECT
 
 	public:
@@ -30,7 +30,6 @@ class toDus : public QThread {
 		~toDus();
 
 		void iniciar();
-		void run() override;
 
 		/**
 		 * @brief Obtiene el estado de la sesión toDus
@@ -54,7 +53,7 @@ class toDus : public QThread {
 		 */
 		void solicitarEnlaceFirmado(const QString &enlace, std::function<void(const QString &)> retroalimentador);
 
-		void solicitarEnlaceFirmadoSubida();
+		void solicitarEnlaceFirmadoSubida(const QString &tamano);
 
 	public slots:
 		/**
@@ -68,11 +67,8 @@ class toDus : public QThread {
 
 	private slots:
 		void eventoFinalizadaCodigoSMS();
-		void eventoRecepcionDatosFichaSolicitud();
 		void eventoFinalizadaFichaSolicitud();
-		void eventoRecepcionDatosFichaAcceso();
 		void eventoFinalizadaFichaAcceso();
-		void eventoError(QNetworkReply::NetworkError codigo);
 		void eventoCambiarEstado(QAbstractSocket::SocketState estado);
 		void eventoConexionLista();
 		void eventoDatosRecibidos();
@@ -86,11 +82,20 @@ class toDus : public QThread {
 			SesionIniciada = 0x04
 		};
 
+		QByteArray _buferCargaCodigoSMS;
+		QByteArray _buferDescargaCodigoSMS;
+		QPointer<HTTP1> _httpCodigoSMS;
+		QByteArray _buferCargaFichaSolicitud;
+		QByteArray _buferDescargaFichaSolicitud;
+		QPointer<HTTP1> _httpFichaSolicitud;
+		QByteArray _buferCargaFichaAcceso;
+		QByteArray _buferDescargaFichaAcceso;
+		QPointer<HTTP1> _httpFichaAcceso;
 		QPointer<QSslSocket> _socaloSSL;
-		QPointer<QNetworkAccessManager> _administradorAccesoRed;
 		Estado _estado;
 		ProgresoInicioSesion _progresoInicioSesion;
 		QString _idSesion;
+		QSettings _configuracion;
 		unsigned int _contadorComandos;
 		QMutex _mutexContadorComandos;
 		QString _jID;
@@ -100,9 +105,6 @@ class toDus : public QThread {
 		bool _fichaAccesoRenovada;
 		QMap<QString, std::function<void(const QString &)>> _listadoRetroalimentadores;
 		QString _idInicioSesion;
-		QNetworkReply *_respuestaCodigoSMS;
-		QNetworkReply *_respuestaFichaSolicitud;
-		QNetworkReply *_respuestaFichaAcceso;
 		QMutex _mutexSolicitarEnlace;
 
 		QString generarIDSesion(unsigned int totalCaracteres);
@@ -116,7 +118,7 @@ class toDus : public QThread {
 		void xmppEstablecerSesion();
 		void xmppMantenerSesionActiva();
 		void xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void(const QString &)> retroalimentador);
-		void xmppSolicitarEnlaceSubida();
+		void xmppSolicitarEnlaceSubida(const QString &tamano);
 };
 
 #endif // TODUS_HPP

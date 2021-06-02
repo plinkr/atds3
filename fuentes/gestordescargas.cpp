@@ -12,13 +12,11 @@
 
 
 GestorDescargas::GestorDescargas(VentanaPrincipal *padre)
-	: QThread(padre), _deteniendoDescargas(false), _padre(padre), _baseDatos(NULL), _configuracionTotalDescargasParalelas(0), _totalDescargasActivas(0) {
+	: QThread(padre), _deteniendoDescargas(false), _padre(padre), _configuracionTotalDescargasParalelas(0), _totalDescargasActivas(0) {
 }
 
 void GestorDescargas::run() {
 	QSettings configuracion;
-
-	_baseDatos = iniciarConexionBaseDatos();
 
 	while (isInterruptionRequested() == false) {
 		if (_deteniendoDescargas == false) {
@@ -29,7 +27,6 @@ void GestorDescargas::run() {
 	}
 
 	detenerDescargas();
-	cerrarConexionBaseDatos(_baseDatos);
 }
 
 void GestorDescargas::agregarDescarga(int fila, unsigned int id, QSharedPointer<ModeloEntradas> modelo, QSharedPointer<ModeloEntradas> modeloDescargando) {
@@ -43,7 +40,7 @@ void GestorDescargas::agregarDescarga(int fila, unsigned int id, QSharedPointer<
 
 void GestorDescargas::detenerDescarga(unsigned int id) {
 	if (_descargasActivas.find(id) != _descargasActivas.end()) {
-		_descargasActivas[id]->detener();
+		QTimer::singleShot(0, _descargasActivas[id], &Descarga::detener);
 		_descargasActivas.remove(id);
 	}
 
@@ -58,15 +55,14 @@ void GestorDescargas::detenerDescargas() {
 	_deteniendoDescargas = true;
 
 	for (auto it = _descargasActivas.begin(); it != _descargasActivas.end(); it++) {
-		it.value()->detener();
+		QTimer::singleShot(0, it.value(), &Descarga::detener);
 	}
 	_descargasActivas.clear();
 
 	_mutexDescargasEnCola.lock();
-	for (auto it = _descargasEnCola.begin(); it != _descargasEnCola.end(); it++) {
-		baseDatosEjecutar(_baseDatos, "UPDATE entradas SET estado = " + QString::number(_ListadoEstados::Pausada) + " WHERE (id = " + QString::number(_descargasEnCola[it.key()].id) + ")");
+	/*for (auto it = _descargasEnCola.begin(); it != _descargasEnCola.end(); it++) {
 		_descargasEnCola[it.key()].modelo->setData(_descargasEnCola[it.key()].modelo->index(_descargasEnCola[it.key()].fila, 1), _ListadoEstados::Pausada);
-	}
+	}*/
 	_descargasEnCola.clear();
 	_mutexDescargasEnCola.unlock();
 
@@ -92,11 +88,13 @@ void GestorDescargas::procesarTerminacionDescarga(unsigned int id) {
 				}
 			}*/
 			if (_configuracion.value("descargas/eliminarAlFinalizar").toBool() == true) {
-				baseDatosEjecutar(_baseDatos, "DELETE FROM entradas WHERE (id = " + QString::number(_descargasActivas[id]->id()) + ")");
-				_descargasActivas[id]->modelo()->select();
-				_descargasActivas[id]->modeloDescargas()->select();
+				_descargasActivas[id]->modelo()->eliminarFila(id);
+				_descargasActivas[id]->modeloDescargas()->eliminarFila(id);
 			}
 		}
+
+		_descargasActivas[id]->modeloDescargas()->submitAll();
+		_descargasActivas[id]->modelo()->select();
 
 		_descargasActivas.remove(id);
 	}
@@ -123,4 +121,8 @@ void GestorDescargas::iniciarProximaDescargaDisponible() {
 	}
 
 	_mutexDescargasEnCola.unlock();
+}
+
+int GestorDescargas::totalDescargas() {
+	return _descargasActivas.size() + _descargasEnCola.size();
 }

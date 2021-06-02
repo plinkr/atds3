@@ -8,16 +8,16 @@
 #include <QFile>
 #include <QSettings>
 #include <QNetworkAccessManager>
+#include <QSystemTrayIcon>
 
 
-struct sqlite3;
 class QThread;
 class QTreeView;
 class QStandardItemModel;
 class QCloseEvent;
 class DelegacionIconoEstado;
 class DelegacionBarraProgreso;
-class DelegacionVelocidad;
+class DelegacionTamano;
 class QStandardItemModel;
 class QListView;
 class ModeloCategorias;
@@ -28,6 +28,7 @@ class VentanaConfiguracion;
 class QLabel;
 class GestorDescargas;
 class QNetworkReply;
+class HTTP1;
 
 class VentanaPrincipal : public QMainWindow
 {
@@ -91,6 +92,8 @@ class VentanaPrincipal : public QMainWindow
 		void detenerEjecucion();
 
 	private slots:
+		void cerrarAplicacion();
+
 		/**
 		 * @brief Agrega la descarga especificada por el usuario en la ventana 'Agrega descarga'
 		 */
@@ -160,11 +163,6 @@ class VentanaPrincipal : public QMainWindow
 		void eventoCategoriaSeleccionada(const QModelIndex &indice);
 
 		/**
-		 * @brief Evento que se dispara cuando se recibe algún dato de la descarga del avatar
-		 */
-		void eventoRecepcionDatosAvatarTodus();
-
-		/**
 		 * @brief Evento que se dispara cuando se finaliza la descarga del avatar
 		 */
 		void eventoDescargaTerminadaAvatarTodus();
@@ -175,9 +173,10 @@ class VentanaPrincipal : public QMainWindow
 		 */
 		void actualizarEstadoTodus(toDus::Estado estado);
 
+		void eventoIconoSistemaActivado(QSystemTrayIcon::ActivationReason razon);
+
 	private:
 		QSettings _configuracion;
-		sqlite3 *_baseDatos;
 
 		/**
 		 * @brief Modelo del listado de categorías
@@ -205,9 +204,14 @@ class VentanaPrincipal : public QMainWindow
 		QPointer<DelegacionBarraProgreso> _elementoBarraProgreso;
 
 		/**
+		 * @brief Elemento que representa el texto leíble por el humano del tamaño de descarga dentro del listado de descargas
+		 */
+		QPointer<DelegacionTamano> _elementoTamano;
+
+		/**
 		 * @brief Elemento que representa el texto leíble por el humano de la velocidad de descarga dentro del listado de descargas
 		 */
-		QPointer<DelegacionVelocidad> _elementoVelocidad;
+		QPointer<DelegacionTamano> _elementoVelocidad;
 
 		/**
 		 * @brief Ventana 'Agregar descarga'
@@ -230,8 +234,8 @@ class VentanaPrincipal : public QMainWindow
 		QPointer<QLabel> _avatarTodus;
 		QString _rutaAvatarTodus;
 		QFile _archivoAvatarTodus;
-		QPointer<QNetworkAccessManager> _administradorAccesoRedAvatarTodus;
-		QNetworkReply *_respuestaAvatarTodus;
+		QPointer<HTTP1> _httpAvatar;
+		QByteArray _buferDescargaAvatar;
 
 		/**
 		 * @brief Categoría activada por el usuario
@@ -325,6 +329,8 @@ class VentanaPrincipal : public QMainWindow
 
 		QList<QUrl> _listadoArchivosSoltar;
 
+		QPointer<QSystemTrayIcon> _iconoSistema;
+
 		/**
 		 * @brief Evento que se produce cuando el usuario cierra la ventana principal
 		 * @param evento Evento
@@ -337,9 +343,14 @@ class VentanaPrincipal : public QMainWindow
 		void dropEvent(QDropEvent *);
 
 		/**
-		 * @brief Inicializa la base de datos
+		 * @brief Inicializa la base de datos en memoria
 		 */
 		void inicializarBaseDatos();
+
+		/**
+		 * @brief Sincroniza la base de datos física
+		 */
+		void sincronizarBaseDatos();
 
 		/**
 		 * @brief Construye los botones de la barra de herramientas

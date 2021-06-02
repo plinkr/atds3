@@ -1,8 +1,9 @@
 #include "ventanaprincipal.hpp"
+#include "http1.hpp"
 #include "main.hpp"
 #include "delegacioniconoestado.hpp"
 #include "delegacionbarraprogreso.hpp"
-#include "delegacionvelocidad.hpp"
+#include "delegaciontamano.hpp"
 #include "modelocategorias.hpp"
 #include "modeloentradas.hpp"
 #include "descarga.hpp"
@@ -34,37 +35,26 @@
 #include <QNetworkProxy>
 #include <QSqlQuery>
 #include <QSqlRecord>
+#include <QMenu>
+#include <QInputDialog>
 
 
 VentanaPrincipal::VentanaPrincipal(QWidget *parent)
-	: QMainWindow(parent), _baseDatos(NULL), _categoriaActiva(0) {
+	: QMainWindow(parent), _categoriaActiva(0) {
 	Q_INIT_RESOURCE(iconos);
 
-	_baseDatos = iniciarConexionBaseDatos();
 	inicializarBaseDatos();
 
 	setAcceptDrops(true);
 
 	construirIU();
 
-	_administradorAccesoRedAvatarTodus = new QNetworkAccessManager(this);
-#if QT_VERSION >= 0x050e00
-	_administradorAccesoRedAvatarTodus->setAutoDeleteReplies(true);
-	_administradorAccesoRedAvatarTodus->setTransferTimeout(10000);
-#endif
-	_administradorAccesoRedAvatarTodus->setProxy(obtenerConfiguracionProxy());
+	_toDus = new toDus(this);
+	connect(_toDus, &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+	QTimer::singleShot(0, _toDus, &toDus::iniciar);
 
-/*
-	_baseDatos = QSharedPointer<BaseDatos>(new BaseDatos(this));
-	connect(this, &VentanaPrincipal::ejecutarInstruccionSQL, _baseDatos.get(), &BaseDatos::ejecutarInstruccion);
-	_baseDatos->start();
-*/
-	_toDus = QSharedPointer<toDus>(new toDus());
-	connect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
-	QTimer::singleShot(0, _toDus.get(), &toDus::iniciar);
-
-	if (_configuracion.value("todus/fichaAcceso").toString().size() > 0 || _configuracion.value("todus/telefono").toString().size() > 0) {
-		QTimer::singleShot(100, _toDus.get(), &toDus::iniciarSesion);
+	if (_configuracion.value("todus/fichaAcceso").toString().size() > 0 || _configuracion.value("todus/fichaSolicitud").toString().size() > 0 || _configuracion.value("todus/telefono").toString().size() > 0) {
+		QTimer::singleShot(1000, _toDus, &toDus::iniciarSesion);
 	} else {
 		eventoConfiguracion();
 	}
@@ -76,9 +66,11 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	int estado = 0;
 	for (auto modelo : modelos) {
 		for (int f = 0; f < modelo->rowCount(); f++) {
-			estado = modelo->data(modelo->index(f, 1)).toInt();
+			estado = modelo->data(modelo->index(f, 2)).toInt();
 			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
-				QTimer::singleShot(100, std::bind(&GestorDescargas::agregarDescarga, _gestorDescargas, f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas));
+				modelo->setData(modelo->index(f, 2), _ListadoEstados::EnEsperaIniciar);
+				_modeloCategoriaDescargas->setData(_modeloCategoriaDescargas->index(f, 2), _ListadoEstados::EnEsperaIniciar);
+				QTimer::singleShot(1000, std::bind(&GestorDescargas::agregarDescarga, _gestorDescargas, f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas));
 			}
 		}
 	}
@@ -90,38 +82,52 @@ VentanaPrincipal::~VentanaPrincipal() {
 
 void VentanaPrincipal::closeEvent(QCloseEvent *evento) {
 	// Oculta la ventana
-	hide();
+	setVisible(false);
 
-	// Desconecta la actualización del estado de la sesión toDus
-	//disconnect(_toDus.get(), &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+	if (_gestorDescargas->totalDescargas() > 0) {
+		if (_configuracion.value("atds3/notificacionIconoSistema", false).toBool() == false) {
+			_configuracion.setValue("atds3/notificacionIconoSistema", true);
+			_iconoSistema->showMessage(_aplicacionTitulo, "ATDS3 continuará funcionando en segundo plano mientras se realizan las descargan. Puede volver a la ventana haciendo clic en el icono del sistema.");
+		}
+	} else {
+		evento->accept();
+		cerrarAplicacion();
+	}
+
+	// Ignora el evento
+	evento->ignore();
+}
+
+void VentanaPrincipal::cerrarAplicacion() {
+	setVisible(false);
+	_iconoSistema->hide();
+
+	_modeloCategoriaDescargas->submitAll();
+	sincronizarBaseDatos();
 
 	// Detiene adecuadamente todas las descargas activas
 	_gestorDescargas->requestInterruption();
 	_gestorDescargas->wait();
 
 	// Desconecta la sesión toDus
-	_toDus->requestInterruption();
-	_toDus->wait();
-/*
-	// Desconecta la base de datos
-	_baseDatos->requestInterruption();
-	_baseDatos->wait();
-*/
+	disconnect(_toDus, &toDus::estadoCambiado, this, &VentanaPrincipal::actualizarEstadoTodus);
+
 	// Guarda la geometría de la ventana en las configuraciones
 	_configuracion.setValue("atds3/geometria", saveGeometry());
 
-	// Continua el proceso de cerrado de la aplicación
-	evento->accept();
+	qApp->exit();
 }
 
 void VentanaPrincipal::dragEnterEvent(QDragEnterEvent *evento) {
 	const QMimeData *mime = evento->mimeData();
+	QString extension;
 
 	if (mime->hasUrls()) {
 		QList<QUrl> urls = mime->urls();
 
 		for (const auto &url : urls) {
-			if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+			extension = url.toLocalFile().toLower().right(4);
+			if (extension == ".txt" || extension == ".s3p") {
 				_listadoArchivosSoltar = urls;
 				evento->acceptProposedAction();
 				return;
@@ -131,8 +137,11 @@ void VentanaPrincipal::dragEnterEvent(QDragEnterEvent *evento) {
 }
 
 void VentanaPrincipal::dragMoveEvent(QDragMoveEvent *evento) {
+	QString extension;
+
 	for (const auto &url : _listadoArchivosSoltar) {
-		if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+		extension = url.toLocalFile().toLower().right(4);
+		if (extension == ".txt" || extension == ".s3p") {
 			evento->acceptProposedAction();
 			return;
 		}
@@ -145,6 +154,8 @@ void VentanaPrincipal::dragLeaveEvent(QDragLeaveEvent *evento) {
 }
 
 void VentanaPrincipal::dropEvent(QDropEvent *) {
+	QString extension;
+
 	/**
 	 * Construye la ventana 'Agregar descargas desde archivo'
 	 */
@@ -153,7 +164,8 @@ void VentanaPrincipal::dropEvent(QDropEvent *) {
 	connect(_ventanaAgregarDescargasDesdeArchivo, &VentanaAgregarDescargasDesdeArchivos::accepted, this, &VentanaPrincipal::agregarDescargasDesdeArchivo);
 
 	for (const auto &url : _listadoArchivosSoltar) {
-		if (url.toLocalFile().toLower().endsWith(".txt") == true) {
+		extension = url.toLocalFile().toLower().right(4);
+		if (extension == ".txt" || extension == ".s3p") {
 			_ventanaAgregarDescargasDesdeArchivo->procesarArchivo(url.toLocalFile());
 		}
 	}
@@ -195,7 +207,7 @@ void VentanaPrincipal::agregarDescarga() {
 			break;
 	}
 
-	flujo << "INSERT INTO entradas (categoria, estado, enlace, ruta, nombre, completado, velocidad) VALUES (" << datos.categoria << ", " << _ListadoEstados::Pausada << ", " << datos.enlace << ", " << rutaDescarga << ", " << datos.nombre << ", 0, 0) RETURNING id";
+	flujo << "INSERT INTO entradas (categoria, estado, enlace, nombre, ruta) VALUES (" << datos.categoria << ", " << (datos.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada) << ", \"" << datos.enlace << "\", \"" << datos.nombre << "\", \"" << rutaDescarga << "\") RETURNING id";
 	solicitudSQL.exec(instruccionSQL);
 	solicitudSQL.next();
 
@@ -216,7 +228,8 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	QVector<_NuevaDescarga> listadoDescargas = _ventanaAgregarDescargasDesdeArchivo->obtenerDatosDescargas();
 	QSharedPointer<ModeloEntradas> modelo;
 	QString rutaDescarga = _configuracion.value("descargas/ruta").toString();
-	QString instruccionSQL = "INSERT INTO entradas (categoria, estado, enlace, ruta, nombre, completado, velocidad) VALUES";
+	QSqlQuery solicitudSQL;
+	QString instruccionSQL = "INSERT INTO entradas (categoria, estado, enlace, nombre, ruta) VALUES";
 	QTextStream flujo(&instruccionSQL);
 	int filaModelo = 0;
 
@@ -241,11 +254,12 @@ void VentanaPrincipal::agregarDescargasDesdeArchivo() {
 	}
 
 	for (_NuevaDescarga &nuevaDescarga : listadoDescargas) {
-		flujo << " (" << QString::number(nuevaDescarga.categoria) << ", " << (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada) << ", '" << nuevaDescarga.enlace << "', '" << rutaDescarga << "', '" << nuevaDescarga.nombre << "', 0, 0),";
+		nuevaDescarga.nombre.replace("\"", "\\\"");
+		flujo << " (" << QString::number(nuevaDescarga.categoria) << ", " << (nuevaDescarga.iniciar == true ? _ListadoEstados::EnEsperaIniciar : _ListadoEstados::Pausada) << ", \"" << nuevaDescarga.enlace << "\", \"" << nuevaDescarga.nombre << "\", \"" << rutaDescarga << "\"),";
 	}
 
 	instruccionSQL.chop(1);
-	baseDatosEjecutar(_baseDatos, instruccionSQL);
+	solicitudSQL.exec(instruccionSQL);
 	modelo->select();
 	_modeloCategoriaDescargas->select();
 
@@ -316,8 +330,7 @@ void VentanaPrincipal::procesarCambiosConfiguracion() {
 	}
 
 	if (reconexionRequerida == true) {
-		_administradorAccesoRedAvatarTodus->setProxy(obtenerConfiguracionProxy());
-		_toDus->reconectar();
+		QTimer::singleShot(0, _toDus, &toDus::reconectar);
 	}
 }
 
@@ -354,6 +367,7 @@ void VentanaPrincipal::eventoAgregarDescargasDesdeArchivo() {
 void VentanaPrincipal::eventoEliminarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 	unsigned int id = 0;
+	QSqlQuery solicitudSQL;
 	QString instruccionSQL = "DELETE FROM entradas WHERE (";
 	QTextStream flujo(&instruccionSQL);
 
@@ -388,7 +402,7 @@ void VentanaPrincipal::eventoEliminarDescarga() {
 		}
 		instruccionSQL.chop(4);
 		flujo << ")";
-		baseDatosEjecutar(_baseDatos, instruccionSQL);
+		solicitudSQL.exec(instruccionSQL);
 		modelo->select();
 	}
 
@@ -400,6 +414,7 @@ void VentanaPrincipal::eventoEliminarDescarga() {
  */
 void VentanaPrincipal::eventoEliminarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
+	QSqlQuery solicitudSQL;
 
 	switch (_categoriaActiva) {
 		case 0x01:
@@ -430,14 +445,19 @@ void VentanaPrincipal::eventoEliminarTodasDescargas() {
 	}
 	_gestorDescargas->_deteniendoDescargas = false;
 
-	baseDatosEjecutar(_baseDatos, "DELETE FROM entradas WHERE (" + modelo->filter() + ")");
+	solicitudSQL.exec("DELETE FROM entradas WHERE (" + modelo->filter() + ")");
 	modelo->select();
 
 	unsetCursor();
 }
 
 void VentanaPrincipal::eventoSubir() {
-	_toDus->solicitarEnlaceFirmadoSubida();
+	bool ok = false;
+	QString tamano = QInputDialog::getText(nullptr, "Solicitar enlace de subida", "Tamaño del archivo:", QLineEdit::Normal, "", &ok);
+
+	if (ok == true) {
+		_toDus->solicitarEnlaceFirmadoSubida(tamano);
+	}
 }
 
 /**
@@ -446,6 +466,7 @@ void VentanaPrincipal::eventoSubir() {
 void VentanaPrincipal::eventoIniciarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 	unsigned int id = 0;
+	QSqlQuery solicitudSQL;
 	QString instruccionSQL = "UPDATE entradas SET estado = " + QString::number(_ListadoEstados::EnEsperaIniciar) + " WHERE (";
 	QTextStream flujo(&instruccionSQL);
 
@@ -473,11 +494,11 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
-			if (modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::Pausada) {
+			if (modelo->data(modelo->index(i.row(), 2)).toInt() == _ListadoEstados::Pausada) {
 				id = modelo->data(modelo->index(i.row(), 0)).toUInt();
 				flujo << "id = " << QString::number(id) << " OR ";
-				modelo->setData(modelo->index(i.row(), 1), _ListadoEstados::EnEsperaIniciar);
-				_gestorDescargas->agregarDescarga(i.row(), id, obtenerModeloDesdeCategoria(modelo->data(modelo->index(i.row(), 6)).toInt()), _modeloCategoriaDescargas);
+				modelo->setData(modelo->index(i.row(), 2), _ListadoEstados::EnEsperaIniciar);
+				_gestorDescargas->agregarDescarga(i.row(), id, obtenerModeloDesdeCategoria(modelo->data(modelo->index(i.row(), 1)).toInt()), _modeloCategoriaDescargas);
 				qApp->processEvents();
 			}
 		}
@@ -485,7 +506,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 
 	instruccionSQL.chop(4);
 	flujo << ")";
-	baseDatosEjecutar(_baseDatos, instruccionSQL);
+	solicitudSQL.exec(instruccionSQL);
 
 	unsetCursor();
 }
@@ -496,6 +517,7 @@ void VentanaPrincipal::eventoIniciarDescarga() {
 void VentanaPrincipal::eventoPausarDescarga() {
 	QSharedPointer<ModeloEntradas> modelo;
 	unsigned int id = 0;
+	QSqlQuery solicitudSQL;
 	QString instruccionSQL = "UPDATE entradas SET estado = " + QString::number(_ListadoEstados::Pausada) + " WHERE (";
 	QTextStream flujo(&instruccionSQL);
 
@@ -522,10 +544,10 @@ void VentanaPrincipal::eventoPausarDescarga() {
 
 	if (_listadoDescargas->selectionModel()->selectedRows().isEmpty() == false) {
 		for (const auto &i : _listadoDescargas->selectionModel()->selectedRows()) {
-			if (modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::EnEsperaIniciar || modelo->data(modelo->index(i.row(), 1)).toInt() == _ListadoEstados::Iniciada) {
+			if (modelo->data(modelo->index(i.row(), 2)).toInt() == _ListadoEstados::EnEsperaIniciar || modelo->data(modelo->index(i.row(), 2)).toInt() == _ListadoEstados::Iniciada) {
 				id = modelo->data(modelo->index(i.row(), 0)).toUInt();
 				flujo << "id = " << QString::number(id) << " OR ";
-				modelo->setData(modelo->index(i.row(), 1), _ListadoEstados::Pausada);
+				modelo->setData(modelo->index(i.row(), 2), _ListadoEstados::Pausada);
 				_gestorDescargas->detenerDescarga(id);
 				qApp->processEvents();
 			}
@@ -534,7 +556,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 
 	instruccionSQL.chop(4);
 	flujo << ")";
-	baseDatosEjecutar(_baseDatos, instruccionSQL);
+	solicitudSQL.exec(instruccionSQL);
 
 	unsetCursor();
 }
@@ -545,6 +567,7 @@ void VentanaPrincipal::eventoPausarDescarga() {
 void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
 	unsigned int id = 0;
+	QSqlQuery solicitudSQL;
 	QString instruccionSQL = "UPDATE entradas SET estado = " + QString::number(_ListadoEstados::EnEsperaIniciar) + " WHERE (";
 	QTextStream flujo(&instruccionSQL);
 
@@ -571,18 +594,18 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 	setCursor(Qt::WaitCursor);
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
-		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Pausada) {
+		if (modelo->data(modelo->index(f, 2)).toInt() == _ListadoEstados::Pausada) {
 			id = modelo->data(modelo->index(f, 0)).toUInt();
 			flujo << "id = " << QString::number(id) << " OR ";
-			modelo->setData(modelo->index(f, 1), _ListadoEstados::EnEsperaIniciar);
-			_gestorDescargas->agregarDescarga(f, id, obtenerModeloDesdeCategoria(modelo->data(modelo->index(f, 6)).toInt()), _modeloCategoriaDescargas);
+			modelo->setData(modelo->index(f, 2), _ListadoEstados::EnEsperaIniciar);
+			_gestorDescargas->agregarDescarga(f, id, obtenerModeloDesdeCategoria(modelo->data(modelo->index(f, 1)).toInt()), _modeloCategoriaDescargas);
 			qApp->processEvents();
 		}
 	}
 
 	instruccionSQL.chop(4);
 	flujo << ")";
-	baseDatosEjecutar(_baseDatos, instruccionSQL);
+	solicitudSQL.exec(instruccionSQL);
 
 	unsetCursor();
 }
@@ -593,6 +616,7 @@ void VentanaPrincipal::eventoIniciarTodasDescargas() {
 void VentanaPrincipal::eventoPausarTodasDescargas() {
 	QSharedPointer<ModeloEntradas> modelo;
 	unsigned int id = 0;
+	QSqlQuery solicitudSQL;
 	QString instruccionSQL = "UPDATE entradas SET estado = " + QString::number(_ListadoEstados::Pausada) + " WHERE (";
 	QTextStream flujo(&instruccionSQL);
 
@@ -618,10 +642,10 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 	setCursor(Qt::WaitCursor);
 
 	for (int f = 0; f < modelo->rowCount(); f++) {
-		if (modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::EnEsperaIniciar || modelo->data(modelo->index(f, 1)).toInt() == _ListadoEstados::Iniciada) {
+		if (modelo->data(modelo->index(f, 2)).toInt() == _ListadoEstados::EnEsperaIniciar || modelo->data(modelo->index(f, 2)).toInt() == _ListadoEstados::Iniciada) {
 			id = modelo->data(modelo->index(f, 0)).toUInt();
 			flujo << "id = " << QString::number(id) << " OR ";
-			modelo->setData(modelo->index(f, 1), _ListadoEstados::Pausada);
+			modelo->setData(modelo->index(f, 2), _ListadoEstados::Pausada);
 			_gestorDescargas->detenerDescarga(id);
 			qApp->processEvents();
 		}
@@ -629,7 +653,7 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 
 	instruccionSQL.chop(4);
 	flujo << ")";
-	baseDatosEjecutar(_baseDatos, instruccionSQL);
+	solicitudSQL.exec(instruccionSQL);
 
 	unsetCursor();
 }
@@ -676,6 +700,8 @@ void VentanaPrincipal::eventoAcerca() {}
 void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 	QSharedPointer<ModeloEntradas> modelo;
 
+	_modeloCategoriaDescargas->submitAll();
+
 	_configuracion.setValue("atds3/ultimaCategoria", indice.row());
 
 	switch (indice.row()) {
@@ -705,29 +731,29 @@ void VentanaPrincipal::eventoCategoriaSeleccionada(const QModelIndex &indice) {
 	_categoriaActiva = indice.row() + 1;
 
 	if (indice.row() == 1) {
-		_listadoDescargas->hideColumn(4);
+		_listadoDescargas->hideColumn(7);
+		_listadoDescargas->hideColumn(8);
+		_listadoDescargas->hideColumn(9);
 	} else {
-		_listadoDescargas->showColumn(4);
+		_listadoDescargas->showColumn(7);
+		_listadoDescargas->showColumn(8);
+		_listadoDescargas->showColumn(9);
 	}
 
 	//emit categoriaSeleccionada(modeloActivo);
 }
 
 /**
- * @brief Evento que se dispara cuando se recibe algún dato de la descarga del avatar
- */
-void VentanaPrincipal::eventoRecepcionDatosAvatarTodus() {
-	_archivoAvatarTodus.write(_respuestaAvatarTodus->readAll());
-}
-
-/**
  * @brief Evento que se dispara cuando se finaliza la descarga del avatar
  */
 void VentanaPrincipal::eventoDescargaTerminadaAvatarTodus() {
-	_archivoAvatarTodus.close();
+	if (_httpAvatar->codigoHTTP() == 200 && isVisible() == true) {
+		QPixmap avatar;
 
-	if (_respuestaAvatarTodus->error() == QNetworkReply::NetworkError::NoError) {
-		_avatarTodus->setPixmap(QIcon(_rutaAvatarTodus).pixmap(QSize(48, 48)));
+		if (avatar.loadFromData(_buferDescargaAvatar) == true) {
+			_buferDescargaAvatar.clear();
+			_avatarTodus->setPixmap(avatar);
+		}
 	}
 }
 
@@ -743,6 +769,8 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 	switch (estado) {
 		case toDus::Estado::Desconectado:
 			_estadoSesionTodus->setText("Desconectado.");
+			_avatarTodus->unsetCursor();
+			_avatarTodus->setToolTip("");
 			break;
 		case toDus::Estado::ResolviendoNombreDNS:
 			_estadoSesionTodus->setText("Resolviendo nombre DNS...");
@@ -757,29 +785,96 @@ void VentanaPrincipal::actualizarEstadoTodus(toDus::Estado estado) {
 			_estadoSesionTodus->setText("Iniciando sesión...");
 			break;
 		case toDus::Estado::Listo:
-			_estadoSesionTodus->setText("<b>" + _configuracion.value("todus/nombre", "").toString() + "</b><br/>Listo para usar.");
+		{
+			QString nombre = _configuracion.value("todus/nombre", "").toString();
+			QString biografia = _configuracion.value("todus/biografia", "").toString();
+
+			if (nombre.size() > 0) {
+				_estadoSesionTodus->setText("<b>" + nombre + "</b><br/>Listo para usar.");
+			} else {
+				_estadoSesionTodus->setText("Listo para usar.");
+			}
+			_estadoSesionTodus->setToolTip(biografia);
+/*
+			_avatarTodus->setCursor(Qt::PointingHandCursor);
+			_avatarTodus->setToolTip("Haga clic aquí para cambiar el avatar.");
+*/
 			actualizarAvatar();
 			break;
+		}
 		case toDus::Estado::Desconectando:
 			_estadoSesionTodus->setText("Desconectando...");
 			break;
 	}
 }
 
+void VentanaPrincipal::eventoIconoSistemaActivado(QSystemTrayIcon::ActivationReason razon) {
+	switch(razon) {
+		case QSystemTrayIcon::Trigger:
+		case QSystemTrayIcon::DoubleClick:
+		case QSystemTrayIcon::MiddleClick:
+			setVisible(!isVisible());
+			break;
+		default:
+			break;
+	}
+}
+
 /**
- * @brief Inicializa la base de datos
+ * @brief Inicializa la base de datos en memoria
  */
 void VentanaPrincipal::inicializarBaseDatos() {
-	QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+	QSqlDatabase bdArchivo = QSqlDatabase::addDatabase("QSQLITE", "ATDS3");
+	QSqlDatabase bd = QSqlDatabase::addDatabase("QSQLITE");
 
-	db.setDatabaseName(_rutaBaseDatos);
-	db.open();
+	bd.setDatabaseName(":memory:");
+	bd.open();
 
 	/**
 	 * Crea las estructuras de las tablas
 	 */
 	QSqlQuery solicitudSQL;
-	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, estado INTEGER NOT NULL, nombre TEXT NOT NULL, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0, ruta TEXT NOT NULL, categoria INTEGER NOT NULL, enlace TEXT NOT NULL, totalADescargar INTEGER DEFAULT 0, totalDescargado INTEGER DEFAULT 0)");
+	solicitudSQL.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, enlace TEXT NOT NULL, nombre TEXT NOT NULL, ruta TEXT NOT NULL, bytesTotal INTEGER DEFAULT 0, bytesTransferidos INTEGER DEFAULT 0, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0)");
+
+	bdArchivo.setDatabaseName(_rutaBaseDatos);
+	if (bdArchivo.open() == true) {
+		QSqlQuery solicitudSQLArchivo(bdArchivo);
+
+		/**
+		 * Crea las estructuras de las tablas
+		 */
+		solicitudSQLArchivo.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, enlace TEXT NOT NULL, nombre TEXT NOT NULL, ruta TEXT NOT NULL, bytesTotal INTEGER DEFAULT 0, bytesTransferidos INTEGER DEFAULT 0, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0)");
+
+		bd.transaction();
+		solicitudSQLArchivo.exec("SELECT * FROM entradas");
+		while (solicitudSQLArchivo.next() == true) {
+			solicitudSQL.exec("INSERT INTO entradas VALUES (" + solicitudSQLArchivo.value("id").toString() + ", " + solicitudSQLArchivo.value("categoria").toString() + ", " + solicitudSQLArchivo.value("estado").toString() + ", \"" + solicitudSQLArchivo.value("enlace").toString() + "\", \"" + solicitudSQLArchivo.value("nombre").toString() + "\", \"" + solicitudSQLArchivo.value("ruta").toString() + "\", " + solicitudSQLArchivo.value("bytesTotal").toString() + ", " + solicitudSQLArchivo.value("bytesTransferidos").toString() + ", " + solicitudSQLArchivo.value("completado").toString() + ", " + solicitudSQLArchivo.value("velocidad").toString() + ")");
+		}
+		bd.commit();
+		bdArchivo.close();
+	}
+}
+
+/**
+ * @brief Sincroniza la base de datos física
+ */
+void VentanaPrincipal::sincronizarBaseDatos() {
+	QSqlDatabase bdArchivo = QSqlDatabase::database("ATDS3");
+	QSqlDatabase bd = QSqlDatabase::database();
+	QSqlQuery solicitudSQLArchivo(bdArchivo);
+	QSqlQuery solicitudSQL;
+
+	bdArchivo.setDatabaseName(_rutaBaseDatos);
+	if (bdArchivo.open() == true) {
+		bdArchivo.transaction();
+		solicitudSQLArchivo.exec("DELETE FROM entradas");
+		solicitudSQL.exec("SELECT * FROM entradas");
+		while (solicitudSQL.next() == true) {
+			solicitudSQLArchivo.exec("INSERT INTO entradas VALUES (" + solicitudSQL.value("id").toString() + ", " + solicitudSQL.value("categoria").toString() + ", " + solicitudSQL.value("estado").toString() + ", \"" + solicitudSQL.value("enlace").toString() + "\", \"" + solicitudSQL.value("nombre").toString() + "\", \"" + solicitudSQL.value("ruta").toString() + "\", " + solicitudSQL.value("bytesTotal").toString() + ", " + solicitudSQL.value("bytesTransferidos").toString() + ", " + solicitudSQL.value("completado").toString() + ", " + solicitudSQL.value("velocidad").toString() + ")");
+		}
+		bdArchivo.commit();
+		bdArchivo.close();
+	}
 }
 
 /**
@@ -880,8 +975,16 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	accionConfiguracion->setToolTip("Configura datos de la aplicación");
 	accionConfiguracion->setStatusTip("Configura datos de la aplicación");
 	accionConfiguracion->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_P));
-	connect(accionConfiguracion, SIGNAL(triggered(bool)), this, SLOT(eventoConfiguracion()));
+	connect(accionConfiguracion, &QAction::triggered, this, &VentanaPrincipal::eventoConfiguracion);
 	barraHerramientas->addAction(accionConfiguracion);
+
+	QAction *accionTerminar = new QAction();
+	accionTerminar->setIcon(QIcon(":/iconos/terminar.svg"));
+	accionTerminar->setText("Terminar");
+	accionTerminar->setToolTip("Termina la ejecución de la aplicación");
+	accionTerminar->setStatusTip("Termina la ejecución de la aplicación");
+	accionTerminar->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Q));
+	connect(accionTerminar, &QAction::triggered, this, &VentanaPrincipal::cerrarAplicacion);
 /*
 	barraHerramientas->addSeparator();
 
@@ -910,6 +1013,22 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	barraHerramientas->addWidget(_avatarTodus);
 
 	addToolBar(barraHerramientas);
+
+	QMenu *menuIconoSistema = new QMenu(this);
+
+	menuIconoSistema->addAction(accionAgregarDescarga);
+	menuIconoSistema->addAction(accionAgregarDescargasDesdeArchivo);
+	menuIconoSistema->addSeparator();
+	menuIconoSistema->addAction(accionConfiguracion);
+	menuIconoSistema->addSeparator();
+	menuIconoSistema->addAction(accionTerminar);
+
+	_iconoSistema = new QSystemTrayIcon(this);
+	_iconoSistema->setContextMenu(menuIconoSistema);
+	_iconoSistema->setIcon(QIcon(":/iconos/atds3.png"));
+	_iconoSistema->setToolTip(_aplicacionTitulo);
+	connect(_iconoSistema, &QSystemTrayIcon::activated, this, &VentanaPrincipal::eventoIconoSistemaActivado);
+	_iconoSistema->show();
 }
 
 /**
@@ -979,21 +1098,6 @@ QListView *VentanaPrincipal::construirListadoCategorias() {
  */
 QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	/**
-	 * Ancho y alto mínimo de la ventana. Inicialmente toma 1/3 de los valores actuales
-	 * de la pantalla y les fuerza un mínimo sin son inferiores a los valores que se
-	 * necesitan para que la ventana se visualice completamente.
-	 */
-	int ancho = qApp->primaryScreen()->availableSize().width() * 0.33;
-	int alto = qApp->primaryScreen()->availableSize().height() * 0.33;
-
-	if (ancho < 600) {
-		ancho = 600;
-	}
-	if (alto < 400) {
-		alto = 400;
-	}
-
-	/**
 	 * Modelo del listado de la categoría 'Descargando'
 	 */
 	_modeloCategoriaDescargas = QSharedPointer<ModeloEntradas>(new ModeloEntradas(this));
@@ -1041,28 +1145,30 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
 	_listadoDescargas->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_listadoDescargas->setItemsExpandable(false);
 	_listadoDescargas->setModel(_modeloCategoriaDescargas.get());
-	_listadoDescargas->setMinimumSize(QSize(ancho, alto));
 	_listadoDescargas->setUniformRowHeights(true);
 	_listadoDescargas->setRootIsDecorated(false);
 	_listadoDescargas->setSelectionBehavior(QAbstractItemView::SelectRows);
 	_listadoDescargas->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	_listadoDescargas->setSortingEnabled(false);
 	_listadoDescargas->setStyleSheet("QTreeView::item { height: 28px; }");
-	_listadoDescargas->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+	_listadoDescargas->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
 	_listadoDescargas->header()->setStretchLastSection(true);
 
 	_listadoDescargas->hideColumn(0);
-	for(int i = 6; i < 10; i++) {
-		_listadoDescargas->hideColumn(i);
-	}
+	_listadoDescargas->hideColumn(1);
+	_listadoDescargas->hideColumn(3);
+	_listadoDescargas->hideColumn(5);
 
 	_elementoIconoEstado = new DelegacionIconoEstado();
 	_elementoBarraProgreso = new DelegacionBarraProgreso();
-	_elementoVelocidad = new DelegacionVelocidad();
-	_listadoDescargas->setItemDelegateForColumn(1, _elementoIconoEstado);
-	_listadoDescargas->setItemDelegateForColumn(3, _elementoBarraProgreso);
-	_listadoDescargas->setItemDelegateForColumn(4, _elementoVelocidad);
+	_elementoTamano = new DelegacionTamano();
+	_elementoVelocidad = new DelegacionTamano(true);
+	_listadoDescargas->setItemDelegateForColumn(2, _elementoIconoEstado);
+	_listadoDescargas->setItemDelegateForColumn(6, _elementoTamano);
+	_listadoDescargas->setItemDelegateForColumn(7, _elementoTamano);
+	_listadoDescargas->setItemDelegateForColumn(8, _elementoBarraProgreso);
+	_listadoDescargas->setItemDelegateForColumn(9, _elementoVelocidad);
 
 	_categoriaActiva = 0x01;
 
@@ -1073,6 +1179,7 @@ QTreeView *VentanaPrincipal::construirListadoDescargas() {
  * @brief Construye la interfaz de usuario
  */
 void VentanaPrincipal::construirIU() {
+	setMinimumSize(QSize(705, 430));
 	setWindowIcon(QIcon(":/iconos/atds3.svg"));
 
 	// Restaura la geometría de la ventana previamente guardado
@@ -1113,6 +1220,7 @@ void VentanaPrincipal::construirIU() {
 	eventoCategoriaSeleccionada(indiceSeleccionado);
 
 	statusBar()->showMessage("Listo");
+	statusBar()->addPermanentWidget(new QLabel("v" + _aplicacionVersion));
 }
 
 /**
@@ -1128,34 +1236,33 @@ void VentanaPrincipal::actualizarAvatar() {
 	QString ipServidorS3 = _configuracion.value("avanzadas/ipServidorS3", "").toString();
 	QString nombreDNSServidorS3 = _configuracion.value("avanzadas/nombreDNSServidorS3", "s3.todus.cu").toString();
 	int puertoServidorS3 = _configuracion.value("avanzadas/puertoServidorS3", 443).toInt();
-	QUrl url = QUrl(enlaceAvatar);
-	QNetworkRequest solicitud;
 	QString autorizacion = "Bearer " + _configuracion.value("todus/fichaAcceso").toString();
 
-	_rutaAvatarTodus = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/" + _aplicacionNombreCorto + "_avatar.jpg";
+	enlaceAvatar.remove(0, 8 + nombreDNSServidorS3.size());
 
-#if QT_VERSION >= 0x050e00
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-#endif
-	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
+	_httpAvatar = new HTTP1(this);
 
+	_httpAvatar->establecerMetodo(HTTP1::Metodo::OBTENER);
 	if (ipServidorS3.size() > 0) {
-		url.setHost(ipServidorS3);
+		_httpAvatar->establecerAnfitrion(ipServidorS3);
+	} else {
+		_httpAvatar->establecerAnfitrion(nombreDNSServidorS3);
 	}
-	url.setPort(puertoServidorS3);
+	_httpAvatar->establecerPuerto(puertoServidorS3);
+	_httpAvatar->establecerRuta(enlaceAvatar);
 
-	solicitud.setUrl(url);
-	solicitud.setHeader(QNetworkRequest::UserAgentHeader, _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
-	solicitud.setHeader(QNetworkRequest::ContentTypeHeader, "application/octet-stream");
-	solicitud.setRawHeader("Authorization", autorizacion.toLocal8Bit());
-	solicitud.setRawHeader("Host", nombreDNSServidorS3.toLocal8Bit());
+	_buferDescargaAvatar.clear();
+	_httpAvatar->establecerDestinoDescarga(&_buferDescargaAvatar);
 
-	_archivoAvatarTodus.setFileName(_rutaAvatarTodus);
-	_archivoAvatarTodus.open(QIODevice::WriteOnly);
+	_httpAvatar->agregarCabeceraSolicitud("Accept", "image/*");
+	_httpAvatar->agregarCabeceraSolicitud("Authorization", autorizacion);
+	_httpAvatar->agregarCabeceraSolicitud("Content-Type", "application/octet-stream");
+	_httpAvatar->agregarCabeceraSolicitud("Host", nombreDNSServidorS3);
+	_httpAvatar->agregarCabeceraSolicitud("User-Agent", _configuracion.value("avanzadas/agenteUsuario", _agenteUsuarioTodus).toString() + " HTTP-Download");
 
-	_respuestaAvatarTodus = _administradorAccesoRedAvatarTodus->get(solicitud);
-	connect(_respuestaAvatarTodus, &QIODevice::readyRead, this, &VentanaPrincipal::eventoRecepcionDatosAvatarTodus);
-	connect(_respuestaAvatarTodus, &QNetworkReply::finished, this, &VentanaPrincipal::eventoDescargaTerminadaAvatarTodus);
+	connect(_httpAvatar, &HTTP1::finalizado, this, &VentanaPrincipal::eventoDescargaTerminadaAvatarTodus);
+
+	_httpAvatar->ejecutar();
 }
 
 QSharedPointer<ModeloEntradas> VentanaPrincipal::obtenerModeloDesdeCategoria(int categoria) {

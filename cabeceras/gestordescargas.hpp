@@ -11,7 +11,6 @@
 class VentanaPrincipal;
 class ModeloEntradas;
 class Descarga;
-struct sqlite3;
 
 class GestorDescargas : public QThread {
 	Q_OBJECT
@@ -30,12 +29,13 @@ class GestorDescargas : public QThread {
 		void detenerDescarga(unsigned int id);
 		void detenerDescargas();
 
+		int totalDescargas();
+
 	private slots:
 		void procesarTerminacionDescarga(unsigned int id);
 
 	private:
 		VentanaPrincipal *_padre;
-		sqlite3 *_baseDatos;
 
 		QSettings _configuracion;
 

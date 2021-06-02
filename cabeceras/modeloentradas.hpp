@@ -12,7 +12,7 @@ class ModeloEntradas : public QSqlTableModel {
 	public:
 		ModeloEntradas(QObject *padre = nullptr, const QSqlDatabase &baseDatos = QSqlDatabase());
 
-		void eliminarFila(int fila);
+		void eliminarFila(unsigned int fila);
 };
 
 #endif // MODELOENTRADAS_HPP
