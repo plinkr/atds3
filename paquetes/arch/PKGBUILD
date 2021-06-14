@@ -1,6 +1,6 @@
 # Maintainer: No maintainer <no@maintain.er>
 pkgname=atds3
-pkgver=0.7.0
+pkgver=0.8.0
 pkgrel=1
 pkgdesc="ATDS3 es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
 
@@ -15,11 +15,11 @@ ATDS3 posee las siguientes características:
 arch=('x86_64')
 license=('BSD')
 groups=('s3')
-depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'qt5-base>=5.15.2' 'qt5-svg>=5.15.2')
+depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'qt5-base>=5.15' 'qt5-svg>=5.15')
 provides=('atds3')
 changelog='changelog'
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('e36a8136964a6b895d226481e5703e9dbd41d3c298d5c22983c5477fe8907ada')
+sha256sums=('fca0d7511ff53632b2ff1dc763da33d51f1ed843184e1c4d3fcd88bc0435a469')
 
 prepare() {
 	cd "$pkgname-$pkgver"

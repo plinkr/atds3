@@ -78,6 +78,11 @@ struct _NuevaDescarga {
 };
 
 /**
+ * @brief Crea los directorios para alojar los archivos descargados
+ */
+extern void crearDirectoriosDescargas();
+
+/**
  * @brief Obtiene la ruta base para los iconos basado en el tema de escritorio activo
  * @return Ruta del icono
  */

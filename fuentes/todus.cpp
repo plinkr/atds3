@@ -18,10 +18,11 @@
 #include <QInputDialog>
 #include <QMutexLocker>
 #include <QFile>
+//#include <iostream>
 
 
 toDus::toDus(QObject *padre)
-	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(0), _desconexionSolicitada(false), _fichaAccesoRenovada(false) {
+	: QObject(padre), _progresoInicioSesion(ProgresoInicioSesion::Ninguno), _contadorComandos(0), _desconexionSolicitada(false), _fichaAccesoRenovada(false), _contadorPING(1) {
 }
 toDus::~toDus() {
 	google::protobuf::ShutdownProtobufLibrary();
@@ -33,7 +34,7 @@ void toDus::iniciar() {
 	_idSesion = generarIDSesion(5);
 	_socaloSSL = new QSslSocket(this);
 	_socaloSSL->setPeerVerifyMode(QSslSocket::VerifyNone);
-	_temporizadorMantenerSesionActiva.setInterval(60000);
+	_temporizadorMantenerSesionActiva.setInterval(5000);
 
 	connect(_socaloSSL, &QSslSocket::stateChanged, this, &toDus::eventoCambiarEstado);
 	connect(_socaloSSL, &QSslSocket::encrypted, this, &toDus::eventoConexionLista);
@@ -78,6 +79,8 @@ void toDus::iniciarSesion() {
 	QString fichaAcceso = _configuracion.value("todus/fichaAcceso").toString();
 	std::time_t tiempoActual = std::time(nullptr);
 	qint32 fichaAccesoTiempoExpiracion = _configuracion.value("todus/fichaAccesoTiempoExpiracion", (long long)tiempoActual).toInt();
+
+	_dominioJID = "im.todus.cu";
 
 	_socaloSSL->setProxy(obtenerConfiguracionProxy());
 
@@ -231,18 +234,19 @@ void toDus::eventoConexionLista() {
 }
 
 void toDus::eventoDatosRecibidos() {
-	QByteArray bufer;
+	QString bufer;
 	QRegularExpression re;
 	QRegularExpressionMatch rem;
 
 	while (_socaloSSL->bytesAvailable() > 0) {
 		bufer = _socaloSSL->readAll();
+//		std::cout << bufer.toStdString() << std::endl;
 
 		switch (_progresoInicioSesion) {
 			case ProgresoInicioSesion::Ninguno:
 				break;
 			case ProgresoInicioSesion::Saludo: // Respuesta al saludo
-				re = QRegularExpression("<stream:features>.+<e>PLAIN</e>.+</stream:features>");
+				re = QRegularExpression("<stream:features>.+<e>PLAIN</e>.+</stream:features>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::MecanismosAutentificacion;
@@ -255,7 +259,7 @@ void toDus::eventoDatosRecibidos() {
 				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::Autenficicacion;
 					xmppSaludar();
-					xmppEstablecerSesion();
+					//_socaloSSL->write("<stream:stream xmlns='jc' o='im.todus.cu' xmlns:stream='x1' v='1.0'>", QRegularExpression::CaseInsensitiveOption);
 				} else {
 					_progresoInicioSesion = ProgresoInicioSesion::Ninguno;
 					desconectar();
@@ -264,45 +268,59 @@ void toDus::eventoDatosRecibidos() {
 				}
 				break;
 			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
-				re = QRegularExpression("<iq t='result' i='" + _idSesion + "-" + QString::number(_contadorComandos) + "'>.+<jid>(.+)</jid>.+</iq>");
+				re = QRegularExpression(".*<stream:stream i='.+' v='1.0' xml:lang='en' xmlns:stream='x1' f='im.todus.cu' xmlns='jc'>.*", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					_progresoInicioSesion = ProgresoInicioSesion::SesionIniciada;
-					_jID = rem.captured(1);
 					_temporizadorMantenerSesionActiva.start();
+					xmppEstablecerSesion();
 					_desconexionSolicitada = false;
 					_estado = Estado::Listo;
 					emit estadoCambiado(_estado);
 				}
 				break;
 			case ProgresoInicioSesion::SesionIniciada: // Respuesta a algún comando
-				// La respuesta está dirigida a esta sesión?
-				re = QRegularExpression("<iq.+o='" + _jID + "'.+t='result'.+>.+</iq>");
+				// Sesion establecida
+				re = QRegularExpression("<iq t='result' i='.+'><b1 xmlns='x4'><jid>(.+)</jid><sid>.+</sid></b1></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
-					// Comando: GURL
-					re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.+)' status='200'/></iq>");
-					rem = re.match(bufer);
-					if (rem.hasMatch() == true) {
-						QString idSesion = rem.captured(1);
-						if (_listadoRetroalimentadores.find(idSesion) != _listadoRetroalimentadores.end()) {
-							_listadoRetroalimentadores[idSesion](rem.captured(2));
-							_listadoRetroalimentadores.remove(idSesion);
-						}
-					} else {
-						// Comando: PURL
-						re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='200'/></iq>");
-						rem = re.match(bufer);
-						if (rem.hasMatch() == true) {
-							QString idSesion = rem.captured(1);
-							QString enlaceFirmadoSubida = rem.captured(2);
-							QString enlaceNoFirmadoDescarga = rem.captured(3);
-							//_listadoEnlacesFirmados.remove(idSesion);
-							//emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
-							std::cout << "curl --progress-bar --header 'Authorization: Bearer " << _configuracion.value("todus/fichaAcceso").toString().toStdString() << "' --request PUT --tcp-nodelay --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file \"${archivo}\" '" << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << "'" << std::endl;
-							std::cout << enlaceNoFirmadoDescarga.toStdString() << std::endl;
-						}
+					_jID = rem.captured(1);
+					_socaloSSL->write("<en xmlns='x7' u='true' max='300'/>");
+				}
+				// Corrección del contador del PONG
+				re = QRegularExpression("<a h='(.+)' xmlns='x7'/>", QRegularExpression::CaseInsensitiveOption);
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
+					_contadorPING = rem.captured(1).toUInt() + 1;
+				}
+				// PING
+				re = QRegularExpression("<r xmlns='x7'/>", QRegularExpression::CaseInsensitiveOption);
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
+					// PONG
+					xmppPONG();
+				}
+				// Comando: GURL
+				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.+)' status='200'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
+					QString idSesion = rem.captured(1);
+					if (_listadoRetroalimentadores.find(idSesion) != _listadoRetroalimentadores.end()) {
+						_listadoRetroalimentadores[idSesion](rem.captured(2));
+						_listadoRetroalimentadores.remove(idSesion);
 					}
+				}
+				// Comando: PURL
+				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='200'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				rem = re.match(bufer);
+				if (rem.hasMatch() == true) {
+					QString idSesion = rem.captured(1);
+					QString enlaceFirmadoSubida = rem.captured(2);
+					QString enlaceNoFirmadoDescarga = rem.captured(3);
+					//_listadoEnlacesFirmados.remove(idSesion);
+					//emit enlaceFirmadoObtenido(enlaceNoFirmado, re.cap(2));
+					std::cout << "curl --progress-bar --header 'Authorization: Bearer " << _configuracion.value("todus/fichaAcceso").toString().toStdString() << "' --request PUT --tcp-nodelay --user-agent 'ToDus 0.38.35 HTTP-Upload' --upload-file \"${archivo}\" '" << enlaceFirmadoSubida.replace("&amp;", "&").toStdString() << "'" << std::endl;
+					std::cout << enlaceNoFirmadoDescarga.toStdString() << std::endl;
 				}
 				break;
 		}
@@ -508,7 +526,16 @@ void toDus::xmppEstablecerSesion() {
 }
 
 void toDus::xmppMantenerSesionActiva() {
-	QString buferAEnviar = "<iq from='" + _jID + "' to='" + _dominioJID + "' id='" + _idSesion + "-" + QString::number(obtenerProximoIDComando()) + "' type='get'><ping xmlns='urn:xmpp:ping'/></iq>\n";
+//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:roster:hash' hash='CB9C29EED34978062620B4734C36CAA3AC4EE2A36A72C0C7A6D899AE47828490'></query></iq>\n";
+//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:block:get'></query></iq>\n";
+	QByteArray buferAEnviar = "<p i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "'></p>\n";
+
+	_socaloSSL->write(buferAEnviar);
+}
+
+void toDus::xmppPONG() {
+//	QString buferAEnviar = "<iq from='" + _jID + "' to='" + _dominioJID + "' id='" + _idSesion + "-" + QString::number(obtenerProximoIDComando()) + "' type='get'><ping xmlns='urn:xmpp:ping'/></iq>\n";
+	QString buferAEnviar = "<a xmlns='x7' h='" + QString::number(_contadorPING++) + "'/>";
 
 	_socaloSSL->write(buferAEnviar.toLocal8Bit());
 }

@@ -60,7 +60,6 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 	}
 
 	_gestorDescargas = new GestorDescargas(this);
-	_gestorDescargas->start();
 
 	QList<QSharedPointer<ModeloEntradas>> modelos {_modeloCategoriaProgramas, _modeloCategoriaMusica, _modeloCategoriaVideos, _modeloCategoriaOtros};
 	int estado = 0;
@@ -70,10 +69,12 @@ VentanaPrincipal::VentanaPrincipal(QWidget *parent)
 			if (estado == _ListadoEstados::EnEsperaIniciar || estado == _ListadoEstados::Iniciada) {
 				modelo->setData(modelo->index(f, 2), _ListadoEstados::EnEsperaIniciar);
 				_modeloCategoriaDescargas->setData(_modeloCategoriaDescargas->index(f, 2), _ListadoEstados::EnEsperaIniciar);
-				QTimer::singleShot(1000, std::bind(&GestorDescargas::agregarDescarga, _gestorDescargas, f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas));
+				_gestorDescargas->agregarDescarga(f, modelo->data(modelo->index(f, 0)).toUInt(), modelo, _modeloCategoriaDescargas);
 			}
 		}
 	}
+
+	_gestorDescargas->start();
 }
 VentanaPrincipal::~VentanaPrincipal() {
 	// Emitir la señal de detención de la aplicación para que todos los hilos de descargas cesen su ejecución
@@ -285,6 +286,10 @@ void VentanaPrincipal::procesarCambiosConfiguracion() {
 	}
 	if (_configuracionFichaAcceso != _configuracion.value("todus/fichaAcceso").toString()) {
 		reconexionRequerida = true;
+	}
+	if (_configuracionDescargasRuta != _configuracion.value("descargas/ruta").toString()) {
+		crearDirectoriosDescargas();
+		sincronizarBaseDatos();
 	}
 	if (_configuracionIpServidorAutentificacion != _configuracion.value("avanzadas/ipServidorAutentificacion").toString()) {
 		reconexionRequerida = true;
@@ -664,6 +669,7 @@ void VentanaPrincipal::eventoPausarTodasDescargas() {
 void VentanaPrincipal::eventoConfiguracion() {
 	_configuracionTelefono = _configuracion.value("todus/telefono").toString();
 	_configuracionFichaAcceso = _configuracion.value("todus/fichaAcceso").toString();
+	_configuracionDescargasRuta = _configuracion.value("descargas/ruta").toString();
 	_configuracionIpServidorAutentificacion = _configuracion.value("avanzadas/ipServidorAutentificacion").toString();
 	_configuracionPuertoServidorAutentificacion = _configuracion.value("avanzadas/puertoServidorAutentificacion", 443).toInt();
 	_configuracionNombreDNSServidorAutentificacion = _configuracion.value("avanzadas/nombreDNSServidorAutentificacion").toString();
@@ -752,7 +758,7 @@ void VentanaPrincipal::eventoDescargaTerminadaAvatarTodus() {
 
 		if (avatar.loadFromData(_buferDescargaAvatar) == true) {
 			_buferDescargaAvatar.clear();
-			_avatarTodus->setPixmap(avatar);
+			_avatarTodus->setPixmap(avatar.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 		}
 	}
 }
@@ -867,11 +873,18 @@ void VentanaPrincipal::sincronizarBaseDatos() {
 	bdArchivo.setDatabaseName(_rutaBaseDatos);
 	if (bdArchivo.open() == true) {
 		bdArchivo.transaction();
-		solicitudSQLArchivo.exec("DELETE FROM entradas");
+
+		/**
+		 * Crea las estructuras de las tablas
+		 */
+		solicitudSQLArchivo.exec("DROP TABLE IF EXISTS entradas");
+		solicitudSQLArchivo.exec("CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, enlace TEXT NOT NULL, nombre TEXT NOT NULL, ruta TEXT NOT NULL, bytesTotal INTEGER DEFAULT 0, bytesTransferidos INTEGER DEFAULT 0, completado INTEGER DEFAULT 0, velocidad INTEGER DEFAULT 0)");
+
 		solicitudSQL.exec("SELECT * FROM entradas");
 		while (solicitudSQL.next() == true) {
 			solicitudSQLArchivo.exec("INSERT INTO entradas VALUES (" + solicitudSQL.value("id").toString() + ", " + solicitudSQL.value("categoria").toString() + ", " + solicitudSQL.value("estado").toString() + ", \"" + solicitudSQL.value("enlace").toString() + "\", \"" + solicitudSQL.value("nombre").toString() + "\", \"" + solicitudSQL.value("ruta").toString() + "\", " + solicitudSQL.value("bytesTotal").toString() + ", " + solicitudSQL.value("bytesTransferidos").toString() + ", " + solicitudSQL.value("completado").toString() + ", " + solicitudSQL.value("velocidad").toString() + ")");
 		}
+
 		bdArchivo.commit();
 		bdArchivo.close();
 	}
@@ -1006,6 +1019,7 @@ void VentanaPrincipal::construirBotonesBarraHerramientas(QToolBar *barraHerramie
 	_estadoSesionTodus->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
 	_avatarTodus = new QLabel();
+	_avatarTodus->setMaximumSize(QSize(48, 48));
 	_avatarTodus->setPixmap(QIcon(obtenerRutaIcono() + "usuario.svg").pixmap(QSize(48, 48)));
 
 	barraHerramientas->addWidget(elementoEspaciador);
@@ -1240,6 +1254,10 @@ void VentanaPrincipal::actualizarAvatar() {
 
 	enlaceAvatar.remove(0, 8 + nombreDNSServidorS3.size());
 
+	if (_httpAvatar.isNull() == false) {
+		_httpAvatar->abort();
+		delete _httpAvatar;
+	}
 	_httpAvatar = new HTTP1(this);
 
 	_httpAvatar->establecerMetodo(HTTP1::Metodo::OBTENER);
@@ -1254,7 +1272,7 @@ void VentanaPrincipal::actualizarAvatar() {
 	_buferDescargaAvatar.clear();
 	_httpAvatar->establecerDestinoDescarga(&_buferDescargaAvatar);
 
-	_httpAvatar->agregarCabeceraSolicitud("Accept", "image/*");
+	_httpAvatar->agregarCabeceraSolicitud("Accept", "*/*");
 	_httpAvatar->agregarCabeceraSolicitud("Authorization", autorizacion);
 	_httpAvatar->agregarCabeceraSolicitud("Content-Type", "application/octet-stream");
 	_httpAvatar->agregarCabeceraSolicitud("Host", nombreDNSServidorS3);

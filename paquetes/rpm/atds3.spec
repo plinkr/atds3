@@ -1,11 +1,11 @@
 Name:			atds3
-Version:		0.7.0
+Version:		0.8.0
 Release:		1%{?dist}
 Summary:		Administrador de Transferencias para toDus (S3)
 
 License:		BSD
 
-Source0:		atds3-0.7.0.tar.gz
+Source0:		atds3-0.8.0.tar.gz
 
 BuildArch:		x86_64
 
@@ -51,6 +51,12 @@ strip %{buildroot}%{_bindir}/%{name}
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Sat Jun 12 2021 No maintainer <no@maintain.er> - 0.8.0-1
+- Actualizado el mecanismo de inicio de sesión en toDus.
+- Se corrige el problema de la desconexión contínua.
+- Corregido fallo que rompía las dimensiones de la interfaz de usuario cuando se visualizaba la fotografía del perfil de toDus.
+- Corregido fallo que no permitía eliminar correctamente las descargas finalizadas del listado de descargas cuando la opción estaba configurada.
+- Agregada la habilidad de cambiar la ruta de la carpeta de las descargas y sincronizar completamente la base de datos en la nueva ruta.
 * Wed Jun 02 2021 No maintainer <no@maintain.er> - 0.7.0-1
 - Reemplazado código base de comunicación HTTP con los servidores de la red toDus. Ahora es más sólido y eficiente.
 - Incrustada la librería Protocol Buffers en los binarios para Windows.

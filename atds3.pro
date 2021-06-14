@@ -6,7 +6,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 0.7.0
+VERSION = 0.8.0
 windows {
 	RC_ICONS = recursos/iconos/atds3.ico
 	QMAKE_TARGET_COMPANY = ATDS3

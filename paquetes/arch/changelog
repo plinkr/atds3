@@ -1,3 +1,13 @@
+atds3 (0.8.0-1) stable; urgency=low
+
+  * Actualizado el mecanismo de inicio de sesión en toDus.
+  * Se corrige el problema de la desconexión contínua.
+  * Corregido fallo que rompía las dimensiones de la interfaz de usuario cuando se visualizaba la fotografía del perfil de toDus.
+  * Corregido fallo que no permitía eliminar correctamente las descargas finalizadas del listado de descargas cuando la opción estaba configurada.
+  * Agregada la habilidad de cambiar la ruta de la carpeta de las descargas y sincronizar completamente la base de datos en la nueva ruta.
+
+ -- No maintainer <no@maintain.er>  Sat, 12 Jun 2021 13:50:00 -0500
+
 atds3 (0.7.0-1) stable; urgency=low
 
   * Reemplazado código base de comunicación HTTP con los servidores de la red toDus. Ahora es más sólido y eficiente.

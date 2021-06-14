@@ -175,6 +175,8 @@ void Descarga::eventoDescargaTerminada() {
 			case QAbstractSocket::RemoteHostClosedError:
 			case QAbstractSocket::ProxyConnectionClosedError:
 				if (_http->codigoHTTP() == 200 || _http->codigoHTTP() == 206) {
+					_error = false;
+
 					_modelo->setData(_modelo->index(_filaModelo, 2), _ListadoEstados::Finalizada);
 					_modelo->setData(_modelo->index(_filaModelo, 7), _modelo->data(_modelo->index(_filaModelo, 6)).toUInt());
 					_modelo->setData(_modelo->index(_filaModelo, 8), 100);
@@ -210,9 +212,7 @@ void Descarga::iniciar() {
 
 	if (_toDus->obtenerEstado() == toDus::Estado::Listo) {
 		_iniciado = true;
-		_bytesRecibidos = 0;
-		_bytesTotal = 0;
-		_ultimoTamanoRegistrado = 0;
+		_error = false;
 		_ultimoTiempoRecepcion = std::time(nullptr);
 		if (_temporizadorMonitorizacionDescarga.isNull() == true) {
 			_temporizadorMonitorizacionDescarga = new QTimer(this);

@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
 	_aplicacionNombreCorto = "atds3";
-	_aplicacionVersion = "0.7.0";
+	_aplicacionVersion = "0.8.0";
 	_agenteUsuarioTodus = "ToDus 0.39.4";
 	_numeroVersionTodus = "21808";
 
@@ -113,8 +113,6 @@ int main(int argc, char *argv[])
 	app.setApplicationName(_aplicacionNombreCorto);
 	app.setApplicationVersion(_aplicacionVersion);
 	app.setQuitOnLastWindowClosed(false);
-
-	_rutaBaseDatos = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/" + _aplicacionNombreCorto.toLower() + "/" + _aplicacionNombreCorto + ".db";
 
 	crearConfiguracionesDefecto();
 
@@ -212,7 +210,7 @@ QString obtenerRutaDescargas() {
 		}
 
 		rutaDescarga += "/" + _aplicacionNombreCorto;
-		directorioDescarga.mkdir(rutaDescarga);
+		directorioDescarga.mkpath(rutaDescarga);
 	}
 
 	return rutaDescarga;
@@ -226,10 +224,12 @@ void crearDirectoriosDescargas() {
 	QString rutaDescarga = obtenerRutaDescargas();
 	QVector<QString> directorios {"programas", "musica", "videos", "otros"};
 
+	_rutaBaseDatos = rutaDescarga + "/" + _aplicacionNombreCorto + ".db";
+
 	directorioDescarga.cd(rutaDescarga);
 	for (const QString &directorio : directorios) {
 		if (directorioDescarga.exists(directorio) == false) {
-			directorioDescarga.mkdir(directorio);
+			directorioDescarga.mkpath(directorio);
 		}
 	}
 }

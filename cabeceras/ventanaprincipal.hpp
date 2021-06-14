@@ -253,6 +253,11 @@ class VentanaPrincipal : public QMainWindow
 		QString _configuracionFichaAcceso;
 
 		/**
+		 * @brief Configuracion: Ruta de las descargas
+		 */
+		QString _configuracionDescargasRuta;
+
+		/**
 		 * @brief Configuracion: IP del servidor de autentificación
 		 */
 		QString _configuracionIpServidorAutentificacion;

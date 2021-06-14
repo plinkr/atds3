@@ -106,6 +106,7 @@ class toDus : public QObject {
 		QMap<QString, std::function<void(const QString &)>> _listadoRetroalimentadores;
 		QString _idInicioSesion;
 		QMutex _mutexSolicitarEnlace;
+		unsigned int _contadorPING;
 
 		QString generarIDSesion(unsigned int totalCaracteres);
 		unsigned int obtenerProximoIDComando();
@@ -117,6 +118,7 @@ class toDus : public QObject {
 		void xmppIniciarSesion();
 		void xmppEstablecerSesion();
 		void xmppMantenerSesionActiva();
+		void xmppPONG();
 		void xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void(const QString &)> retroalimentador);
 		void xmppSolicitarEnlaceSubida(const QString &tamano);
 };
