@@ -27,7 +27,7 @@ message RecepcionFichaSolicitud {
 
 message SolicitudFichaAcceso {
 	required string telefono = 1;
-	required string fichaSolicitud = 2;
+	required bytes fichaSolicitud = 2;
 	required string numeroVersion = 3;
 }
 

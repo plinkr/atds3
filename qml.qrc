@@ -1,0 +1,30 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/comun/BarraBotones.qml</file>
+        <file>qml/configuracion/apariencia/Apariencia.qml</file>
+        <file>qml/configuracion/avanzadas/Avanzadas.qml</file>
+        <file>qml/configuracion/descargas/Descargas.qml</file>
+        <file>qml/configuracion/informacion/Informacion.qml</file>
+        <file>qml/configuracion/proxy/Proxy.qml</file>
+        <file>qml/configuracion/todus/Todus.qml</file>
+        <file>qml/configuracion/Configuracion.qml</file>
+        <file>qml/principal/EditarCategoria.qml</file>
+        <file>qml/principal/Categorias.qml</file>
+        <file>qml/principal/MenuLateral.qml</file>
+        <file>qml/principal/Principal.qml</file>
+        <file>qml/principal/Paquetes.qml</file>
+        <file>qml/atds3.qml</file>
+        <file>qml/atds3.qmlproject</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>qml/principal/CodigoVerificacion.qml</file>
+        <file>qml/principal/PublicarContenido.qml</file>
+        <file>qml/principal/VistaTarea.qml</file>
+        <file>qml/configuracion/publicaciones/Publicaciones.qml</file>
+        <file>qml/configuracion/todus/PPFInformacion.qml</file>
+        <file>qml/comun/EntradaLineaTexto.qml</file>
+        <file>qml/comun/TextoMenuContextual.qml</file>
+        <file>qml/comun/EntradaAreaTexto.qml</file>
+        <file>qml/configuracion/notificaciones/Notificaciones.qml</file>
+        <file>qml/configuracion/notificaciones/Notificacion.qml</file>
+    </qresource>
+</RCC>

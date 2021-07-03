@@ -5,37 +5,42 @@
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
-#include <QMutex>
+#include <QRecursiveMutex>
 #include <QSettings>
 #include <QSslSocket>
+#include <QQueue>
+#include <QtWebSockets/QWebSocket>
 
 
-class HTTP1;
+class HTTP;
 
 class toDus : public QObject {
 	Q_OBJECT
 
 	public:
-		enum Estado {
-			Desconectado = 0x01,
-			ResolviendoNombreDNS = 0x02,
-			Conectando = 0x03,
-			Conectado = 0x04,
-			IniciandoSesion = 0x05,
-			Listo = 0x06,
-			Desconectando = 0x07
+		enum Estados {
+			Desconectado,
+			SolicitandoCodigoSMS,
+			SolicitandoFichaSolicitud,
+			SolicitandoFichaAcceso,
+			ResolviendoNombreDNS,
+			Conectando,
+			Conectado,
+			IniciandoSesion,
+			Listo,
+			Desconectando
 		};
 
 		toDus(QObject *padre = nullptr);
 		~toDus();
 
-		void iniciar();
+//		void iniciar();
 
 		/**
 		 * @brief Obtiene el estado de la sesión toDus
 		 * @return Devuelve el estado de la sesión toDus
 		 */
-		Estado obtenerEstado();
+		Estados obtenerEstado();
 
 		/**
 		 * @brief Desconecta de toDus
@@ -47,22 +52,23 @@ class toDus : public QObject {
 		 */
 		void reconectar();
 
-		/**
-		 * @brief Solicita a toDus el enlace firmado para obtener un archivo
-		 * @param enlace Enlace no firmado
-		 */
-		void solicitarEnlaceFirmado(const QString &enlace, std::function<void(const QString &)> retroalimentador);
+		void solicitarFichaSolicitud(const QString &codigo);
 
-		void solicitarEnlaceFirmadoSubida(const QString &tamano);
+		void obtenerEnlaceFirmado(int tipo, qint64 paquete, qint64 id, const QString &enlace, qint64 tamano = 0);
+		void eliminarSolicitudEnlaceFirmado(qint64 id);
+		void eliminarTodasSolicitudesEnlaceFirmado(qint64 paquete);
+
+		void iniciarPPF();
 
 	public slots:
+		void procesarColaSolicitudesEnlacesFirmados();
 		/**
 		 * @brief Inicia la sesión en toDus partiendo del número de teléfono o ficha de acceso configurada
 		 */
 		void iniciarSesion();
 
 	signals:
-		void estadoCambiado(Estado estado);
+		void estadoCambiado(Estados estado);
 		void enlaceFirmadoObtenido(const QString &noFirmado, const QString &firmado);
 
 	private slots:
@@ -72,6 +78,12 @@ class toDus : public QObject {
 		void eventoCambiarEstado(QAbstractSocket::SocketState estado);
 		void eventoConexionLista();
 		void eventoDatosRecibidos();
+		void eventoPPFConectado();
+		void eventoPPFPong();
+		void eventoPPFMensajeRecibido(const QString &mensaje);
+		void eventoPPFDesconectado();
+		void eventoPPFSocaloWebPING();
+		void eventoPPFSocaloWebVerificarConexion();
 
 	private:
 		enum ProgresoInicioSesion {
@@ -81,23 +93,33 @@ class toDus : public QObject {
 			Autenficicacion = 0x03,
 			SesionIniciada = 0x04
 		};
+		struct SolicitudEnlaceFirmado {
+				int tipo;
+				qint64 paquete;
+				QString enlace;
+				qint64 tamano;
+				QString idSesion;
+				int reintentos;
+		};
 
 		QByteArray _buferCargaCodigoSMS;
 		QByteArray _buferDescargaCodigoSMS;
-		QPointer<HTTP1> _httpCodigoSMS;
+		QPointer<HTTP> _httpCodigoSMS;
 		QByteArray _buferCargaFichaSolicitud;
 		QByteArray _buferDescargaFichaSolicitud;
-		QPointer<HTTP1> _httpFichaSolicitud;
+		QPointer<HTTP> _httpFichaSolicitud;
+		unsigned short _solicitudesFichaAcceso;
 		QByteArray _buferCargaFichaAcceso;
 		QByteArray _buferDescargaFichaAcceso;
-		QPointer<HTTP1> _httpFichaAcceso;
+		QByteArray _fichaAccesoActual;
+		QPointer<HTTP> _httpFichaAcceso;
 		QPointer<QSslSocket> _socaloSSL;
-		Estado _estado;
+		Estados _estado;
 		ProgresoInicioSesion _progresoInicioSesion;
 		QString _idSesion;
-		QSettings _configuracion;
+		QSettings _configuraciones;
 		unsigned int _contadorComandos;
-		QMutex _mutexContadorComandos;
+		QRecursiveMutex _mutexContadorComandos;
 		QString _jID;
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
@@ -105,22 +127,40 @@ class toDus : public QObject {
 		bool _fichaAccesoRenovada;
 		QMap<QString, std::function<void(const QString &)>> _listadoRetroalimentadores;
 		QString _idInicioSesion;
-		QMutex _mutexSolicitarEnlace;
+		QRecursiveMutex _mutexSolicitarEnlace;
 		unsigned int _contadorPING;
+		QTimer _temporizadorListadoSolicitudesEnlacesFirmados;
+		QRecursiveMutex _mutexListadoSolicitudesEnlacesFirmados;
+		QMap<qint64, SolicitudEnlaceFirmado> _listadoSolicitudesEnlacesFirmados;
+		int _solicitudesEnlacesFirmadosAnterior;
+		QWebSocket _socaloWeb;
+		Estados _estadoSocaloWeb;
+		bool _socaloWebConexionActiva;
+		bool _socaloWebMismaFichaRecibida;
+		bool _socaloWebFichaAportada;
+		int _socaloWebIndiceFichaLocal;
+		QTimer _temporizadorSocaloWebPING;
+		QTimer _temporizadorSocaloWebVerificarConexion;
 
 		QString generarIDSesion(unsigned int totalCaracteres);
 		unsigned int obtenerProximoIDComando();
 		void solicitarCodigoSMS(const QString &telefono);
-		void solicitarFichaSolicitud(const QString &codigo);
 		void solicitarFichaAcceso();
 		void iniciarSesionConFichaAcceso();
+		void xmppEnviar(const QString &buferAEnviar);
 		void xmppSaludar();
 		void xmppIniciarSesion();
 		void xmppEstablecerSesion();
+		void xmppEstablecerTiempoInactividad();
+		void xmppEstablecerPresencia();
+		void xmppSolicitarUsuariosBloqueados();
+		void xmppSolicitarListadoGruposCanales();
 		void xmppMantenerSesionActiva();
 		void xmppPONG();
-		void xmppSolicitarEnlaceDescarga(const QString &enlace, std::function<void(const QString &)> retroalimentador);
-		void xmppSolicitarEnlaceSubida(const QString &tamano);
+		void xmppSolicitarEnlaceDescarga(qint64 id);
+		void xmppSolicitarEnlaceSubida(qint64 id);
+		void socaloWebAportarFicha();
+		void socaloWebSolicitarFicha();
 };
 
 #endif // TODUS_HPP
