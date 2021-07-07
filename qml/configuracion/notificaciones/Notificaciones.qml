@@ -39,6 +39,9 @@ Page {
 		notificacionFinalizacionErroneaTarea.visual = configuraciones.valor("notificaciones/visualFinalizacionErroneaTarea", true)
 		notificacionFinalizacionErroneaTarea.audible = configuraciones.valor("notificaciones/audibleFinalizacionErroneaTarea", true)
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -47,6 +50,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height

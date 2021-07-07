@@ -1,25 +1,25 @@
 # Maintainer: No maintainer <no@maintain.er>
 pkgname=atds3
-pkgver=0.8.0
+pkgver=1.0.0
 pkgrel=1
-pkgdesc="ATDS3 es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
+pkgdesc="ATDS3 es una aplicación para escritorio que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).
 
 ATDS3 posee las siguientes características:
 
- * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
+ * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux y Windows.
  * Fácil de usar: ATDS3 es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
  * Configurable: ATDS3 ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.
- * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de descargas y subidas al mismo tiempo.
+ * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.
  * Ajustado al protocolo de red de toDus: ATDS3 Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.
  * Inteligene: ATDS3 tiene escrito código para comportarse de forma inteligente dependiendo de la situación de la red y cómo descargar los archivos."
 arch=('x86_64')
 license=('BSD')
 groups=('s3')
-depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'qt5-base>=5.15' 'qt5-svg>=5.15')
+depends=('openssl>=1.1.1.k' 'protobuf>=3.16.0' 'libx11>=1.7' 'libxext>=1.3' 'qt5-base>=5.15' 'qt5-declarative>=5.15' 'qt5-quickcontrols>=5.15' 'qt5-quickcontrols2>=5.15' 'qt5-graphicaleffects>=5.15' 'qt5-imageformats>=5.15' 'qt5-svg>=5.15' 'qt5-websockets>=5.15' 'qt5-multimedia>=5.15')
 provides=('atds3')
 changelog='changelog'
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('fca0d7511ff53632b2ff1dc763da33d51f1ed843184e1c4d3fcd88bc0435a469')
+sha256sums=('1ab2a2e0068784edeb51e26c9cf4f77c9909e5af20d10d059c3ef46e178265ef')
 
 prepare() {
 	cd "$pkgname-$pkgver"
@@ -32,7 +32,7 @@ build() {
 	cd "$pkgname-$pkgver"
 	mkdir -p _construccion
 	cd _construccion
-	qmake "$srcdir/$pkgname-$pkgver/$pkgname.pro" QMAKE_PREFIX="$pkgdir" QMAKE_CFLAGS_ISYSTEM=-I CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG-=separate_debug_info CONFIG+=release CONFIG+=protobuf
+	qmake "$srcdir/$pkgname-$pkgver/$pkgname.pro" QMAKE_INSTALL_PREFIX="$pkgdir" QMAKE_CFLAGS_ISYSTEM=-I CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG-=separate_debug_info CONFIG+=release CONFIG+=protobuf
 	make -j1
 }
 

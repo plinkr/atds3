@@ -1,7 +1,7 @@
 import Qt.labs.platform 1.0
 import QtQuick 2.12
-import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 import "qrc:/qml/comun"
 
 
@@ -20,6 +20,9 @@ Page {
 		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 3)
 		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -28,6 +31,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id:deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -49,12 +53,10 @@ Page {
 					columns: 3
 //					columnSpacing: 10
 
-					Label {
+					Subtitulo {
 						Layout.columnSpan: 3
 						Layout.topMargin: 20
-						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 2
-						text: "Descargas"
+						titulo: "Descargas"
 					}
 
 					Label {
@@ -115,7 +117,7 @@ Page {
 					SpinBox {
 						id: descargasParalelas
 						Accessible.role: Accessible.SpinBox
-						Accessible.name: "Descargas paralelas"
+						Accessible.name: "Descargas paralelas. Valor: " + value
 						Accessible.description: "Define el total de tareas de descargas que pueden estar activas de forma simultánea (máximo 10)"
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
 						Layout.columnSpan: columnasIntegradasVistaVertical
@@ -149,12 +151,10 @@ Page {
 						visible: columnasIntegradasVistaVertical === 1
 					}
 
-					Label {
+					Subtitulo {
 						Layout.columnSpan: 3
 						Layout.topMargin: 40
-						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 2
-						text: "Acción al finalizar una descarga"
+						titulo: "Acción al finalizar un paquete"
 					}
 
 					Label {
@@ -167,8 +167,8 @@ Page {
 					Switch {
 						id: descargasEliminarDelListadoAlFinalizar
 						Accessible.role: Accessible.CheckBox
-						Accessible.name: "Eliminar del listado al finalizar la descarga?"
-						Accessible.description: "Define si se debe eliminar del listado la descarga tras finalizar"
+						Accessible.name: "Eliminar el paquete del listado al finalizar la descarga?"
+						Accessible.description: "Define si se debe eliminar el paquete del listado tras finalizar exitosamente la descarga de todas sus tareas."
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
@@ -191,7 +191,7 @@ Page {
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						Layout.fillWidth: true
 						font.pointSize: ventanaPrincipal.font.pointSize - 2
-						text: "Define si se debe eliminar del listado la descarga tras finalizar."
+						text: "Define si se debe eliminar el paquete del listado tras finalizar exitosamente la descarga de todas sus tareas."
 						wrapMode: Label.WordWrap
 					}
 					Label {

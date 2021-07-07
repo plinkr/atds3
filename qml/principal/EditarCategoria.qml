@@ -25,6 +25,9 @@ Page {
 //		categoriaCanalTodus.text = ''
 //		categoriaDescargarAutomaticamente.checked = false
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	function editar(indice) {
@@ -68,10 +71,10 @@ Page {
 
 					if (creando === true) {
 //						modeloCategorias.agregar(categoriaTitulo.text, icono.ruta, categoriaCanalTodus.text, categoriaDescargarAutomaticamente.checked)
-                        modeloCategorias.agregar(categoriaTitulo.text, icono.ruta, "", false)
+						modeloCategorias.agregar(categoriaTitulo.text.trim(), icono.ruta, "", false)
                     } else {
 //						modeloCategorias.actualizar(listadoCategorias.currentIndex, categoriaTitulo.text, icono.ruta, categoriaCanalTodus.text, categoriaDescargarAutomaticamente.checked)
-                        modeloCategorias.actualizar(listadoCategorias.currentIndex, categoriaTitulo.text, icono.ruta, "", false)
+						modeloCategorias.actualizar(listadoCategorias.currentIndex, categoriaTitulo.text.trim(), icono.ruta, "", false)
                     }
 
 					vistaApilable.pop();
@@ -85,6 +88,7 @@ Page {
 	}
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height

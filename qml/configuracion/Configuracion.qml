@@ -16,6 +16,7 @@ import "qrc:/qml/configuracion/informacion"
 Page {
 	property string nombre: "Configuracion"
 	property string titulo: "Configuración"
+	property alias deslizante: deslizante
 	property alias pantallaConfiguracionTodus: pantallaConfiguracionTodus
 	property alias pantallaConfiguracionDescargas: pantallaConfiguracionDescargas
 	property alias pantallaConfiguracionPublicaciones: pantallaConfiguracionPublicaciones
@@ -23,12 +24,21 @@ Page {
 	property alias pantallaConfiguracionAvanzadas: pantallaConfiguracionAvanzadas
 	property alias pantallaConfiguracionInformacion: pantallaConfiguracionInformacion
 
+	function mostrar() {
+		vistaApilable.push(this)
+
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+	}
+
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de las configuraciones de ATDS3"
 	Accessible.description: "Aquí se muestran los accesos a las diferentes secciones de configuración de ATDS3"
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		clip: true
@@ -51,8 +61,6 @@ Page {
 				spacing: 10
 
 				Repeater {
-					id: repetidor
-
 					model: ListModel {
 						ListElement {
 							icono: "qrc:/svg/theater-masks.svg"
@@ -95,20 +103,20 @@ Page {
 							descripcion: "Muestra información variada de la aplicación."
 						}
 					}
-					Button {
-						Accessible.role: Accessible.Button
+					delegate: ItemDelegate {
+						Accessible.role: Accessible.ListItem
 						Accessible.name: `${model.titulo}. ${model.descripcion}`
 						Layout.fillWidth: true
-//						Layout.preferredHeight: tamanoIconos + 40
+						Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+						Layout.preferredHeight: tamanoIconos + 40
 						clip: true
-						display: AbstractButton.TextUnderIcon
+						display: AbstractButton.TextBesideIcon
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
-						flat: true
 						icon.height: tamanoIconos
 						icon.width: tamanoIconos
 						icon.source: model.icono
-						spacing: 10
+						spacing: 30
 						text: `<h3>${model.titulo}</h3><p>${model.descripcion}</p>`
 						width: listadoConfiguraciones.width
 
@@ -136,7 +144,7 @@ Page {
 									pantallaConfiguracionAvanzadas.mostrar()
 									break;
 								case 7: // Informacion
-									vistaApilable.push(pantallaConfiguracionInformacion)
+									pantallaConfiguracionInformacion.mostrar()
 									break;
 								default:
 									break;

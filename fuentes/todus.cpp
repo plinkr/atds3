@@ -59,8 +59,6 @@ toDus::~toDus() {
 }
 
 void toDus::procesarColaSolicitudesEnlacesFirmados() {
-	QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
-
 	if (_listadoSolicitudesEnlacesFirmados.size() != _solicitudesEnlacesFirmadosAnterior) {
 		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Solicitudes de enlaces firmados por procesar: " << _listadoSolicitudesEnlacesFirmados.size() << std::endl;
 
@@ -183,22 +181,16 @@ void toDus::iniciarSesion() {
 }
 
 void toDus::obtenerEnlaceFirmado(int tipo, qint64 paquete, qint64 id, const QString &enlace, qint64 tamano) {
-	QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
-
 	_listadoSolicitudesEnlacesFirmados[id] = { tipo, paquete, enlace, tamano, "", 0 };
 }
 
 void toDus::eliminarSolicitudEnlaceFirmado(qint64 id) {
-	QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
-
 	if (_listadoSolicitudesEnlacesFirmados.find(id) != _listadoSolicitudesEnlacesFirmados.end()) {
 		_listadoSolicitudesEnlacesFirmados.remove(id);
 	}
 }
 
 void toDus::eliminarTodasSolicitudesEnlaceFirmado(qint64 paquete) {
-	QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
-
 	for (qint64 id : _listadoSolicitudesEnlacesFirmados.keys()) {
 		if (_listadoSolicitudesEnlacesFirmados[id].paquete == paquete) {
 			_listadoSolicitudesEnlacesFirmados.remove(id);
@@ -446,7 +438,6 @@ void toDus::eventoDatosRecibidos() {
 				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.*)' status='(.+)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
-					QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
 					QString enlaceFirmado;
 
@@ -471,7 +462,6 @@ void toDus::eventoDatosRecibidos() {
 				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='(.+)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
-					QMutexLocker b(&_mutexListadoSolicitudesEnlacesFirmados);
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
 					QString enlace;
 					QString enlaceFirmado;
@@ -527,8 +517,6 @@ QString toDus::generarIDSesion(unsigned int totalCaracteres) {
 }
 
 unsigned int toDus::obtenerProximoIDComando() {
-	QMutexLocker b(&_mutexContadorComandos);
-
 	_contadorComandos++;
 
 	return _contadorComandos;
@@ -735,7 +723,6 @@ void toDus::xmppPONG() {
 }
 
 void toDus::xmppSolicitarEnlaceDescarga(qint64 id) {
-	QMutexLocker b(&_mutexSolicitarEnlace);
 	_listadoSolicitudesEnlacesFirmados[id].idSesion = _idSesion + "-" + QString::number(obtenerProximoIDComando());
 	QString buferAEnviar = "<iq i='" + _listadoSolicitudesEnlacesFirmados[id].idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "'><query xmlns='todus:gurl' url='" + _listadoSolicitudesEnlacesFirmados[id].enlace + "'></query></iq>";
 
@@ -743,7 +730,6 @@ void toDus::xmppSolicitarEnlaceDescarga(qint64 id) {
 }
 
 void toDus::xmppSolicitarEnlaceSubida(qint64 id) {
-	QMutexLocker b(&_mutexSolicitarEnlace);
 	_listadoSolicitudesEnlacesFirmados[id].idSesion = _idSesion + "-" + QString::number(obtenerProximoIDComando());
 	QString buferAEnviar = "<iq i='" + _listadoSolicitudesEnlacesFirmados[id].idSesion + "' t='get' from='" + _jID + "' to='" + _dominioJID + "'><query xmlns='todus:purl' persistent='false' room='' type='0' size='" + QString::number(_listadoSolicitudesEnlacesFirmados[id].tamano) + "'></query></iq>";
 

@@ -3,6 +3,7 @@
 DIRECTORIO_INICIAL="$(pwd)"
 LXC_RAIZ="/var/lib/lxc"
 LXC_DEBIAN="atds3-debian"
+LXC_DEBIAN_ARQUITECTURAS="amd64 i386"
 LXC_FEDORA="atds3-fedora"
 LXC_ARCH="atds3-arch"
 VERSION="${1}"
@@ -11,15 +12,17 @@ DIRECTORIO_PAQUETES="paquetes"
 mkdir -p "${DIRECTORIO_PAQUETES}" 2&>1 > /dev/null
 
 ## Debian/Ubuntu
-cp construir_lxc_debian.sh ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root/
-chmod +x ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root/construir_lxc_debian.sh
-cp atds3-${VERSION}.tar.gz ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root/atds3_${VERSION}.orig.tar.gz
-cd ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root
-tar xf atds3_${VERSION}.orig.tar.gz
-cd ${DIRECTORIO_INICIAL}
-cp -R deb ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root/atds3-${VERSION}/debian
-lxc-execute --name="${LXC_DEBIAN}" -- /root/construir_lxc_debian.sh ${VERSION}
-cp ${LXC_RAIZ}/${LXC_DEBIAN}/rootfs/root/atds3_0.8.0-1_amd64.deb "${DIRECTORIO_PAQUETES}"/
+for ARQUITECTURA in ${LXC_DEBIAN_ARQUITECTURAS}; do
+	cp construir_lxc_debian.sh ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root/
+	chmod +x ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root/construir_lxc_debian.sh
+	cp atds3-${VERSION}.tar.gz ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root/atds3_${VERSION}.orig.tar.gz
+	cd ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root
+	tar xf atds3_${VERSION}.orig.tar.gz
+	cd ${DIRECTORIO_INICIAL}
+	cp -R deb/${ARQUITECTURA} ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root/atds3-${VERSION}/debian
+	lxc-execute --name="${LXC_DEBIAN}_${ARQUITECTURA}" -- /root/construir_lxc_debian.sh ${VERSION}
+	cp ${LXC_RAIZ}/${LXC_DEBIAN}_${ARQUITECTURA}/rootfs/root/atds3_${VERSION}-1_${ARQUITECTURA}.deb "${DIRECTORIO_PAQUETES}"/
+done
 
 ## Fedora/CentOS/RHEL
 cp construir_lxc_fedora.sh ${LXC_RAIZ}/${LXC_FEDORA}/rootfs/root/

@@ -242,7 +242,7 @@ Page {
 				icon.width: tamanoIconos
 				icon.source: "qrc:/svg/cog.svg"
 
-				onClicked: vistaApilable.push(pantallaConfiguracion)
+				onClicked: pantallaConfiguracion.mostrar()
 			}
 		}
 	}

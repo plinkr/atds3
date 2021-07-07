@@ -5,7 +5,6 @@
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
-#include <QRecursiveMutex>
 #include <QSettings>
 #include <QSslSocket>
 #include <QQueue>
@@ -119,7 +118,6 @@ class toDus : public QObject {
 		QString _idSesion;
 		QSettings _configuraciones;
 		unsigned int _contadorComandos;
-		QRecursiveMutex _mutexContadorComandos;
 		QString _jID;
 		QString _dominioJID;
 		QTimer _temporizadorMantenerSesionActiva;
@@ -127,10 +125,8 @@ class toDus : public QObject {
 		bool _fichaAccesoRenovada;
 		QMap<QString, std::function<void(const QString &)>> _listadoRetroalimentadores;
 		QString _idInicioSesion;
-		QRecursiveMutex _mutexSolicitarEnlace;
 		unsigned int _contadorPING;
 		QTimer _temporizadorListadoSolicitudesEnlacesFirmados;
-		QRecursiveMutex _mutexListadoSolicitudesEnlacesFirmados;
 		QMap<qint64, SolicitudEnlaceFirmado> _listadoSolicitudesEnlacesFirmados;
 		int _solicitudesEnlacesFirmadosAnterior;
 		QWebSocket _socaloWeb;

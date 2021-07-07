@@ -45,8 +45,8 @@ Pane {
 				focusPolicy: Qt.StrongFocus
 				flat: true
 				hoverEnabled: true
-				icon.height: 24
-				icon.width: 24
+				icon.height: tamanoIconos === 48 ? 24 : 16
+				icon.width: tamanoIconos === 48 ? 24 : 16
 				icon.source: "qrc:/svg/plus-square.svg"
 				visible: ventanaPrincipal.orientacionHorizontal === true ? panelCategorias.state === "expandido" : true
 
@@ -60,12 +60,11 @@ Pane {
 				Accessible.role: Accessible.Button
 				Accessible.name: "Expandir o contraer"
 				Accessible.description: "Haga clic aquí para expandir o contraer el listado de las categorías"
-//				KeyNavigation.tab: listadoCategorias
 				focusPolicy: Qt.StrongFocus
 				flat: true
 				hoverEnabled: true
-				icon.height: 24
-				icon.width: 24
+				icon.height: tamanoIconos === 48 ? 24 : 16
+				icon.width: tamanoIconos === 48 ? 24 : 16
 				icon.source: "qrc:/svg/chevron-circle-left.svg"
 				visible: orientacionHorizontal === true
 				state: estadoListadoCategorias
@@ -102,16 +101,20 @@ Pane {
 
 		ListView {
 			id: listadoCategorias
+			Accessible.role: Accessible.List
+			Accessible.name: "Listado de categorías"
 			Layout.fillHeight: true
 			Layout.fillWidth: true
 			boundsBehavior: Flickable.StopAtBounds
-			currentIndex: configuraciones.valor("atds3/ultimaCategoriaSeleccionada", 0)
+			currentIndex: parseInt(configuraciones.valor("atds3/ultimaCategoriaSeleccionada", 0))
 			clip: true
 			highlightFollowsCurrentItem: true
 			model: modeloCategorias
 			delegate: ItemDelegate {
 				Accessible.role: Accessible.ListItem
 				Accessible.name: `Categoría ${model.titulo}`
+				ToolTip.text: estadoListadoCategorias === "expandido" ? "" : model.titulo
+				ToolTip.visible: estadoListadoCategorias === "expandido" ? false : hovered
 				clip: true
 				display: AbstractButton.TextBesideIcon
 				focusPolicy: Qt.StrongFocus
@@ -129,7 +132,7 @@ Pane {
 				icon.width: tamanoIconos
 				icon.source: `qrc:/svg/${model.icono}`
 				spacing: 20
-				text: model.titulo
+				text: estadoListadoCategorias === "expandido" ? model.titulo : ""
 				width: ListView.view.width
 
 				Behavior on icon.color {
@@ -188,11 +191,11 @@ Pane {
 			Rectangle {
 				id: indicadorDisponibilidadTodus
 				Layout.alignment: Qt.AlignCenter
-				height: 12
+				height: tamanoIconos === 48 ? 12 : 10
+				width: tamanoIconos === 48 ? 12 : 10
 				radius: 50
-				width: 12
 				state: "perdido"
-
+				ToolTip.text: state === "perdido" ? "Conexión perdida con los servidores de toDus" : "Conexión disponible con los servidores de toDus"
 				states: [
 					State {
 						name: "disponible"
@@ -217,6 +220,13 @@ Pane {
 						}
 					}
 				]
+
+				MouseArea {
+					anchors.fill: parent
+					hoverEnabled: true
+
+					onHoveredChanged: indicadorDisponibilidadTodus.ToolTip.visible = containsMouse
+				}
 			}
 
 			Label {
@@ -258,6 +268,7 @@ Pane {
 		MenuItem {
 			enabled: false
 			font.bold: true
+			height: tamanoIconos === 48 ? 48 : 38
 			icon.source: `qrc:/svg/${modeloCategorias.obtener(listadoCategorias.currentIndex).icono}`
 			text: modeloCategorias.obtener(listadoCategorias.currentIndex).titulo
 		}
@@ -265,6 +276,7 @@ Pane {
 		MenuItem {
 			enabled: listadoCategorias.currentIndex > 2
 			hoverEnabled: true
+			height: tamanoIconos === 48 ? 48 : 38
 			icon.source: "qrc:/svg/edit.svg"
 			text: "Editar"
 			onTriggered:{
@@ -278,6 +290,7 @@ Pane {
 		MenuItem {
 			enabled: listadoCategorias.currentIndex > 2
 			hoverEnabled: true
+			height: tamanoIconos === 48 ? 48 : 38
 			icon.source: "qrc:/svg/minus-square.svg"
 			text: "Eliminar"
 			onTriggered: {
@@ -291,6 +304,7 @@ Pane {
 		MenuSeparator {}
 		MenuItem {
 			hoverEnabled: true
+			height: tamanoIconos === 48 ? 48 : 38
 			icon.source: "qrc:/svg/folder-open.svg"
 			text: "Abrir ubicación"
 			onTriggered: {

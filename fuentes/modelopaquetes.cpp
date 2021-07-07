@@ -18,18 +18,20 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QTextStream>
-#include <QMutexLocker>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QMenu>
 #include <QTcpSocket>
+#include <QStandardPaths>
 
 
 ModeloPaquetes::ModeloPaquetes(QObject *padre)
-	: QSqlTableModel(padre), _categoria(0), _toDus(toDus(this)) {
+	: QSqlTableModel(padre), _categoria(0) {
 	QSqlDatabase bd = QSqlDatabase::database();
 	QSqlQuery solicitudSQL;
 	QString instruccionSQL;
+
+	_toDus.setParent(this);
 
 	if (bd.tables().indexOf("paquetes") == -1) {
 		solicitudSQL.exec("CREATE TABLE paquetes (id INTEGER PRIMARY KEY, tipo INTEGER NOT NULL, formato INTEGER NOT NULL, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, nombre TEXT NOT NULL, tamano INTEGER NOT NULL, tamanoTransferido INTEGER NOT NULL, completado INTEGER NOT NULL, velocidad INTEGER NOT NULL, error BOOLEAN NOT NULL)");
@@ -48,7 +50,11 @@ ModeloPaquetes::ModeloPaquetes(QObject *padre)
 	select();
 
 	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::connected, this, &ModeloPaquetes::eventoConexionTodus);
+#if QT_VERSION >= 0x050e00
 	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::errorOccurred, this, &ModeloPaquetes::eventoErrorConexionTodus);
+#else
+	connect(&_socaloTCPDisponibilidadTodus, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(eventoErrorConexionTodus(QNetworkReply::NetworkError)));
+#endif
 	_temporizadorVerificadorDisponibilidadTodus.setInterval(30000);
 	connect(&_temporizadorVerificadorDisponibilidadTodus, &QTimer::timeout, this, &ModeloPaquetes::verificarDisponibilidadTodus);
 	_temporizadorVerificadorDisponibilidadTodus.start();
@@ -484,8 +490,6 @@ void ModeloPaquetes::pausar(int fila) {
 }
 
 void ModeloPaquetes::iniciarTodas() {
-	QMutexLocker bp(&_mutexPaquetes);
-	QMutexLocker bt(&_mutexTareas);
 	QSqlQuery solicitudSQLPaquetes;
 	QSqlQuery solicitudSQLTareas;
 	QString filtroCategoria = obtenerFiltroCategoria(_categoria);
@@ -669,7 +673,8 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	_tareasPublicaciones.insert(id, new Tarea());
 	_tareasPublicaciones[id]->paquete = paquete;
 	_tareasPublicaciones[id]->fila = 0;
-	_tareasPublicaciones[id]->nombre = QByteArray::fromPercentEncoding(registroTarea["ruta"].toByteArray());
+	_tareasPublicaciones[id]->nombre = QByteArray::fromPercentEncoding(registroTarea["nombre"].toByteArray());
+	_tareasPublicaciones[id]->ruta = QByteArray::fromPercentEncoding(registroTarea["ruta"].toByteArray());
 	_tareasPublicaciones[id]->enlace = enlace;
 	_tareasPublicaciones[id]->tamanoTransferido = 0;
 	_tareasPublicaciones[id]->ultimoTiempoTransferencia = std::time(nullptr);
@@ -696,7 +701,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 
 	rutaHTTP.remove(0, 9 + servidorS3.size());
 
-	informacionArchivo.setFile(_tareasPublicaciones[id]->nombre);
+	informacionArchivo.setFile(_tareasPublicaciones[id]->ruta);
 	if (informacionArchivo.exists() == true) {
 		if (_tareasPublicaciones[id]->tamano != informacionArchivo.size()) {
 			if (_modelosTareas[paquete]) {
@@ -748,7 +753,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	_tareasPublicaciones[id]->http.establecerPuerto(puertoServidorS3);
 	_tareasPublicaciones[id]->http.establecerRuta(rutaHTTP);
 
-	_tareasPublicaciones[id]->archivo.setFileName(_tareasPublicaciones[id]->nombre);
+	_tareasPublicaciones[id]->archivo.setFileName(_tareasPublicaciones[id]->ruta);
 	_tareasPublicaciones[id]->archivo.open(QIODevice::ReadOnly);
 	_tareasPublicaciones[id]->http.establecerOrigenCarga(&_tareasPublicaciones[id]->archivo);
 
@@ -764,13 +769,14 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	connect(&_tareasPublicaciones[id]->http, &HTTP::detenidoParaReiniciar, this, &ModeloPaquetes::eventoTareaDetenidaParaReiniciar);
 	connect(&_tareasPublicaciones[id]->http, &HTTP::finalizado, this, &ModeloPaquetes::eventoTareaFinalizada);
 
+#if QT_VERSION >= 0x050e00
 	_tareasPublicaciones[id]->http.setTransferTimeout(125000);
+#endif
 	_tareasPublicaciones[id]->http.establecerId(id);
 	_tareasPublicaciones[id]->http.ejecutar();
 }
 
 void ModeloPaquetes::procesarColaEjecucion() {
-	QMutexLocker b(&_mutexTareas);
 	int totalPublicacionesParalelas = _configuraciones.value("publicaciones/paralelas", 1).toInt() - _tareasPublicaciones.size();
 	int totalDescargasParalelas = _configuraciones.value("descargas/paralelas", 3).toInt() - _tareasDescargas.size();
 	QSqlQuery solicitudSQL;
@@ -923,11 +929,19 @@ void ModeloPaquetes::eventoPaqueteActualizarCampos(qint64 idPaquete) {
 						}
 					}
 
-					notificar("FinalizacionExitosaPaquete", false, "Paquete finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
+						notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+					} else {
+						notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+					}
 				}
 
 				if (error == true) {
-					notificar("FinalizacionErroneaPaquete", true, "Paquete detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
+						notificar("FinalizacionErroneaPaquete", true, "Paquete de publicación detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+					} else {
+						notificar("FinalizacionErroneaPaquete", true, "Paquete de descarga detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+					}
 				}
 
 				_paquetes[idPaquete]->temporizadorActualizacionCampos.stop();
@@ -976,7 +990,7 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 			QMetaObject::invokeMethod(_qmlRaiz, "visualizarTareaIniciada", Qt::QueuedConnection, Q_ARG(QVariant, _paquetes[tarea->paquete]->categoria), Q_ARG(QVariant, tarea->paquete), Q_ARG(QVariant, _paquetes[tarea->paquete]->fila), Q_ARG(QVariant, tarea->fila));
 
 			if (publicacion == false) {
-				notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			} else {
 				notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			}
@@ -1037,6 +1051,7 @@ void ModeloPaquetes::eventoTareaDetenida(qint64 id) {
 	if (tarea) {
 		QVariantMap campos;
 
+		tarea->archivo.close();
 		tarea->tamanoTransferido = tarea->http.bytesDescargados();
 		if (tarea->tamano > 0) {
 			tarea->completado = (int)((tarea->tamanoTransferido * 100) / tarea->tamano);
@@ -1048,54 +1063,72 @@ void ModeloPaquetes::eventoTareaDetenida(qint64 id) {
 			}
 		}
 		tarea->velocidad = 0;
-
+		campos["estado"] = Estados::Pausado;
 		campos["tamanoTransferido"] = tarea->tamanoTransferido;
 		campos["completado"] = tarea->completado;
 		campos["velocidad"] = 0;
+		campos["error"] = false;
 
 		if (tarea->http.error() == false) {
+			if (_modelosTareas[tarea->paquete]) {
+				if (_modelosTareas[tarea->paquete]->corregirFila(tarea->fila, id) == true) {
+					_modelosTareas[tarea->paquete]->actualizarCampos(tarea->fila, campos);
+				}
+			} else {
+				QSqlQuery solicitudSQL;
+
+				solicitudSQL.exec("UPDATE tareas SET estado = " + QString::number(Estados::Pausado) + ", tamanoTransferido = " + QString::number(tarea->tamanoTransferido) + ", completado = " + QString::number(tarea->completado) + ", veloidad = 0, error = false WHERE (id = " + QString::number(id) + ")");
+			}
+
 			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea pausada. Transferido: " << tarea->tamanoTransferido << " B. Completado: " << tarea->completado << "%" << std::endl;
-
-			if (_modelosTareas[tarea->paquete]) {
-				campos["estado"] = Estados::Pausado;
-				campos["error"] = false;
-				if (_modelosTareas[tarea->paquete]->corregirFila(tarea->fila, id) == true) {
-					_modelosTareas[tarea->paquete]->actualizarCampos(tarea->fila, campos);
-				}
-			} else {
-				QSqlQuery solicitudSQL;
-
-				solicitudSQL.exec(QString("UPDATE tareas SET estado = %2, tamanoTransferido = %3, completado = %4, velocidad = %5 WHERE (id = %1)").arg(id).arg(Estados::Pausado).arg(tarea->tamanoTransferido).arg(tarea->completado).arg(tarea->velocidad));
-			}
 		} else {
-			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea detenida con error" << std::endl;
+			if (_configuraciones.value("publicaciones/reintentarTareasErroneas", false) == false || tarea->http.codigoHTTP() == 404) {
+				if (_modelosTareas[tarea->paquete]) {
+					campos["estado"] = Estados::Error;
+					campos["error"] = true;
+					if (_modelosTareas[tarea->paquete]->corregirFila(tarea->fila, id) == true) {
+						_modelosTareas[tarea->paquete]->actualizarCampos(tarea->fila, campos);
+					}
+				} else {
+					QSqlQuery solicitudSQL;
 
-			if (_modelosTareas[tarea->paquete]) {
-				campos["estado"] = Estados::Error;
-				campos["error"] = true;
-				if (_modelosTareas[tarea->paquete]->corregirFila(tarea->fila, id) == true) {
-					_modelosTareas[tarea->paquete]->actualizarCampos(tarea->fila, campos);
+					solicitudSQL.exec("UPDATE tareas SET estado = " + QString::number(Estados::Error) + ", velocidad = 0, error = true WHERE (id = " + QString::number(id) + ")");
+				}
+
+				if (corregirFila(_paquetes[tarea->paquete]->fila, tarea->paquete) == true) {
+					actualizarCampo(_paquetes[tarea->paquete]->fila, "error", true);
+				} else {
+					QSqlQuery solicitudSQL;
+
+					solicitudSQL.exec("UPDATE paquetes SET error = true WHERE (id = " + QString::number(tarea->paquete) + ")");
+				}
+
+				if (publicacion == true) {
+					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de publicación detenida con error" << std::endl;
+					notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+				} else {
+					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de descarga detenida con error" << std::endl;
+					notificar("FinalizacionErroneaTarea", true, "Tarea de descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 				}
 			} else {
-				QSqlQuery solicitudSQL;
+				if (_modelosTareas[tarea->paquete]) {
+					campos["estado"] = Estados::EnEsperaIniciar;
+					campos["tamanoTransferido"] = 0;
+					campos["completado"] = 0;
+					campos["velocidad"] = 0;
+					campos["error"] = false;
+					if (_modelosTareas[tarea->paquete]->corregirFila(tarea->fila, id) == true) {
+						_modelosTareas[tarea->paquete]->actualizarCampos(tarea->fila, campos);
+					}
+				} else {
+					QSqlQuery solicitudSQL;
 
-				solicitudSQL.exec(QString("UPDATE tareas SET estado = %2, velocidad = 0, error = true WHERE (id = %1)").arg(id).arg(Estados::Error));
+					solicitudSQL.exec("UPDATE tareas SET estado = " + QString::number(Estados::EnEsperaIniciar) + ", tamanoTransferido = 0, completado = 0, velocidad = 0, error = true WHERE (id = " + QString::number(id) + ")");
+				}
 			}
-
-			if (corregirFila(_paquetes[tarea->paquete]->fila, tarea->paquete) == true) {
-				actualizarCampo(_paquetes[tarea->paquete]->fila, "error", true);
-			} else {
-				QSqlQuery solicitudSQL;
-
-				solicitudSQL.exec(QString("UPDATE paquetes SET error = true WHERE (id = %1)").arg(tarea->paquete));
-			}
-
-			notificar("FinalizacionErroneaTarea", true, "Tarea detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 		}
 
 		eventoPaqueteActualizarCampos(tarea->paquete);
-
-		tarea->archivo.close();
 	}
 
 	if (publicacion == true) {
@@ -1179,6 +1212,8 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 	}
 
 	if (tarea) {
+		tarea->archivo.close();
+
 		if (tarea->http.error() == false) {
 			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea finalizada. Transferido: " << tarea->tamano << " B" << std::endl;
 
@@ -1208,7 +1243,11 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 				}
 			}
 
-			notificar("FinalizacionExitosaTarea", false, "Tarea finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+			if (publicacion == true) {
+				notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+			} else {
+				notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
 		} else {
@@ -1237,12 +1276,14 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 				solicitudSQL.exec(QString("UPDATE paquetes SET error = true WHERE (id = %1)").arg(tarea->paquete));
 			}
 
-			notificar("FinalizacionErroneaTarea", true, "Tarea detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+			if (publicacion == true) {
+				notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+			} else {
+				notificar("FinalizacionErroneaTarea", true, "Tarea des descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
 		}
-
-		tarea->archivo.close();
 	}
 
 	if (publicacion == true) {
@@ -1445,4 +1486,24 @@ void ModeloPaquetes::eventoErrorConexionTodus(QAbstractSocket::SocketError error
 		notificar("ConexionPerdidaTodus", true, "Pérdida de la disponibilidad de toDus", "Se ha detectado la pérdida de la disponibilidad de acceso a la red toDus.", "conexion-perdida-todus.mp3");
 	}
 	_estadoDisponibilidadTodus = EstadosTodus::Perdido;
+}
+
+void ModeloPaquetes::restablecerDatosFabrica() {
+	QSqlDatabase bd = QSqlDatabase::database();
+	QSqlQuery solicitudSQL;
+	qint64 idPaquete = 0;
+	QDir directorio;
+
+	solicitudSQL.exec("SELECT id FROM paquetes WHERE (estado = " + QString::number(Estados::EnEsperaIniciar) + " OR estado = " + QString::number(Estados::Iniciado) + ")");
+	while (solicitudSQL.next() == true) {
+		idPaquete = solicitudSQL.value("id").toLongLong();
+		eliminarPaqueteDelListado(idPaquete);
+	}
+
+	bd.close();
+	directorio.remove(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + _aplicacionNombreCorto + ".db");
+
+	_configuraciones.remove("");
+
+	qApp->quit();
 }

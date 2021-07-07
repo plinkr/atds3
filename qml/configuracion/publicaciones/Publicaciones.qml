@@ -11,16 +11,21 @@ Page {
 	property int alineacionColumnasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? Qt.AlignRight | Qt.AlignBaseline : Qt.AlignLeft | Qt.AlignBaseline
 	property int columnasIntegradasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? 1 : 2
 	property alias publicacionesParalelas: publicacionesParalelas
+	property alias publicacionesReintentarTareasErroneas: publicacionesReintentarTareasErroneas
 	property alias publicacionesGenerarArchivosDescargaAlFinalizar: publicacionesGenerarArchivosDescargaAlFinalizar
 //	property alias publicacionesDividirPorVolumenes: publicacionesDividirPorVolumenes
 //	property alias publicacionesTamanoVolumenes: publicacionesTamanoVolumenes
 
 	function mostrar() {
 		publicacionesParalelas.value = configuraciones.valor("publicaciones/paralelas", 1)
+		publicacionesReintentarTareasErroneas.checked = configuraciones.valor("publicaciones/reintentarTareasErroneas", false)
 		publicacionesGenerarArchivosDescargaAlFinalizar.checked = configuraciones.valor("publicaciones/generarArchivosDescargaAlFinalizar", true)
 //		publicacionesDividirPorVolumenes.checked = configuraciones.publicacionesDividirPorVolumenes
 //		publicacionesTamanoVolumenes.text = configuraciones.publicacionesTamanoVolumenes
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -29,6 +34,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -48,14 +54,11 @@ Page {
 					Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 					Layout.fillWidth: true
 					columns: 2
-//					columnSpacing: 10
 
-					Label {
+					Subtitulo {
 						Layout.columnSpan: 2
 						Layout.topMargin: 20
-						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 2
-						text: "Publicaciones"
+						titulo: "Publicaciones"
 					}
 
 					Label {
@@ -70,7 +73,7 @@ Page {
 					SpinBox {
 						id: publicacionesParalelas
 						Accessible.role: Accessible.SpinBox
-						Accessible.name: "Publicaciones paralelas"
+						Accessible.name: "Publicaciones paralelas. Valor: " + value
 						Accessible.description: "Define el total de tareas de publicación que pueden estar activas de forma simultánea (máximo 10)"
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
 						Layout.columnSpan: columnasIntegradasVistaVertical
@@ -94,6 +97,39 @@ Page {
 						Layout.fillWidth: true
 						font.pointSize: ventanaPrincipal.font.pointSize - 2
 						text: "Define el total de tareas de publicación que pueden estar activas de forma simultánea (máximo 10)."
+						wrapMode: Label.WordWrap
+					}
+
+					Label {
+						Layout.columnSpan: 2
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Switch {
+						id: publicacionesReintentarTareasErroneas
+						Accessible.role: Accessible.CheckBox
+						Accessible.name: text
+						Accessible.description: "Habilite esta opción si desea que se reintenten automáticamente las tareas de publicación que se detengan con error."
+						focusPolicy: Qt.StrongFocus
+						hoverEnabled: true
+						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						text: "Reintentar las tareas erróneas"
+
+						onToggled: configuraciones.establecerValor("publicaciones/reintentarTareasErroneas", checked)
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						font.pointSize: ventanaPrincipal.font.pointSize - 2
+						text: "Habilite esta opción si desea que se reintenten automáticamente las tareas de publicación que se detengan con error."
 						wrapMode: Label.WordWrap
 					}
 

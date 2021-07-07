@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
 	_organizacionDominio = "atds3.nat.cu";
 	_aplicacionNombreCorto = "atds3";
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
-	_aplicacionVersion ="1.0.0-CL8";
-	_agenteUsuarioTodus = "ToDus 0.40.10";
-	_numeroVersionTodus = "21814";
+	_aplicacionVersion ="1.0.0";
+	_agenteUsuarioTodus = "ToDus 0.40.16";
+	_numeroVersionTodus = "21820";
 #ifdef Q_OS_WIN
 	_rutaDescargaPredeterminada = QString("file:///%1/%2").arg(QStandardPaths::writableLocation(QStandardPaths::StandardLocation::DownloadLocation)).arg(_aplicacionNombreCorto);
 #else

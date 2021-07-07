@@ -9,12 +9,20 @@ Page {
 	property string nombre: "ConfiguracionTodusPPFInformacion"
 	property string titulo: "Programa Piscina de Fichas"
 
+	function mostrar() {
+		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+	}
+
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de información del Programa de Fichas de ATDS3"
 	Accessible.description: "Aquí se muestran informaciones sobre el Programa de Fichas de ATDS3"
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -33,8 +41,8 @@ Page {
 				Image {
 					Layout.fillWidth: true
 					fillMode: Image.PreserveAspectFit
-					sourceSize.height: 128
-					sourceSize.width: 128
+					sourceSize.height: tamanoIconos === 48 ? 128 : 64
+					sourceSize.width: tamanoIconos === 48 ? 128 : 64
 					source: "qrc:/svg/atom.svg"
 /*
 					ColorOverlay {

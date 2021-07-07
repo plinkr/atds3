@@ -28,6 +28,9 @@ Page {
 		avanzadasAgenteUsuario.text = configuraciones.valor("avanzadas/agenteUsuario", "")
 		avanzadasNumeroVersion.text = configuraciones.valor("avanzadas/numeroVersion", "")
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -36,6 +39,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -56,12 +60,10 @@ Page {
 					Layout.fillWidth: true
 					columns: 4
 
-					Label {
+					Subtitulo {
 						Layout.columnSpan: 4
 						Layout.topMargin: 20
-						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 2
-						text: "Conexiones"
+						titulo: "Conexiones"
 					}
 
 					Label {
@@ -164,12 +166,10 @@ Page {
 						onEditingFinished: configuraciones.establecerValor("avanzadas/servidorS3Puerto", parseInt(text.trim()))
 					}
 
-					Label {
+					Subtitulo {
 						Layout.columnSpan: 4
 						Layout.topMargin: 40
-						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 2
-						text: "Otras"
+						titulo: "Otras"
 					}
 
 					Label {
@@ -207,6 +207,37 @@ Page {
 						placeholderText: _numeroVersionTodus
 
 						onEditingFinished: configuraciones.establecerValor("avanzadas/numeroVersion", text.trim())
+					}
+
+					Subtitulo {
+						Layout.columnSpan: 4
+						Layout.topMargin: 40
+						titulo: "Restablecimiento"
+					}
+					Label {
+						Layout.columnSpan: 4
+					}
+					Button {
+						Accessible.role: Accessible.Button
+						Accessible.name: text
+						Accessible.description: "Esta acción eliminará la base de datos y todas las configuraciones de ATDS3. Una vez eliminadas, se cerrará la aplicación. Una vez que inicie nuevamente, toda la base de dato sy configuraciones estarán creadas desde cero."
+						Layout.alignment: Qt.AlignCenter
+						Layout.columnSpan: 4
+						flat: true
+						hoverEnabled: true
+						padding: 20
+						spacing: 20
+						icon.source: "qrc:/svg/redo.svg"
+						text: "Restablecer datos de fábrica"
+
+						onClicked: modeloPaquetes.restablecerDatosFabrica()
+					}
+					Label {
+						Layout.columnSpan: 4
+						Layout.fillWidth: true
+						font.pointSize: ventanaPrincipal.font.pointSize - 2
+						text: "Esta acción eliminará la base de datos y todas las configuraciones de ATDS3. Al finalizar, se cerrará la aplicación. Una vez que inicie nuevamente, toda la base de datos y configuraciones estarán creadas desde cero."
+						wrapMode: Label.WordWrap
 					}
 				}
 			}

@@ -24,6 +24,9 @@ Page {
 		proxyUsuario.text = configuraciones.valor("proxy/usuario", "")
 		proxyContrasena.text = ""
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -32,6 +35,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height

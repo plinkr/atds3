@@ -64,6 +64,9 @@ bool ModeloTareas::setData(const QModelIndex &indice, const QVariant &valor, int
 void ModeloTareas::establecerFiltroPaquete(int paquete) {
 	setFilter(QString("paquete = %1").arg(paquete));
 	select();
+	while (canFetchMore() == true) {
+		fetchMore();
+	}
 }
 
 QVariantMap ModeloTareas::obtener(int fila) const {

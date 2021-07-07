@@ -19,8 +19,16 @@ Page {
 	function mostrar() {
 		tituloPaquete.text = ""
 		modeloArchivosPublicar.clear()
-		deslizable.contentY = 0
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+	}
+
+	function agregarArchivosAlListado(archivos) {
+		for (let ruta of archivos) {
+			modeloArchivosPublicar.append({ nombre: decodeURIComponent(ruta.toString().substring(ruta.toString().lastIndexOf("/") + 1)), ruta: ruta.toString() });
+		}
 	}
 
 	Accessible.role: Accessible.Pane
@@ -29,7 +37,7 @@ Page {
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
-		id: deslizable
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -48,8 +56,8 @@ Page {
 				Image {
 					Layout.fillWidth: true
 					fillMode: Image.PreserveAspectFit
-					sourceSize.height: 128
-					sourceSize.width: 128
+					sourceSize.height: tamanoIconos === 48 ? 128 : 64
+					sourceSize.width: tamanoIconos === 48 ? 128 : 64
 					source: "qrc:/svg/file-upload.svg"
 /*
 					ColorOverlay {
@@ -320,10 +328,7 @@ Page {
 		options: FileDialog.ReadOnly
 
 		onAccepted: {
-			for (let ruta of files) {
-				modeloArchivosPublicar.append({ nombre: decodeURIComponent(ruta.toString().substring(ruta.toString().lastIndexOf("/") + 1)), ruta: ruta.toString() });
-			}
-
+			agregarArchivosAlListado(files)
 			configuraciones.establecerValor("atds3/ultimaRutaUtilizada", folder.toString())
 		}
 	}

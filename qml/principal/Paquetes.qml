@@ -61,16 +61,22 @@ Pane {
 		anchors.fill: parent
 
 		onDropped: {
-			if (vistaCategorias.listadoCategorias.currentIndex !== 1 && vistaCategorias.listadoCategorias.currentIndex !== 2) {
-				if (drop.hasUrls === true) {
-					modeloPaquetes.agregarDescargasDesdeArchivos(drop.urls)
+			if (drop.hasUrls === true) {
+				if (vistaCategorias.listadoCategorias.currentIndex !== 2) {
+					if (vistaCategorias.listadoCategorias.currentIndex === 1) {
+						pantallaPublicarContenido.mostrar()
+						pantallaPublicarContenido.agregarArchivosAlListado(drop.urls)
+					} else {
+						modeloPaquetes.agregarDescargasDesdeArchivos(drop.urls)
+					}
 				}
 			}
 		}
 
 		ListView {
 			id: listadoPaquetes
-			objectName: "listadoPaquetes"
+			Accessible.role: Accessible.List
+			Accessible.name: "Listado de paquetes y tareas"
 			anchors.fill: parent
 			boundsBehavior: Flickable.StopAtBounds
 			clip: true
@@ -139,10 +145,13 @@ Pane {
 				property int idPaquete: model.id
 				property alias listadoTareas: listadoTareas
 
+				Accessible.role: Accessible.ListItem
+				Accessible.name: "Paquete " + (model.nombre !== undefined ? decodeURIComponent(model.nombre) : "") + ". Completado: " + (model.completado !== undefined ? model.completado : "0") + "%"
 				clip: true
+				focusPolicy: Qt.StrongFocus
 				highlighted: ListView.isCurrentItem
 				hoverEnabled: true
-				height: ListView.isCurrentItem === false ? 40 : 40 + 4 + etiquetaTituloListadoTareas.height + 4 + listadoTareas.height
+				height: ListView.isCurrentItem === false ? (tamanoIconos === 48 ? 40 : 32) : (tamanoIconos === 48 ? 40 : 32) + 4 + etiquetaTituloListadoTareas.height + 4 + listadoTareas.height
 				width: ListView.view.width
 
 				Behavior on height {
@@ -168,7 +177,7 @@ Pane {
 						id: listadoTareas
 						Layout.fillWidth: true
 						Layout.minimumHeight: 40
-						Layout.maximumHeight: 200
+						Layout.maximumHeight: tamanoIconos === 48 ? 200 : 160
 						boundsBehavior: Flickable.StopAtBounds
 						clip: true
 						highlightFollowsCurrentItem: true
@@ -177,7 +186,7 @@ Pane {
 						}
 						delegate: Item {
 							clip: true
-							height: 40
+							height: tamanoIconos === 48 ? 40 : 32
 							width: ListView.view.width
 
 							ColumnLayout {
@@ -194,7 +203,7 @@ Pane {
 						Component.onCompleted: {
 							modeloPaquetes.establecerModeloTareas(idPaquete, modeloTareas);
 							modeloTareas.establecerFiltroPaquete(idPaquete)
-							listadoTareas.Layout.preferredHeight = modeloTareas.rowCount() * 40
+							listadoTareas.Layout.preferredHeight = modeloTareas.rowCount() * (tamanoIconos === 48 ? 40 : 32)
 							etiquetaTituloListadoTareas.text = `Listado de tareas: ${modeloTareas.rowCount()} en total`
 						}
 
@@ -204,8 +213,12 @@ Pane {
 					}
 				}
 
-				onPressed: {
-					listadoPaquetes.currentIndex = index
+				onClicked: {
+					if (index === listadoPaquetes.currentIndex) {
+						listadoPaquetes.currentIndex = -1
+					} else {
+						listadoPaquetes.currentIndex = index
+					}
 				}
 
 				onPressAndHold: {
@@ -239,6 +252,7 @@ Pane {
 		MenuItem {
 			enabled: false
 			font.bold: true
+			height: tamanoIconos === 48 ? 48 : 38
 			text: {
 				if (listadoPaquetes.currentIndex === -1) {
 					return ""
@@ -249,12 +263,14 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
+			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/play.svg"
 			text: "Iniciar"
 			onTriggered: modeloPaquetes.iniciar(listadoPaquetes.currentIndex)
 		}
 		MenuItem {
+			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/pause.svg"
 			text: "Pausar"
@@ -262,6 +278,7 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
+			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/minus-square.svg"
 			text: "Eliminar"
@@ -269,6 +286,7 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
+			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/folder-open.svg"
 			text: "Abrir ubicación"

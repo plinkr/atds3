@@ -30,6 +30,7 @@ ApplicationWindow {
 //	property alias bandejaIconos: bandejaIconos
 
 	id: ventanaPrincipal
+	font.pointSize: tamanoIconos === 48 ? 12 : 10
 	height: 620
     width: 1080
 	visible: true
@@ -100,7 +101,7 @@ ApplicationWindow {
 		switch (valor) {
 			case 0:
 				return 32
-			case 1:
+			default:
 				return 48
 		}
 	}

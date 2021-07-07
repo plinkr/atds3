@@ -9,12 +9,20 @@ Page {
 	property string nombre: "ConfiguracionInformacion"
 	property string titulo: "Información"
 
+	function mostrar() {
+		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+	}
+
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de información de la aplicación"
 	Accessible.description: "Aquí se muestran informaciones variadas sobre la aplicación ATDS3"
 	header: BarraBotones { titulo: parent.titulo }
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -36,8 +44,8 @@ Page {
 
 					Image {
 						Layout.alignment: Qt.AlignCenter
-						sourceSize.height: 256
-						sourceSize.width: 256
+						sourceSize.height: tamanoIconos === 48 ? 256 : 128
+						sourceSize.width: tamanoIconos === 48 ? 256 : 128
 						source: "qrc:/svg/atds3.svg"
 						fillMode: Image.PreserveAspectFit
 /*
@@ -51,8 +59,9 @@ Page {
 
                     Label {
 						Layout.fillWidth: true
+						Layout.topMargin: 30
 						horizontalAlignment: Qt.AlignHCenter
-						color: Material.accent
+//						color: Material.accent
 						font.bold: true
 						font.pointSize: ventanaPrincipal.font.pointSize + 4
 						text: _aplicacionTitulo
@@ -74,7 +83,7 @@ Page {
 						Layout.topMargin: 30
 						font.pointSize: ventanaPrincipal.font.pointSize + 1
 						text: {
-							return `<p><i>ATDS3</i> es una aplicación para escritorio y móviles que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).</p>
+							return `<p><i>ATDS3</i> es una aplicación para escritorio y móviles que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).</p>
 <p><i>ATDS3</i> posee las siguientes características:</p>
 <ul>
   <li><b>Multiplataforma</b>: Puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, Android, macOS, iOS, Windows.</li>

@@ -1,10 +1,3 @@
-[In reply to Administrador de Transferencias para toDus (S3)]
-La app es una maravilla chicos, pero me gustaria recomendar dos cosillas
-
-1-Que se vea por algún lado cuando uno está logeado como en la 0.8. (Es bastante útil)
-
-2-Que cuando des clic derecho sólo el fichero descargado puedas seleccionar ir a la carpeta desde se descargo directamente.
-
 
 
 @admins deberias agragarle una caracteristica para que se vea mas bonito, algo que te diga el tiempo aproximado que va ademorar en terminar la tarea ya sea descarga o subida
@@ -12,18 +5,7 @@ La app es una maravilla chicos, pero me gustaria recomendar dos cosillas
 
 
 [In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
-#sugerencia El programa de piscina de fichas es buena idea pero creo que deberian implementar un sistema parecido pero para uso individual. Ejemplo, si el que crea contenido tiene la oportunidad de usar el numero de telefono de familiares y amigos, puede agregarlo a su "piscina individual" y asi ir rotando entre esos numeros que él proporcionó.
-
-
-[In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
 una sugerencia podrían poner para q cuando termine de subir los archivos , los q no subió reintente de nuevo automáticamente  ?
-
-
-[In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
-admin crees en la próxima versión le puedes agregar la función de salvar el txt de lo enviado por si pasa algo en el procesó de subida
-
-
-Admin una pequeña #sugerencia es que si pudieras en futuras versiones agregar una notificación para cada vez que termine un proceso ya sea de subida o de bajada para así no tener que estar tan pendiente de la pantalla
 
 
 Hola, estoy probando la herramienta, so far so good. Han tenido en cuenta agregar una opción de apagar el pc cuando se terminan las tareas? O publicar automáticamente los txt en los grupos de Telegram elegidos?
@@ -32,13 +14,6 @@ Hola, estoy probando la herramienta, so far so good. Han tenido en cuenta agrega
 [In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
 #sugerencia Agregar el tiempo aproximado que dura la descarga calculado por el tamaño total de todas las partes y la velocidad de descarga, hacer lo mismo para la subida
 #sugerencia Seleccionar multiples archivos en la lista de descarga para poder eliminarlos y empezar la descarga por las partes que elijamos
-
-
-[In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
-#sugerencia Colocar en la interfaz, preferiblemente al lado del Boton configuracion, un indicador para saber si el programa tiene acceso a internet. Seria de utilidad para las personas que reportan que no les funciona cuando en verdad no le han dado permisos en el cortafuegos o tienen problemas con la red
-
-
-una cosa, ke desearia ke funcionase. es expandir y contraer el elemnto ke se esta descargando. se puede expandir, pero ya no contraerlo cuando vuelves a darle clic. lo hacemos cambiando de categoria. pero si con dar click se volviera a recoger seria elegante. saludos bro... te la estas gastando
 
 [In reply to Administrador de Transferencias para toDus (S3) - Grupo de debate]
 Pon pa que se pueda bajar de URLs también. url?nombre.rar

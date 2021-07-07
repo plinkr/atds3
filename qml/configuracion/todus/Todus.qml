@@ -25,6 +25,9 @@ Page {
 		toDusProgramaPiscinaFichasInternet.checked = configuraciones.valor("todus/programaPiscinaFichasInternet", true)
 		toDusProgramaPiscinaFichasLocal.text = configuraciones.valor("todus/programaPiscinaFichasLocal", "")
 		vistaApilable.push(this)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 
 	Accessible.role: Accessible.Pane
@@ -38,6 +41,7 @@ Page {
 	}
 
 	Flickable {
+		id: deslizante
 		anchors.fill: parent
 		boundsBehavior: Flickable.StopAtBounds
 		contentHeight: contenido.height
@@ -173,7 +177,7 @@ Page {
 							hoverEnabled: true
 							icon.source: "qrc:/svg/question-circle.svg"
 
-							onClicked: vistaApilable.push(pantallaPPFInformacion)
+							onClicked: pantallaPPFInformacion.mostrar()
 						}
 					}
 

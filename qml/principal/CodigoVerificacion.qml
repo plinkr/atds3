@@ -39,8 +39,8 @@ Page {
 			Image {
 				Layout.fillWidth: true
 				fillMode: Image.PreserveAspectFit
-				sourceSize.height: 128
-				sourceSize.width: 128
+				sourceSize.height: tamanoIconos === 48 ? 128 : 64
+				sourceSize.width: tamanoIconos === 48 ? 128 : 64
 				source: "qrc:/svg/code.svg"
 /*
 				ColorOverlay {

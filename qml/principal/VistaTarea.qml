@@ -6,8 +6,8 @@ import QtQuick.Controls.Material 2.12
 
 RowLayout {
 	Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-	Layout.minimumHeight: 40
-	Layout.maximumHeight: 40
+	Layout.minimumHeight: tamanoIconos === 48 ? 40 : 32
+	Layout.maximumHeight: tamanoIconos === 48 ? 40 : 32
 	Layout.fillWidth: true
 	spacing: 8
 
@@ -16,8 +16,8 @@ RowLayout {
 		Layout.minimumWidth: anchoCabeceraEstado
 		Layout.maximumWidth: anchoCabeceraEstado
 		fillMode: Image.PreserveAspectFit
-		sourceSize.height: 24
-		sourceSize.width: 24
+		sourceSize.height: tamanoIconos === 48 ? 24 : 16
+		sourceSize.width: tamanoIconos === 48 ? 24 : 16
 		state: model.estado
 /*
 		ColorOverlay {

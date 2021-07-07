@@ -6,7 +6,6 @@
 #include <QSqlTableModel>
 #include <QSettings>
 #include <QUrl>
-#include <QRecursiveMutex>
 #include <QFile>
 #include <QTimer>
 #include <QSystemTrayIcon>
@@ -39,6 +38,7 @@ class Tarea : public QObject {
 		qint64 paquete;
 		int fila;
 		QString nombre;
+		QString ruta;
 		QString enlace;
 		qint64 tamano;
 		qint64 tamanoTransferido;
@@ -101,6 +101,7 @@ class ModeloPaquetes : public QSqlTableModel {
 		Q_INVOKABLE void iniciarSesionToDus();
 		Q_INVOKABLE void crearDirectorio(const QString &ubicacion);
 		Q_INVOKABLE void notificar(const QString &llave, bool valorPredeterminado, const QString &titulo, const QString &mensaje, const QString &sonido);
+		Q_INVOKABLE void restablecerDatosFabrica();
 
 	private slots:
 		void mostrarOcultarVentana(QSystemTrayIcon::ActivationReason razon);
@@ -117,9 +118,7 @@ class ModeloPaquetes : public QSqlTableModel {
 		int _categoria;
 		QSettings _configuraciones;
 		toDus _toDus;
-		QRecursiveMutex _mutexPaquetes;
 		QMap<qint64, QPointer<Paquete>> _paquetes;
-		QRecursiveMutex _mutexTareas;
 		QMap<qint64, QPointer<Tarea>> _tareasPublicaciones;
 		QMap<qint64, QPointer<Tarea>> _tareasDescargas;
 		QSystemTrayIcon _bandejaIcono;

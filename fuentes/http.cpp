@@ -10,8 +10,10 @@ HTTP::HTTP(QObject *padre)
 	_cabecerasSolicitud["accept"] = "*/*";
 	_cabecerasSolicitud["connection"] = "close";
 
+#if QT_VERSION >= 0x050e00
 	setAutoDeleteReplies(true);
 	setTransferTimeout(15000);
+#endif
 	setProxy(_obtenerProxy());
 }
 
@@ -109,7 +111,9 @@ bool HTTP::ejecutar() {
 	solicitud.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::BackgroundRequestAttribute, true);
+#if QT_VERSION >= 0x050e00
 	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
+#endif
 	solicitud.setPriority(QNetworkRequest::Priority::HighPriority);
 
 	for (const QString &cabecera : _cabecerasSolicitud.keys()) {
@@ -146,7 +150,11 @@ bool HTTP::ejecutar() {
 	_ejecutado = true;
 
 	connect(_respuesta, &QNetworkReply::metaDataChanged, this, &HTTP::eventoCabecerasDescargadas);
+#if QT_VERSION >= 0x050e00
 	connect(_respuesta, &QNetworkReply::errorOccurred, this, &HTTP::eventoError);
+#else
+	connect(_respuesta, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(eventoError(QNetworkReply::NetworkError)));
+#endif
 	connect(_respuesta, &QNetworkReply::finished, this, &HTTP::eventoFinalizado);
 
 	emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Conectando a " << _anfitrion.toStdString() << ":" << _puerto << std::endl;
@@ -162,68 +170,6 @@ void HTTP::detener() {
 	}
 }
 
-/*
-void HTTP::eventoConectado() {
-	QString mensajeHTTP;
-	QTextStream flujo(&mensajeHTTP);
-	char bufer[1048576];
-	int tamanoBufer = 0;
-
-	//emitirRegistro(TiposRegistro::Depuracion, "HTTP") << "[" << _id << "] " << "Conectado" << std::endl;
-
-	switch (_metodo) {
-		case Metodo::OBTENER:
-			flujo << "GET ";
-			break;
-		case Metodo::PUBLICAR:
-			flujo << "POST ";
-			break;
-		case Metodo::PONER:
-			flujo << "PUT ";
-			break;
-	}
-	flujo << _ruta << " HTTP/1.1\r\n";
-	if (_cabecerasSolicitud.contains("host") == false) {
-		flujo << "Host: " << _anfitrion;
-		if ((std::uint16_t)_anfitrion.at(0).toLatin1() < 40) {
-			flujo << ":" << _puerto;
-		}
-		flujo << "\r\n";
-	}
-	for (const auto &cabecera : _cabecerasSolicitud.keys()) {
-		flujo << cabecera << ": " << _cabecerasSolicitud[cabecera] << "\r\n";
-	}
-	flujo << "\r\n";
-
-	//emitirRegistro(TiposRegistro::Depuracion, "HTTP") << "[" << _id << "] " << mensajeHTTP.toStdString() << std::endl;
-
-	write(mensajeHTTP.toLocal8Bit());
-
-	emit conectado(_id);
-
-	if ((_metodo == Metodo::PUBLICAR || _metodo == Metodo::PONER) && _flujoCargaEstablecido == true) {
-		if (_flujoCarga->device()->seek(0) == true) {
-			while (_flujoCarga->atEnd() == false) {
-				std::memset(bufer, '\0', 1048576);
-				tamanoBufer = _flujoCarga->readRawData(bufer, 1048576);
-				if (_metodo == Metodo::PUBLICAR) {
-					//emitirRegistro(TiposRegistro::Depuracion, "HTTP") << "[" << _id << "] " << QString(bufer).toStdString() << std::endl;
-				}
-				if (writeData(bufer, tamanoBufer) == -1) {
-					break;
-				}
-			}
-		}
-	}
-}
-
-void HTTP::eventoCargarDatos(qint64 bytes) {
-	_bytesCargados += bytes;
-
-	emit bytesCargaTransferidos(_id, _bytesCargados);
-}
-*/
-
 void HTTP::eventoCabecerasDescargadas() {
 	if (_ejecutado == false || _detenido == true) {
 		return;
@@ -236,7 +182,14 @@ void HTTP::eventoCabecerasDescargadas() {
 
 	_codigoHTTP = _respuesta->attribute(QNetworkRequest::HttpStatusCodeAttribute).toUInt();
 	if (_codigoHTTP >= 400) {
-		_error = true;
+		switch (_codigoHTTP) {
+			case 416:
+				_detenido = true;
+				break;
+			default:
+				_error = true;
+				break;
+		}
 	}
 
 	_cabecerasRecibidas = true;
@@ -323,7 +276,12 @@ void HTTP::eventoFinalizado() {
 				emit detenidoParaReiniciar(_id);
 			}
 		} else {
-			emit detenido(_id);
+			if (_codigoHTTP == 416) {
+				_error = false;
+				emit finalizado(_id);
+			} else {
+				emit detenido(_id);
+			}
 		}
 	}
 }

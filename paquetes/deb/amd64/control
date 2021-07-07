@@ -1,0 +1,21 @@
+Source: atds3
+Maintainer: No Maintainer <no@maintain.er>
+Section: net
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 9), build-essential (>= 12.6), devscripts, qtbase5-dev (>= 5.11), qtdeclarative5-dev (>= 5.11), qtquickcontrols2-5-dev (>= 5.11), qtmultimedia5-dev (>= 5.11), qt5-qmake (>= 5.11), libssl-dev (>= 1.1.1d), protobuf-compiler (>= 3.6.1.3), libprotobuf-dev (>= 3.6.1.3), libqt5svg5-dev (>= 5.11), libqt5websockets5-dev (>= 5.11)
+
+Package: atds3
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libssl1.1 (>= 1.1.1d), libqt5core5a (>= 5.11), libqt5gui5 (>= 5.11), libqt5widgets5 (>= 5.11), libqt5qml5 (>= 5.11), libqt5quickcontrols2-5 (>= 5.11), libqt5svg5 (>= 5.11), libqt5sql5 (>= 5.11), libqt5sql5-sqlite (>= 5.11), libqt5network5 (>= 5.11), libqt5websockets5 (>= 5.11), libqt5multimedia5 (>= 5.11), libqt5multimedia5-plugins (>= 5.11), libqt5multimediaquick5 (>= 5.11)
+Description: Administrador de Transferencias para toDus (S3)
+ ATDS3 es una aplicación para escritorio que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).
+ .
+ ATDS3 posee las siguientes características:
+ .
+   * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux y Windows.
+   * Fácil de usar: ATDS3 es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
+   * Configurable: ATDS3 ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.
+   * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.
+   * Ajustado al protocolo de red de toDus: ATDS3 Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.
+   * Inteligene: ATDS3 tiene escrito código para comportarse de forma inteligente dependiendo de la situación de la red y cómo descargar los archivos.

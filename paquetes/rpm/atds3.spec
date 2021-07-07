@@ -1,27 +1,27 @@
 Name:			atds3
-Version:		0.8.0
+Version:		1.0.0
 Release:		1%{?dist}
 Summary:		Administrador de Transferencias para toDus (S3)
 
 License:		BSD
 
-Source0:		atds3-0.8.0.tar.gz
+Source0:		atds3-1.0.0.tar.gz
 
 BuildArch:		x86_64
 
-BuildRequires:	rpm-build rpm-devel rpmlint rpmdevtools coreutils diffutils patch gcc make openssl-devel protobuf-devel protobuf-compiler qt5-qtbase-devel qt5-qtsvg-devel qt5-qtbase qt5-qtbase-gui qt5-qtsvg
+BuildRequires:	rpm-build rpm-devel rpmlint rpmdevtools coreutils diffutils patch gcc make openssl-devel protobuf-devel protobuf-compiler libX11-devel libXext-devel qt5-qtbase-devel qt5-qtdeclarative-devel qt5-qtquickcontrols2-devel qt5-qtsvg-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel qt5-qtbase qt5-qtbase-gui qt5-qtdeclarative qt5-qtquickcontrols qt5-qtquickcontrols2 qt5-qtgraphicaleffects qt5-qtsvg qt5-qtimageformats qt5-qtwebsockets qt5-qtmultimedia
 
-Requires:		openssl-libs protobuf-devel qt5-qtbase qt5-qtbase-gui qt5-qtsvg
+Requires:		openssl-libs protobuf-devel libX11 libXext qt5-qtbase qt5-qtbase-gui qt5-qtquickcontrols qt5-qtdeclarative qt5-qtquickcontrols2 qt5-qtgraphicaleffects qt5-qtsvg qt5-qtimageformats qt5-qtwebsockets qt5-qtmultimedia
 
 %description
-ATDS3 es una aplicación para escritorio que automatiza el proceso de descarga y subida de archivos desde/hacia los servidores de la red toDus (S3).
+ATDS3 es una aplicación para escritorio que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).
 
 ATDS3 posee las siguientes características:
 
  * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS y Windows.
  * Fácil de usar: ATDS3 es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
  * Configurable: ATDS3 ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.
- * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de descargas y subidas al mismo tiempo.
+ * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.
  * Ajustado al protocolo de red de toDus: ATDS3 Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.
  * Inteligene: ATDS3 tiene escrito código para comportarse de forma inteligente dependiendo de la situación de la red y cómo descargar los archivos.
 
@@ -30,7 +30,7 @@ ATDS3 posee las siguientes características:
 protoc --proto_path=%{_builddir}/%{name}-%{version}/documentos/protobuf --cpp_out=%{_builddir}/%{name}-%{version} todus.proto
 mv %{_builddir}/%{name}-%{version}/todus.pb.h %{_builddir}/%{name}-%{version}/cabeceras/
 mv %{_builddir}/%{name}-%{version}/todus.pb.cc %{_builddir}/%{name}-%{version}/fuentes/
-qmake-qt5 %{_builddir}/%{name}-%{version}/%{name}.pro QMAKE_PREFIX=%{buildroot} QMAKE_CFLAGS_ISYSTEM=-I QMAKE_CXXFLAGS+=-g CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG+=release CONFIG+=protobuf
+qmake-qt5 %{_builddir}/%{name}-%{version}/%{name}.pro QMAKE_INSTALL_PREFIX=%{buildroot} QMAKE_CFLAGS_ISYSTEM=-I QMAKE_CXXFLAGS+=-g CONFIG-=debug CONFIG-=qml_debug CONFIG-=qtquickcompiler CONFIG+=release CONFIG+=protobuf
 
 %build
 make %{?_smp_mflags}
@@ -38,7 +38,7 @@ make %{?_smp_mflags}
 %install
 mkdir -p %{buildroot}%{_bindir} %{buildroot}%{_datadir}/pixmaps %{buildroot}%{_datadir}/applications
 install -m 0755 %{_builddir}/%{name}-%{version}/%{name} %{buildroot}%{_bindir}/%{name}
-install -m 0644 %{_builddir}/%{name}-%{version}/recursos/iconos/%{name}.svg %{buildroot}%{_datadir}/pixmaps/%{name}.svg
+install -m 0644 %{_builddir}/%{name}-%{version}/recursos/svg/%{name}.svg %{buildroot}%{_datadir}/pixmaps/%{name}.svg
 install -m 0644 %{_builddir}/%{name}-%{version}/%{name}.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
 
 %check
@@ -51,6 +51,92 @@ strip %{buildroot}%{_bindir}/%{name}
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Tue Jul 6 2021 No maintainer <no@maintain.er> - 1.0.0-1
+- Nueva versión mayor de ATDS3: 1.0.0.
+- Nuevo ícono de ATDS3.
+- Construida nueva interfaz de usuario con animaciones.
+- Agregado nuevo paquete de íconos.
+- Agregada pantalla principal con barra de herramientas, panel de categorías y panel de listado de paquetes y tareas.
+- Agregada pantalla "Crear/Editar categoría"
+- Agregada funcionalidad de creación de una categoría.
+- Agregada funcionalidad de modificación de una categoría creada previamente.
+- Agregada funcionalidad de eliminar una categoría creada previamente.
+- Agregado menú contextual para las categorías.
+- Agregado indicador del estado de disponibilidad de la conexión con el servidor de mensajería de toDus.
+- Agregada etiqueta que muestra el número de versión de ATDS3.
+- Agregada funcionalidad de adición de un paquete de descarga al listado de paquetes.
+- Agregada funcionalidad de eliminación de un paquete del listado de paquetes.
+- Agregada funcionalidad de eliminación de todos los paquetes del listado de paquetes.
+- Agregada funcionalidad de inicialización de un paquete del listado de paquetes.
+- Agregada funcionalidad de reintento automático de una tarea que se detenga con error.
+- Agregada funcionalidad de no escribir y no corromper los archivos previamente creados si la transferencia es errónea (vencimiento del archivo de descarga).
+- Agregada funcionalidad de pausa de un paquete del listado de paquetes.
+- Agregada funcionalidad de inicialización de todos los paquetes del listado de paquetes.
+- Agregada funcionalidad de pausa de todos paquetes del listado de paquetes.
+- Agregada la funcionalidad de navegación por los elementos de la pantalla principal con la tecla TAB.
+- Agregada la funcionalidad de expandir y contraer un paquete en el listado de paquetes.
+- Agregada la pantalla "Publicar archivos".
+- Agregada la funcionalidad de agregar un paquete de publicación al listado de paquetes.
+- Agregada la funcionalidad de publicar tareas de un paquete.
+- Agregada pantalla "Configuración".
+- Agregado cuadro de diálogo "Apariencia".
+- Agregado elemento "Estilo" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar los colores de acento y fondo.
+- Agregada la funcionalidad de personalizar el tamaño de las fuentes e íconos en toda la aplicación.
+- Agregada pantalla "toDus".
+- Agregado elemento "toDus" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar el número de teléfono para iniciar sesión en la red toDus.
+- Agregada la funcionalidad de personalizar la ficha de acceso para iniciar sesión en la red toDus.
+- Agregada la funcionalidad "Programa Piscina de Fichas de ATDS3".
+- Agregada la funcionalidad de cambio automático de ficha de acceso cuando se detecta que se ha llegado al límite de publicaciones/descargas impuestos en los servidores de toDus.
+- Agregada la funcionalidad de personalizar la activación/desactivación del "Programa Piscina de Fichas de ATDS3".
+- Agregada la funcionalidad de personalizar la utilización del servidor de Internet del "Programa Piscina de Fichas de ATDS3".
+- Agregada la funcionalidad "Piscina local" del "Programa Piscina de Fichas de ATDS3".
+- Agregada la funcionalidad de personalizar las fichas de acceso a utilizar en la "Piscina Local" del "Programa Piscina de Fichas de ATDS3".
+- Agregada pantalla informativa sobre el "Programa Piscina de Fichas de ATDS3".
+- Agregada pantalla "Descargas".
+- Agregado elemento "Descargas" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar la ruta de las descargas.
+- Agregada la funcionalidad de personalizar el total de tareas de descargas paralelas.
+- Agregada la funcionalidad de personalizar si se debe eliminar un paquete tras su finalización exitosa.
+- Agregada pantalla "Publicaciones".
+- Agregado elemento "Publicaciones" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar el total de tareas de publicación paralelas.
+- Agregada la funcionalidad de personalizar si se debe reintentar automáticamente las tareas que se detengan con error.
+- Agregada la funcionalidad de personalizar si se debe generar el archivo de descarga una vez finalizado exitosamente la publicación del paquete.
+- Agregada pantalla "Notificaciones".
+- Agregado elemento "Notificaciones" a la pantalla de configuración.
+- Agregado nuevo tema de sonidos "Encantado".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Conexión disponible a toDus".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Conexión perdida con toDus".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Inicialización de un paquete".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Finalización exitosa de un paquete".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Finalización errónea de un paquete".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Inicialización de una tarea".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Finalización exitosa de una tarea".
+- Agregada la funcionalidad de personalizar la notificación visual y audible del evento "Finalización errónea de una tarea".
+- Agregada pantalla "Proxy".
+- Agregado elemento "Proxy" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar si se debe utilizar un proxy para establecer las conexiones de red.
+- Agregada la funcionalidad de personalizar el tipo de proxy a utilizar.
+- Agregada la funcionalidad de personalizar la dirección del anfitrión del proxy.
+- Agregada la funcionalidad de personalizar el puerto del anfitrión del proxy.
+- Agregada la funcionalidad de personalizar el usuario a utilizar en la autentificación del proxy.
+- Agregada la funcionalidad de personalizar la contraseña del usuario a utilizar para la autentificación del proxy.
+- Agregada pantalla "Avanzadas".
+- Agregado elemento "Avanzadas" a la pantalla de configuración.
+- Agregada la funcionalidad de personalizar la dirección del servidor de autentificación de toDus.
+- Agregada la funcionalidad de personalizar el puerto del servidor de autentificación de toDus.
+- Agregada la funcionalidad de personalizar la dirección del servidor de mensajería de toDus.
+- Agregada la funcionalidad de personalizar el puerto del servidor de mensajería de toDus.
+- Agregada la funcionalidad de personalizar la dirección del servidor S3 de toDus.
+- Agregada la funcionalidad de personalizar el puerto del servidor S3 de toDus.
+- Agregada la funcionalidad de personalizar el agente de usuario a utilizar en las solicited HTTP a los servidores de toDus.
+- Agregada la funcionalidad de personalizar el número de la versión a utilizar en el proceso de autentificación de toDus.
+- Agregada la funcionalidad de restablecer completamente la base datos y configuraciones de ATDS3.
+- Agregada pantalla "Información".
+- Agregado elemento "Información" a la pantalla de configuración.
+- Agregada informacion variada sobre ATDS3.
 * Sat Jun 12 2021 No maintainer <no@maintain.er> - 0.8.0-1
 - Actualizado el mecanismo de inicio de sesión en toDus.
 - Se corrige el problema de la desconexión contínua.
