@@ -27,5 +27,6 @@
         <file>qml/configuracion/notificaciones/Notificaciones.qml</file>
         <file>qml/configuracion/notificaciones/Notificacion.qml</file>
         <file>qml/comun/Subtitulo.qml</file>
+        <file>qml/principal/FalloInicioSesion.qml</file>
     </qresource>
 </RCC>

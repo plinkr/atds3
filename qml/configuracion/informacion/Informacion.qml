@@ -86,7 +86,7 @@ Page {
 							return `<p><i>ATDS3</i> es una aplicación para escritorio y móviles que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).</p>
 <p><i>ATDS3</i> posee las siguientes características:</p>
 <ul>
-  <li><b>Multiplataforma</b>: Puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, Android, macOS, iOS, Windows.</li>
+  <li><b>Multiplataforma</b>: Puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux y Windows.</li>
   <li><b>Fácil de usar</b>: Es fácil de usar gracias a la intuitiva interfaz de usuario que posee.</li>
   <li><b>Configurable</b>: Ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.</li>
   <li><b>Completamente asincrónico</b>: Es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.</li>

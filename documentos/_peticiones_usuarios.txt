@@ -20,3 +20,13 @@ Pon pa que se pueda bajar de URLs también. url?nombre.rar
 
 @admin puedes añadir la opción de que para publicar arrastres unos archivos hacia el programa y automáticamente se abre la ventana de ponerle el nombre al txt y cosas así
 
+
+#sugerencia Bueno yo he dicho esto una pila de veces pero lo vuelvo a decir. Mira hoy colapsaste un poco de la cantidad de gente que entro y preguntando cosas, y va a pasar mas aun porque van a seguir creciendo, así que tengo un par de sugerencias que creo que te ayudaran. 
+
+ 1. Crea un FAQ, la gente repite las mismas preguntas una y otra vez, ejemplo: pq me va lento?, como lo configuro?, se me paro?, me gasta datos?, que significa la calavera?, como subo?, como descargo? Entre otras. Todas esas preguntas llevan respuestas iguales o parecidas a las que ya tu das siempre, ya sea de que la velocidad no es tu culpa o que el todus este caído no es tu problema.
+
+ 2. Crea una serie de reglas, hay mucha gente en el grupo, y va a seguir creciendo, la gente lo mismo se pone a hablar de política que de programación que del ciclón que de la madre de los tomates, eso provoca spam y que la gente que tuvo problemas previamente tenga que volver a preguntar pq el spam no deja ver la respuesta. Lo ideal seria que el grupo fuera exclusivamente de soporte de la aplicación, para otros temas hay otros grupos.
+
+ 3. Invita a un bot de bienvenida, al entrar la gente muchas personas entran diciendo, como descargo la app? O se cayo el todus? O no me va. Si hay un bot de bienvenida ejemplo Rose, que presente la FAQ, las Reglas, que te pueda dar la version actual, un video tutorial si existe, que te responda preguntas automáticamente, etc. pues haría las cosas mucho mas fáciles.
+
+Eso es todo lo que tenia que decir, tenga buen día.

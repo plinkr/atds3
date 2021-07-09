@@ -141,6 +141,10 @@ ApplicationWindow {
 		pantallaCodigoVerificacion.mostrar();
 	}
 
+	function mostrarPantallaFalloInicioSesion(error) {
+		pantallaFalloInicioSesion.mostrar(error);
+	}
+
 	Audio {
 		id: reproductorNotificacion
 		audioRole: Audio.NotificationRole
@@ -194,6 +198,11 @@ ApplicationWindow {
 
 	CodigoVerificacion {
 		id: pantallaCodigoVerificacion
+		visible: false
+	}
+
+	FalloInicioSesion {
+		id: pantallaFalloInicioSesion
 		visible: false
 	}
 

@@ -85,10 +85,6 @@ Page {
 								configuraciones.eliminar("todus/fichaAcceso")
 								configuraciones.eliminar("todus/fichaSolicitud")
 								toDusFichaAcceso.text = ""
-							} else {
-								if (text.length === 8 && text !== telefonoAnterior) {
-									modeloPaquetes.iniciarSesionToDus()
-								}
 							}
 						}
 					}
@@ -102,6 +98,24 @@ Page {
 						font.pointSize: ventanaPrincipal.font.pointSize - 2
 						text: "Este campo es uno de los más importantes de la configuración de ATDS3. Aquí se define el número de teléfono para el inicio de sesión en toDus."
 						wrapMode: Label.WordWrap
+					}
+					Button {
+						Accessible.role: Accessible.Button
+						Accessible.name: "Iniciar sesión"
+						Accessible.description: "Haga clic aquí para iniciar sesión en la red toDus con el número configurado"
+						Layout.alignment: Qt.AlignCenter
+						Layout.columnSpan: 2
+						Layout.topMargin: 10
+						enabled: toDusTelefono.text.length === 8 && toDusTelefono.text !== telefonoAnterior
+						flat: true
+						focusPolicy: Qt.StrongFocus
+						hoverEnabled: true
+						icon.source: "qrc:/svg/sign-in-alt.svg"
+						padding: 20
+						spacing: 20
+						text: "Iniciar sesión"
+
+						onClicked: modeloPaquetes.iniciarSesionToDus()
 					}
 
 					Label {

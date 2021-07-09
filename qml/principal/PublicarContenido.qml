@@ -15,6 +15,7 @@ Page {
 	property alias listadoArchivosPublicar: listadoArchivosPublicar
 	property alias modeloArchivosPublicar: modeloArchivosPublicar
 	property alias formatoArchivoDescarga: formatoArchivoDescarga
+	property alias clasificacion: clasificacion
 
 	function mostrar() {
 		tituloPaquete.text = ""
@@ -287,6 +288,45 @@ Page {
 						text: "Define el formato del archivo que compartirá con los demás para que ellos puedan descargar los archivos que especificó previamente. Se recomienda que utilice el formato más reciente para mayor prestaciones y rendimiento en las descargas."
 						wrapMode: Label.WordWrap
 					}
+
+					Label {
+						Layout.alignment: alineacionColumnasVistaVertical
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						text: "Clasificación:"
+					}
+					ComboBox {
+						id: clasificacion
+						Accessible.role: Accessible.ComboBox
+						Accessible.name: "Clasificación de la publicación"
+						Accessible.description: "Define la clasificación a utilizar para la publicación hacia los servidores de toDus"
+						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						hoverEnabled: true
+						focusPolicy: Qt.WheelFocus
+						currentIndex: 0
+						textRole: "titulo"
+						valueRole: "valor"
+						wheelEnabled: true
+						model: ListModel {
+							ListElement { titulo: "Archivo"; valor: 0 }
+							ListElement { titulo: "Nota de voz"; valor: 1 }
+							ListElement { titulo: "Música"; valor: 2 }
+							ListElement { titulo: "Video"; valor: 3 }
+							ListElement { titulo: "Fotografía"; valor: 4 }
+						}
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						font.pointSize: ventanaPrincipal.font.pointSize - 2
+						text: "Define la clasificación a utilizar para la publicación hacia los servidores de toDus."
+						wrapMode: Label.WordWrap
+					}
 				}
 
 				Button {
@@ -303,7 +343,7 @@ Page {
 					icon.source: "qrc:/svg/file-upload.svg"
 					text: "Publicar"
 					onClicked: {
-						modeloPaquetes.agregarPublicacion(tituloPaquete.text.trim(), modeloArchivosPublicar, formatoArchivoDescarga.currentValue)
+						modeloPaquetes.agregarPublicacion(tituloPaquete.text.trim(), modeloArchivosPublicar, formatoArchivoDescarga.currentValue, clasificacion.currentValue)
 						vistaApilable.pop()
 					}
 				}

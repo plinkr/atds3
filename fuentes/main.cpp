@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 	_organizacionDominio = "atds3.nat.cu";
 	_aplicacionNombreCorto = "atds3";
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
-	_aplicacionVersion ="1.0.0";
+	_aplicacionVersion ="1.2.0";
 	_agenteUsuarioTodus = "ToDus 0.40.16";
 	_numeroVersionTodus = "21820";
 #ifdef Q_OS_WIN
@@ -147,7 +147,7 @@ QNetworkProxy _obtenerProxy() {
 	Configuraciones configuraciones;
 	bool activado = configuraciones.valor("proxy/activado", false).toBool();
 	bool tipoOk = true;
-	uint tipo = configuraciones.valor("proxy/tipo", QNetworkProxy::HttpCachingProxy).toUInt(&tipoOk);
+	uint tipo = configuraciones.valor("proxy/tipo", QNetworkProxy::HttpProxy).toUInt(&tipoOk);
 	QString anfitrion = configuraciones.valor("proxy/anfitrion", "proxy.local").toString();
 	bool puertoOk = true;
 	uint puerto = configuraciones.valor("proxy/puerto", 3128).toUInt(&puertoOk);

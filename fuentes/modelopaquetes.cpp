@@ -34,7 +34,7 @@ ModeloPaquetes::ModeloPaquetes(QObject *padre)
 	_toDus.setParent(this);
 
 	if (bd.tables().indexOf("paquetes") == -1) {
-		solicitudSQL.exec("CREATE TABLE paquetes (id INTEGER PRIMARY KEY, tipo INTEGER NOT NULL, formato INTEGER NOT NULL, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, nombre TEXT NOT NULL, tamano INTEGER NOT NULL, tamanoTransferido INTEGER NOT NULL, completado INTEGER NOT NULL, velocidad INTEGER NOT NULL, error BOOLEAN NOT NULL)");
+		solicitudSQL.exec("CREATE TABLE paquetes (id INTEGER PRIMARY KEY, tipo INTEGER NOT NULL, formato INTEGER NOT NULL, clasificacion INTEGER NOT NULL, categoria INTEGER NOT NULL, estado INTEGER NOT NULL, nombre TEXT NOT NULL, tamano INTEGER NOT NULL, tamanoTransferido INTEGER NOT NULL, completado INTEGER NOT NULL, velocidad INTEGER NOT NULL, error BOOLEAN NOT NULL)");
 		solicitudSQL.exec("CREATE INDEX paquetes_tipo ON paquetes (tipo)");
 		solicitudSQL.exec("CREATE INDEX paquetes_categoria ON paquetes (categoria)");
 		solicitudSQL.exec("CREATE INDEX paquetes_estado ON paquetes (estado)");
@@ -50,11 +50,7 @@ ModeloPaquetes::ModeloPaquetes(QObject *padre)
 	select();
 
 	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::connected, this, &ModeloPaquetes::eventoConexionTodus);
-#if QT_VERSION >= 0x050e00
 	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::errorOccurred, this, &ModeloPaquetes::eventoErrorConexionTodus);
-#else
-	connect(&_socaloTCPDisponibilidadTodus, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(eventoErrorConexionTodus(QNetworkReply::NetworkError)));
-#endif
 	_temporizadorVerificadorDisponibilidadTodus.setInterval(30000);
 	connect(&_temporizadorVerificadorDisponibilidadTodus, &QTimer::timeout, this, &ModeloPaquetes::verificarDisponibilidadTodus);
 	_temporizadorVerificadorDisponibilidadTodus.start();
@@ -337,7 +333,7 @@ void ModeloPaquetes::agregarDescargasDesdeArchivos(QList<QUrl> archivos) {
 	}
 }
 
-void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemModel *modeloArchivos, int formato) {
+void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemModel *modeloArchivos, int formato, int clasificacion) {
 	QSqlQuery solicitudSQL;
 	QString instruccionSQL;
 	bool primeraFila = true;
@@ -377,7 +373,7 @@ void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemMode
 	instruccionSQL += ";";
 
 	if (primeraFila == false) {
-		solicitudSQL.exec("INSERT INTO paquetes (tipo, formato, categoria, estado, nombre, tamano, tamanoTransferido, completado, velocidad, error) VALUES (" + QString::number(Tipos::Publicacion) + ", " + QString::number(formato) + ", 1, " + QString::number(Estados::Pausado) + ", '" + tituloPaquete.toUtf8().toPercentEncoding() + "', " + QString::number(tamanoPaquete) + ", 0, 0, 0, false)");
+		solicitudSQL.exec("INSERT INTO paquetes (tipo, formato, clasificacion, categoria, estado, nombre, tamano, tamanoTransferido, completado, velocidad, error) VALUES (" + QString::number(Tipos::Publicacion) + ", " + QString::number(formato) + ", " + QString::number(clasificacion) + ", 1, " + QString::number(Estados::Pausado) + ", '" + tituloPaquete.toUtf8().toPercentEncoding() + "', " + QString::number(tamanoPaquete) + ", 0, 0, 0, false)");
 		if (solicitudSQL.lastInsertId().isValid() == true) {
 			idPaquete = solicitudSQL.lastInsertId().toInt();
 			instruccionSQL.replace("##ID_PAQUETE##", QString::number(idPaquete));
@@ -423,7 +419,7 @@ void ModeloPaquetes::procesarArchivoDescargaClasico(const QUrl &url) {
 	instruccionSQL += ";";
 
 	if (primeraFila == false) {
-		solicitudSQL.exec("INSERT INTO paquetes (tipo, formato, categoria, estado, nombre, tamano, tamanoTransferido, completado, velocidad, error) VALUES (" + QString::number(Tipos::Descarga) + ", " + QString::number(Formatos::Clasico) + ", " + QString::number(_categoria) + ", " + QString::number(Estados::Pausado) + ", '" + nombreArchivo.toUtf8().toPercentEncoding() + "', 0, 0, 0, 0, false)");
+		solicitudSQL.exec("INSERT INTO paquetes (tipo, formato, clasificacion, categoria, estado, nombre, tamano, tamanoTransferido, completado, velocidad, error) VALUES (" + QString::number(Tipos::Descarga) + ", " + QString::number(Formatos::Clasico) + ", 0, " + QString::number(_categoria) + ", " + QString::number(Estados::Pausado) + ", '" + nombreArchivo.toUtf8().toPercentEncoding() + "', 0, 0, 0, 0, false)");
 		if (solicitudSQL.lastInsertId().isValid() == true) {
 			idPaquete = solicitudSQL.lastInsertId().toInt();
 		}
@@ -769,9 +765,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	connect(&_tareasPublicaciones[id]->http, &HTTP::detenidoParaReiniciar, this, &ModeloPaquetes::eventoTareaDetenidaParaReiniciar);
 	connect(&_tareasPublicaciones[id]->http, &HTTP::finalizado, this, &ModeloPaquetes::eventoTareaFinalizada);
 
-#if QT_VERSION >= 0x050e00
 	_tareasPublicaciones[id]->http.setTransferTimeout(125000);
-#endif
 	_tareasPublicaciones[id]->http.establecerId(id);
 	_tareasPublicaciones[id]->http.ejecutar();
 }
@@ -783,13 +777,15 @@ void ModeloPaquetes::procesarColaEjecucion() {
 	qint64 idPaquete = 0;
 	int tipo = Tipos::Publicacion;
 	int formato = Formatos::S3;
+	int clasificacion = Clasificaciones::Archivo;
 
 	if (totalPublicacionesParalelas > 0) {
-		solicitudSQL.exec("SELECT paquetes.id, paquetes.tipo, paquetes.formato, paquetes.categoria, paquetes.tamano, paquetes.tamanoTransferido, paquetes.completado, tareas.id, tareas.ruta, tareas.tamano FROM paquetes LEFT JOIN tareas ON (tareas.paquete = paquetes.id) WHERE (paquetes.tipo = " + QString::number(Tipos::Publicacion) + " AND tareas.estado = " + QString::number(Estados::EnEsperaIniciar) + ") ORDER BY tareas.id LIMIT " + QString::number(totalPublicacionesParalelas));
+		solicitudSQL.exec("SELECT paquetes.id, paquetes.tipo, paquetes.formato, paquetes.clasificacion, paquetes.categoria, paquetes.tamano, paquetes.tamanoTransferido, paquetes.completado, tareas.id, tareas.ruta, tareas.tamano FROM paquetes LEFT JOIN tareas ON (tareas.paquete = paquetes.id) WHERE (paquetes.tipo = " + QString::number(Tipos::Publicacion) + " AND tareas.estado = " + QString::number(Estados::EnEsperaIniciar) + ") ORDER BY tareas.id LIMIT " + QString::number(totalPublicacionesParalelas));
 		while (solicitudSQL.next() == true) {
 			idPaquete = solicitudSQL.value("paquetes.id").toLongLong();
 			tipo = solicitudSQL.value("paquetes.tipo").toInt();
 			formato = solicitudSQL.value("paquetes.formato").toInt();
+			clasificacion = solicitudSQL.value("paquetes.clasificacion").toInt();
 
 			if (_paquetes.find(idPaquete) == _paquetes.end()) {
 				if (tipo == Tipos::Publicacion) {
@@ -802,8 +798,9 @@ void ModeloPaquetes::procesarColaEjecucion() {
 				_paquetes[idPaquete]->id = idPaquete;
 				_paquetes[idPaquete]->fila = 0;
 				_paquetes[idPaquete]->tipo = tipo;
-				_paquetes[idPaquete]->categoria = solicitudSQL.value("paquetes.categoria").toInt();
 				_paquetes[idPaquete]->formato = formato;
+				_paquetes[idPaquete]->clasificacion = clasificacion;
+				_paquetes[idPaquete]->categoria = solicitudSQL.value("paquetes.categoria").toInt();
 				_paquetes[idPaquete]->tamano = solicitudSQL.value("paquetes.tamano").toLongLong();
 				_paquetes[idPaquete]->tamanoTransferido = solicitudSQL.value("paquetes.tamanoTransferido").toLongLong();
 				_paquetes[idPaquete]->completado = solicitudSQL.value("paquetes.completado").toInt();
@@ -813,7 +810,7 @@ void ModeloPaquetes::procesarColaEjecucion() {
 				_paquetes[idPaquete]->temporizadorActualizacionCampos.start();
 			}
 
-			_toDus.obtenerEnlaceFirmado(Tipos::Publicacion, idPaquete, solicitudSQL.value("tareas.id").toLongLong(), "", solicitudSQL.value("tareas.tamano").toLongLong());
+			_toDus.obtenerEnlaceFirmado(Tipos::Publicacion, clasificacion, idPaquete, solicitudSQL.value("tareas.id").toLongLong(), "", solicitudSQL.value("tareas.tamano").toLongLong());
 		}
 	}
 
@@ -835,8 +832,9 @@ void ModeloPaquetes::procesarColaEjecucion() {
 				_paquetes[idPaquete]->id = idPaquete;
 				_paquetes[idPaquete]->fila = 0;
 				_paquetes[idPaquete]->tipo = tipo;
-				_paquetes[idPaquete]->categoria = solicitudSQL.value("paquetes.categoria").toInt();
 				_paquetes[idPaquete]->formato = formato;
+				_paquetes[idPaquete]->clasificacion = Clasificaciones::Archivo;
+				_paquetes[idPaquete]->categoria = solicitudSQL.value("paquetes.categoria").toInt();
 				_paquetes[idPaquete]->tamano = solicitudSQL.value("paquetes.tamano").toLongLong();
 				_paquetes[idPaquete]->tamanoTransferido = solicitudSQL.value("paquetes.tamanoTransferido").toLongLong();
 				_paquetes[idPaquete]->completado = solicitudSQL.value("paquetes.completado").toInt();
@@ -846,7 +844,7 @@ void ModeloPaquetes::procesarColaEjecucion() {
 				_paquetes[idPaquete]->temporizadorActualizacionCampos.start();
 			}
 
-			_toDus.obtenerEnlaceFirmado(Tipos::Descarga, idPaquete, solicitudSQL.value("tareas.id").toInt(), solicitudSQL.value("tareas.enlace").toString());
+			_toDus.obtenerEnlaceFirmado(Tipos::Descarga, Clasificaciones::Archivo, idPaquete, solicitudSQL.value("tareas.id").toInt(), solicitudSQL.value("tareas.enlace").toString());
 		}
 	}
 }
@@ -966,7 +964,11 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 		if (tarea->http.error() == false) {
 			if (publicacion == false) {
 				if (tarea->tamano == 0) {
-					tarea->tamano = tarea->http.cabeceraRespuesta("content-length").toLongLong();
+					if (tarea->tamanoTransferido > 0) {
+						tarea->tamano = tarea->tamanoTransferido + tarea->http.cabeceraRespuesta("content-length").toLongLong();
+					} else {
+						tarea->tamano = tarea->http.cabeceraRespuesta("content-length").toLongLong();
+					}
 				}
 
 				if (_modelosTareas[tarea->paquete]) {

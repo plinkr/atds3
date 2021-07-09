@@ -21,8 +21,9 @@ class Paquete : public QObject {
 		qint64 id;
 		int fila;
 		int tipo;
-		int categoria;
 		int formato;
+		int clasificacion;
+		int categoria;
 		QString nombre;
 		qint64 tamano;
 		qint64 tamanoTransferido;
@@ -61,6 +62,15 @@ class ModeloPaquetes : public QSqlTableModel {
 			S3,
 			Clasico
 		};
+		enum Clasificaciones {
+			Archivo,
+			NotaVoz,
+			Musica,
+			Video,
+			Fotografia,
+			FotografiaPerfil,
+			MiniaturaFotografia
+		};
 		enum Estados {
 			Pausado,
 			EnEsperaIniciar,
@@ -89,7 +99,7 @@ class ModeloPaquetes : public QSqlTableModel {
 		Q_INVOKABLE void eliminar(int fila);
 		Q_INVOKABLE void eliminarTodas();
 		Q_INVOKABLE void agregarDescargasDesdeArchivos(QList<QUrl> archivos);
-		Q_INVOKABLE void agregarPublicacion(const QString &titulo, QAbstractItemModel *modeloArchivos, int formato);
+		Q_INVOKABLE void agregarPublicacion(const QString &titulo, QAbstractItemModel *modeloArchivos, int formato, int clasificacion);
 		Q_INVOKABLE void iniciar(int fila);
 		Q_INVOKABLE void pausar(int fila);
 		Q_INVOKABLE void iniciarTodas();

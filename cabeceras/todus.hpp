@@ -1,6 +1,7 @@
 #ifndef TODUS_HPP
 #define TODUS_HPP
 
+#include "configuraciones.hpp"
 #include <functional>
 #include <QObject>
 #include <QPointer>
@@ -53,7 +54,7 @@ class toDus : public QObject {
 
 		void solicitarFichaSolicitud(const QString &codigo);
 
-		void obtenerEnlaceFirmado(int tipo, qint64 paquete, qint64 id, const QString &enlace, qint64 tamano = 0);
+		void obtenerEnlaceFirmado(int tipo, int clasificacion, qint64 paquete, qint64 id, const QString &enlace, qint64 tamano = 0);
 		void eliminarSolicitudEnlaceFirmado(qint64 id);
 		void eliminarTodasSolicitudesEnlaceFirmado(qint64 paquete);
 
@@ -94,6 +95,7 @@ class toDus : public QObject {
 		};
 		struct SolicitudEnlaceFirmado {
 				int tipo;
+				int clasificacion;
 				qint64 paquete;
 				QString enlace;
 				qint64 tamano;
@@ -116,7 +118,7 @@ class toDus : public QObject {
 		Estados _estado;
 		ProgresoInicioSesion _progresoInicioSesion;
 		QString _idSesion;
-		QSettings _configuraciones;
+		Configuraciones _configuraciones;
 		unsigned int _contadorComandos;
 		QString _jID;
 		QString _dominioJID;
@@ -154,7 +156,7 @@ class toDus : public QObject {
 		void xmppMantenerSesionActiva();
 		void xmppPONG();
 		void xmppSolicitarEnlaceDescarga(qint64 id);
-		void xmppSolicitarEnlaceSubida(qint64 id);
+		void xmppSolicitarEnlaceSubida(qint64 id, int clasificacion);
 		void socaloWebAportarFicha();
 		void socaloWebSolicitarFicha();
 };

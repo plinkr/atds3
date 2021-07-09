@@ -18,7 +18,7 @@ Page {
 
 	function mostrar() {
 		proxyActivado.checked = configuraciones.valor("proxy/activado", false)
-		proxyTipo.currentIndex = proxyTipo.indexOfValue(configuraciones.valor("proxy/tipo", 4))
+		proxyTipo.currentIndex = proxyTipo.indexOfValue(configuraciones.valor("proxy/tipo", 3))
 		proxyAnfitrion.text = configuraciones.valor("proxy/anfitrion", "proxy.local")
 		proxyPuerto.text = configuraciones.valor("proxy/puerto", 3128)
 		proxyUsuario.text = configuraciones.valor("proxy/usuario", "")
@@ -97,7 +97,7 @@ Page {
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
 						model: ListModel {
-							ListElement { titulo: "HTTP(S)"; valor: 4 }
+							ListElement { titulo: "HTTP(S)"; valor: 3 }
 							ListElement { titulo: "SOCKS"; valor: 1 }
 						}
 						textRole: "titulo"

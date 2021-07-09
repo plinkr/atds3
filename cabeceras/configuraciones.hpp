@@ -17,6 +17,9 @@ class Configuraciones : public QObject {
 
 	private:
 		QSettings _configuraciones;
+
+		QByteArray cifrarTexto(const QString &datos, const QString &contrasena);
+		QString descifrarTexto(const QByteArray &datos, const QString &contrasena);
 };
 
 #endif // HTTP2_HPP

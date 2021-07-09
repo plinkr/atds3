@@ -10,10 +10,9 @@ HTTP::HTTP(QObject *padre)
 	_cabecerasSolicitud["accept"] = "*/*";
 	_cabecerasSolicitud["connection"] = "close";
 
-#if QT_VERSION >= 0x050e00
 	setAutoDeleteReplies(true);
 	setTransferTimeout(15000);
-#endif
+	setStrictTransportSecurityEnabled(true);
 	setProxy(_obtenerProxy());
 }
 
@@ -107,13 +106,12 @@ bool HTTP::ejecutar() {
 	QUrl enlace(QString("https://%1/%2").arg(_anfitrion).arg(_ruta));
 	enlace.setPort(_puerto);
 	QNetworkRequest solicitud(enlace);
+	QSslConfiguration configuracionSSL = solicitud.sslConfiguration();
 
 	solicitud.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::BackgroundRequestAttribute, true);
-#if QT_VERSION >= 0x050e00
 	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
-#endif
 	solicitud.setPriority(QNetworkRequest::Priority::HighPriority);
 
 	for (const QString &cabecera : _cabecerasSolicitud.keys()) {
@@ -147,14 +145,12 @@ bool HTTP::ejecutar() {
 			break;
 	}
 
+	_respuesta->ignoreSslErrors();
+
 	_ejecutado = true;
 
 	connect(_respuesta, &QNetworkReply::metaDataChanged, this, &HTTP::eventoCabecerasDescargadas);
-#if QT_VERSION >= 0x050e00
 	connect(_respuesta, &QNetworkReply::errorOccurred, this, &HTTP::eventoError);
-#else
-	connect(_respuesta, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(eventoError(QNetworkReply::NetworkError)));
-#endif
 	connect(_respuesta, &QNetworkReply::finished, this, &HTTP::eventoFinalizado);
 
 	emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Conectando a " << _anfitrion.toStdString() << ":" << _puerto << std::endl;
