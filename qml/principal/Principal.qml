@@ -1,7 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
 import Qt.labs.platform 1.0
 
 
@@ -56,12 +55,6 @@ Page {
 				sourceSize.height: 24
 				sourceSize.width: 24
 				source: iconoCategoriaActual.length > 0 ? `qrc:/svg/${iconoCategoriaActual}` : ""
-
-				ColorOverlay {
-					anchors.fill: parent
-					source: parent
-					color: Material.foreground
-				}
 			}
 */
 			Label {

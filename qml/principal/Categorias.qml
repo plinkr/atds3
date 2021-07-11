@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
 
+
 Pane {
 	property alias listadoCategorias: listadoCategorias
 	property alias indicadorDisponibilidadTodus: indicadorDisponibilidadTodus
@@ -121,13 +122,7 @@ Pane {
 				font.bold: ListView.isCurrentItem
 				highlighted: ListView.isCurrentItem
 				hoverEnabled: true
-				icon.color: {
-					if ( ListView.isCurrentItem === true) {
-						return Material.foreground
-					} else {
-						return Material.color(colorTemaPrimario(), Material.Shade100)
-					}
-				}
+				icon.color: ListView.isCurrentItem === true ? Material.foreground : Material.color(colorAcento, Material.Shade100)
 				icon.height: tamanoIconos
 				icon.width: tamanoIconos
 				icon.source: `qrc:/svg/${model.icono}`
@@ -201,15 +196,7 @@ Pane {
 						name: "disponible"
 						PropertyChanges {
 							target: indicadorDisponibilidadTodus
-							color: {
-								let colorPrimario = colorTemaPrimario()
-
-								if (colorPrimario === Material.Green) {
-									return Material.color(Material.Yellow)
-								} else {
-									return Material.color(Material.Green)
-								}
-							}
+							color: (colorAcento === Material.Cyan || colorAcento === Material.Green || colorAcento === Material.Teal || colorAcento === Material.LightGreen ? Material.color(Material.Yellow) : Material.color(Material.Green))
 						}
 					},
 					State {

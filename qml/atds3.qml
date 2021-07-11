@@ -1,12 +1,11 @@
+import Qt.labs.platform 1.0
 import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
 import QtMultimedia 5.12
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.0
-import cu.nat.atds3 1.0
+import cu.atds3 1.0
 import "qrc:/qml/configuracion"
 import "qrc:/qml/principal"
 
@@ -53,30 +52,63 @@ ApplicationWindow {
 	function colorTemaPrimario() {
 		let color;
 
-		switch (parseInt(configuraciones.valor("atds3/temaColores", 0))) {
-			case 0: // Azul
+		switch (parseInt(configuraciones.valor("atds3/temaColores", 4))) {
+			case 0: // Amarillo
+				color = Material.Yellow;
+				break;
+			case 1: // Ámber
+				color = Material.Amber;
+				break;
+			case 2: // Azul
+				color = Material.Blue;
+				break;
+			case 3: // Azul claro
+				color = Material.LightBlue;
+				break;
+			case 4: // Azul oscuro
 				color = Material.Indigo;
 				break;
-			case 1: // Gris
+			case 5: // Cian
+				color = Material.Cyan;
+				break;
+			case 6: // Gris
 				color = Material.Grey;
 				break;
-			case 2: // Marrón
+			case 7: // Gris azulado
+				color = Material.BlueGrey;
+				break;
+			case 8: // Marrón
 				color = Material.Brown;
 				break;
-			case 3: // Morado
-				color = Material.Purple;
+			case 9: // Naranja
+				color = Material.Orange;
 				break;
-			case 4: // Naranja
+			case 10: // Naranja profundo
 				color = Material.DeepOrange;
 				break;
-			case 5: // Rojo
+			case 11: // Púrpura
+				color = Material.Purple;
+				break;
+			case 12: // Púrpura oscuro
+				color = Material.DeepPurple;
+				break;
+			case 13: // Rojo
 				color = Material.Red;
 				break;
-			case 6: // Rosado
+			case 14: // Rosado
 				color = Material.Pink;
 				break;
-			case 7: // Verde
+			case 15: // Verde
 				color = Material.Green;
+				break;
+			case 16: // Verde azulado
+				color = Material.Teal;
+				break;
+			case 17: // Verde claro
+				color = Material.LightGreen;
+				break;
+			case 18: // Verde lima
+				color = Material.Lime;
 				break;
 		}
 

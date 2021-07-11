@@ -60,17 +60,19 @@ Page {
                     Label {
 						Layout.fillWidth: true
 						Layout.topMargin: 30
+						Material.foreground: Material.Blue
 						horizontalAlignment: Qt.AlignHCenter
-//						color: Material.accent
 						font.bold: true
-						font.pointSize: ventanaPrincipal.font.pointSize + 4
+						font.pointSize: ventanaPrincipal.font.pointSize + 6
 						text: _aplicacionTitulo
 						wrapMode: Label.WordWrap
 					}
                     Label {
 						Layout.fillWidth: true
+						Material.foreground: Material.Blue
 						horizontalAlignment: Qt.AlignHCenter
 						font.bold: true
+						font.pointSize: ventanaPrincipal.font.pointSize + 2
 						text: `v${_aplicacionVersion}`
 						wrapMode: Label.WordWrap
 					}

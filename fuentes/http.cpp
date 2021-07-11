@@ -123,7 +123,7 @@ bool HTTP::ejecutar() {
 	_ejecutado = false;
 	_cabecerasRecibidas = false;
 	_cabecerasRespuesta.clear();
-	_codigoHTTP = 204;
+	_codigoHTTP = 503;
 	_tiempoUltimaCarga = std::time(nullptr);
 	_tiempoUltimaDescarga = _tiempoUltimaCarga;
 

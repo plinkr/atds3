@@ -19,13 +19,6 @@ RowLayout {
 		sourceSize.height: tamanoIconos === 48 ? 24 : 16
 		sourceSize.width: tamanoIconos === 48 ? 24 : 16
 		state: model.estado
-/*
-		ColorOverlay {
-			anchors.fill: parent
-			source: parent
-			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-		}
-*/
 		states: [
 			State {
 				name: Paquetes.Estados.Pausado

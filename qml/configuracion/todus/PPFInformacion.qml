@@ -1,7 +1,6 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
 import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 import "qrc:/qml/comun"
 
 
@@ -44,13 +43,6 @@ Page {
 					sourceSize.height: tamanoIconos === 48 ? 128 : 64
 					sourceSize.width: tamanoIconos === 48 ? 128 : 64
 					source: "qrc:/svg/atom.svg"
-/*
-					ColorOverlay {
-						anchors.fill: parent
-						source: parent
-						color: Material.accent
-					}
-*/
 				}
 
 				Label {

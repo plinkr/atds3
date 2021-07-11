@@ -1,8 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
-import QtGraphicalEffects 1.0
 import "qrc:/qml/comun"
 
 
@@ -22,7 +20,7 @@ Page {
 				break;
 			default:
 				Accessible.description += " Este error es desconocido y, por lo tanto, no existe una explicación."
-				mensajeError.text += "<br/>Este error es desconocido y, por lo tanto, no existe una explicación."
+				mensajeError.text += "<br/>Este error es desconocido. Se le sugiere que acceda al <a href=\"http://t.me/atds3_debate\"><i>grupo de debate de ATDS3</i></a> para que intente obtener una explicación."
 				break;
 		}
 
@@ -49,13 +47,6 @@ Page {
 				sourceSize.height: tamanoIconos === 48 ? 128 : 64
 				sourceSize.width: tamanoIconos === 48 ? 128 : 64
 				source: "qrc:/svg/sad-cry.svg"
-/*
-				ColorOverlay {
-					anchors.fill: parent
-					source: parent
-					color: Material.accent
-				}
-*/
 			}
 
 			Label {
@@ -65,6 +56,12 @@ Page {
 				horizontalAlignment: Qt.AlignHCenter
 				font.bold: true
 				wrapMode: Label.WordWrap
+
+				MouseArea {
+					anchors.fill: parent
+					acceptedButtons: Qt.NoButton
+					cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+				}
 			}
 		}
 	}

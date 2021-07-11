@@ -195,7 +195,7 @@ void toDus::eliminarTodasSolicitudesEnlaceFirmado(qint64 paquete) {
 }
 
 void toDus::eventoFinalizadaCodigoSMS() {
-	if (_httpCodigoSMS->error() == false) {
+	if (_httpCodigoSMS->codigoHTTP() == 200 || _httpCodigoSMS->codigoHTTP() == 204) {
 		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Codigo de verificacion por SMS solicitado." << std::endl;
 
 		QMetaObject::invokeMethod(_qmlRaiz, "mostrarPantallaCodigoVerificacion", Qt::QueuedConnection);
@@ -207,7 +207,7 @@ void toDus::eventoFinalizadaCodigoSMS() {
 }
 
 void toDus::eventoFinalizadaFichaSolicitud() {
-	if (_httpFichaSolicitud->error() == false) {
+	if (_httpFichaSolicitud->codigoHTTP() == 200) {
 		toDusPB::RecepcionFichaSolicitud pbRecepcionFichaSolicitud;
 
 		if (pbRecepcionFichaSolicitud.ParseFromArray(_buferDescargaFichaSolicitud.constData(), _buferDescargaFichaSolicitud.size()) == true) {
@@ -241,7 +241,7 @@ void toDus::eventoFinalizadaFichaAcceso() {
 	desconectar();
 	_estado = Estados::Desconectado;
 
-	if (_httpFichaAcceso->error() == false) {
+	if (_httpFichaAcceso->codigoHTTP() == 200) {
 		toDusPB::RecepcionFichaAcceso pbRecepcionFichaAcceso;
 
 		if (pbRecepcionFichaAcceso.ParseFromArray(_buferDescargaFichaAcceso.constData(), _buferDescargaFichaAcceso.size()) == true) {
@@ -433,7 +433,7 @@ void toDus::eventoDatosRecibidos() {
 				}
 */
 				// Comando: GURL
-				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.*)' status='(.+)'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
@@ -445,19 +445,18 @@ void toDus::eventoDatosRecibidos() {
 								enlaceFirmado = rem.captured(2);
 								enlaceFirmado.replace("&amp;", "&");
 								modeloPaquetes->iniciarDescarga(_listadoSolicitudesEnlacesFirmados[id].paquete, id, enlaceFirmado);
+								_listadoSolicitudesEnlacesFirmados.remove(id);
 							} else {
 								if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
 									socaloWebSolicitarFicha();
-									break;
 								}
 							}
-							_listadoSolicitudesEnlacesFirmados.remove(id);
 						}
 					}
 					break;
 				}
 				// Comando: PURL
-				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.+)' get='(.+)' status='(.+)'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.*)' get='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
@@ -471,13 +470,12 @@ void toDus::eventoDatosRecibidos() {
 								enlaceFirmado.replace("&amp;", "&");
 								enlace = rem.captured(3);
 								modeloPaquetes->iniciarPublicacion(_listadoSolicitudesEnlacesFirmados[id].paquete, id, enlace, enlaceFirmado);
+								_listadoSolicitudesEnlacesFirmados.remove(id);
 							} else {
 								if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
 									socaloWebSolicitarFicha();
-									break;
 								}
 							}
-							_listadoSolicitudesEnlacesFirmados.remove(id);
 						}
 					}
 					break;

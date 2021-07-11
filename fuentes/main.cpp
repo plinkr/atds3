@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
 	_organizacionDominio = "atds3.nat.cu";
 	_aplicacionNombreCorto = "atds3";
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
-	_aplicacionVersion ="1.2.0";
-	_agenteUsuarioTodus = "ToDus 0.40.16";
-	_numeroVersionTodus = "21820";
+	_aplicacionVersion ="1.3.0";
+	_agenteUsuarioTodus = "ToDus 0.40.19";
+	_numeroVersionTodus = "21823";
 #ifdef Q_OS_WIN
 	_rutaDescargaPredeterminada = QString("file:///%1/%2").arg(QStandardPaths::writableLocation(QStandardPaths::StandardLocation::DownloadLocation)).arg(_aplicacionNombreCorto);
 #else
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
 
 	QQuickStyle::setStyle("Material");
 
-	qmlRegisterType<Configuraciones>("cu.nat.atds3", 1, 0, "Configuraciones");
-	qmlRegisterType<ModeloCategorias>("cu.nat.atds3", 1, 0, "ModeloCategorias");
-	qmlRegisterType<ModeloIconoCategorias>("cu.nat.atds3", 1, 0, "ModeloIconoCategorias");
-	qmlRegisterType<ModeloTareas>("cu.nat.atds3", 1, 0, "ModeloTareas");
-	qmlRegisterType<ModeloPaquetes>("cu.nat.atds3", 1, 0, "ModeloPaquetes");
+	qmlRegisterType<Configuraciones>("cu.atds3", 1, 0, "Configuraciones");
+	qmlRegisterType<ModeloCategorias>("cu.atds3", 1, 0, "ModeloCategorias");
+	qmlRegisterType<ModeloIconoCategorias>("cu.atds3", 1, 0, "ModeloIconoCategorias");
+	qmlRegisterType<ModeloTareas>("cu.atds3", 1, 0, "ModeloTareas");
+	qmlRegisterType<ModeloPaquetes>("cu.atds3", 1, 0, "ModeloPaquetes");
 
 	NetworkAccessManagerFactory namf;
 	QQmlApplicationEngine maquinaQML;

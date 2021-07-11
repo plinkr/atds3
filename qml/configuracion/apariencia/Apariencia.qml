@@ -37,7 +37,7 @@ Dialog {
 				focusPolicy: Qt.WheelFocus
 				hoverEnabled: true
 				wheelEnabled: true
-				model: [ "Azul", "Gris", "Marrón","Morado", "Naranja", "Rojo", "Rosado", "Verde" ]
+				model: [ "Amarillo", "Ámber", "Azul", "Azul claro", "Azul oscuro", "Cian", "Gris", "Gris azulado", "Marrón", "Naranja", "Naranja profundo", "Púrpura", "Púrpura oscuro", "Rojo", "Rosado", "Verde", "Verde azulado", "Verde claro", "Verde lima" ]
 
 				onActivated: {
 					configuraciones.establecerValor("atds3/temaColores", currentIndex)
@@ -45,7 +45,7 @@ Dialog {
 				}
 
 				Component.onCompleted: {
-					currentIndex = configuraciones.valor("atds3/temaColores", 0)
+					currentIndex = configuraciones.valor("atds3/temaColores", 4)
 				}
 			}
 

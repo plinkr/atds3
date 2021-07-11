@@ -1,0 +1,11 @@
+POST /v2/todus/users.rosters h2
+Host: auth.todus.cu
+user-agent: ToDus 0.40.19 Auth
+authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjYwMTg4ODcsInVzZXJuYW1lIjoiNTM1ODE3MjA0NiIsInZlcnNpb24iOiIyMTgyMyJ9.31CJTji9XANK6MPOpxlTMdjJcgt1IPiGoTMrucOsQYc
+content-type: application/x-protobuf
+content-length: 12
+accept-encoding: gzip
+
+
+
+5358172046

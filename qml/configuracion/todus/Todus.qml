@@ -1,7 +1,6 @@
 import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
 import QtQuick.Layouts 1.12
+import QtQuick.Controls 2.12
 import "qrc:/qml/comun"
 
 
@@ -115,7 +114,13 @@ Page {
 						spacing: 20
 						text: "Iniciar sesión"
 
-						onClicked: modeloPaquetes.iniciarSesionToDus()
+						onClicked: {
+							configuraciones.eliminar("todus/fichaSolicitud")
+							configuraciones.eliminar("todus/fichaAccesoTiempoExpiracion")
+							configuraciones.eliminar("todus/fichaAcceso")
+							toDusFichaAcceso.text = ""
+							modeloPaquetes.iniciarSesionToDus()
+						}
 					}
 
 					Label {
@@ -160,13 +165,6 @@ Page {
 						sourceSize.height: 48
 						sourceSize.width: 48
 						source: "qrc:/svg/atom.svg"
-/*
-						ColorOverlay {
-							anchors.fill: parent
-							source: parent
-							color: Material.accent
-						}
-*/
 					}
 					RowLayout {
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline

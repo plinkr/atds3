@@ -1,0 +1,10 @@
+POST /v2/auth/users.reserve h2
+Host: auth.todus.cu
+user-agent: ToDus 0.40.19 Auth
+content-type: application/x-protobuf
+content-length: 165
+accept-encoding: gzip
+
+
+
+5358172046–AkDHoxoJdgxdCUmtwrabCZsWzdpcf1v4a2xdzcWCHLexAEIO1WHrceIl7YDIkXgo8yIReQ3yZHu1FWcq8p0hNMkRK6otNR1mFWytSPI1AJ2sjiUTsfHDKqbpgL6dRZSyc6UtdmYwRFmiJEX6R7hc1X

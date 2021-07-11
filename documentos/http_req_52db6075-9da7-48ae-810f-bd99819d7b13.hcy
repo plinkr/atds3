@@ -1,17 +1,0 @@
-POST /v2/todus/users.me h2
-Host: auth.todus.cu
-user-agent: ToDus 0.40.5 Auth
-authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MjM2MTA5OTMsInVzZXJuYW1lIjoiNTM1ODE3MjA0NiIsInZlcnNpb24iOiIyMTgwOSJ9.lso4seZE0kTdKsP4pjJ280t22oUm-WMe8AGejxQgcdg
-content-type: application/x-protobuf
-content-length: 243
-accept-encoding: gzip
-
-
-
-aliasAlex
-
-description	Biografia
-J
-picture_url;/storage/emulated/0/Pictures/toDus/2021_06_12_15_03_49.jpeg
-|
-picture_thumbnail_urlchttps://profile.todus.cu/thumbnail/148087c17136e4ed97ba09dab4a756c48e20f9d40e7901a9395a387f4c2102bc

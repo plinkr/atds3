@@ -772,7 +772,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 
 void ModeloPaquetes::procesarColaEjecucion() {
 	int totalPublicacionesParalelas = _configuraciones.value("publicaciones/paralelas", 1).toInt() - _tareasPublicaciones.size();
-	int totalDescargasParalelas = _configuraciones.value("descargas/paralelas", 3).toInt() - _tareasDescargas.size();
+	int totalDescargasParalelas = _configuraciones.value("descargas/paralelas", 1).toInt() - _tareasDescargas.size();
 	QSqlQuery solicitudSQL;
 	qint64 idPaquete = 0;
 	int tipo = Tipos::Publicacion;

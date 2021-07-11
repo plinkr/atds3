@@ -1,7 +1,7 @@
-import Qt.labs.platform 1.0
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
+import Qt.labs.platform 1.0
 import "qrc:/qml/comun"
 
 
@@ -17,7 +17,7 @@ Page {
 	function mostrar() {
 		descargasRutas.text = configuraciones.valor("descargas/ruta", StandardPaths.writableLocation(StandardPaths.DownloadLocation) + "/atds3")
 		dialogoCarpetas.currentFolder = descargasRutas.text
-		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 3)
+		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 1)
 		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
 		vistaApilable.push(this)
 		deslizante.contentY = 1
