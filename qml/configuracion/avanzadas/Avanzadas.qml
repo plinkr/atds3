@@ -18,21 +18,6 @@ Page {
 	property alias avanzadasAgenteUsuario: avanzadasAgenteUsuario
 	property alias avanzadasNumeroVersion: avanzadasNumeroVersion
 
-	function mostrar() {
-		avanzadasServidorAutentificacion.text = configuraciones.valor("avanzadas/servidorAutentificacion", "")
-		avanzadasPuertoAutentificacion.text = configuraciones.valor("avanzadas/servidorAutentificacionPuerto", "")
-		avanzadasServidorMensajeria.text = configuraciones.valor("avanzadas/servidorMensajeria", "")
-		avanzadasPuertoMensajeria.text = configuraciones.valor("avanzadas/servidorMensajeriaPuerto", "")
-		avanzadasServidorS3.text = configuraciones.valor("avanzadas/servidorS3", "")
-		avanzadasPuertoS3.text = configuraciones.valor("avanzadas/servidorS3Puerto", "")
-		avanzadasAgenteUsuario.text = configuraciones.valor("avanzadas/agenteUsuario", "")
-		avanzadasNumeroVersion.text = configuraciones.valor("avanzadas/numeroVersion", "")
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
-
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de configuración avanzada"
 	Accessible.description: "Aquí se definen opciones avanzadas que definen el comportamiento de la conexión a los servidores de toDus"
@@ -230,7 +215,7 @@ Page {
 						icon.source: "qrc:/svg/redo.svg"
 						text: "Restablecer datos de fábrica"
 
-						onClicked: modeloPaquetes.restablecerDatosFabrica()
+						onClicked: utiles.restablecerDatosFabrica()
 					}
 					Label {
 						Layout.columnSpan: 4
@@ -242,5 +227,20 @@ Page {
 				}
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		avanzadasServidorAutentificacion.text = configuraciones.valor("avanzadas/servidorAutentificacion", "")
+		avanzadasPuertoAutentificacion.text = configuraciones.valor("avanzadas/servidorAutentificacionPuerto", "")
+		avanzadasServidorMensajeria.text = configuraciones.valor("avanzadas/servidorMensajeria", "")
+		avanzadasPuertoMensajeria.text = configuraciones.valor("avanzadas/servidorMensajeriaPuerto", "")
+		avanzadasServidorS3.text = configuraciones.valor("avanzadas/servidorS3", "")
+		avanzadasPuertoS3.text = configuraciones.valor("avanzadas/servidorS3Puerto", "")
+		avanzadasAgenteUsuario.text = configuraciones.valor("avanzadas/agenteUsuario", "")
+		avanzadasNumeroVersion.text = configuraciones.valor("avanzadas/numeroVersion", "")
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		avanzadasServidorAutentificacion.forceActiveFocus()
 	}
 }

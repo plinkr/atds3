@@ -3,13 +3,11 @@
 
 #include "todus.hpp"
 #include "http.hpp"
+#include "utiles.hpp"
 #include <QSqlTableModel>
 #include <QSettings>
 #include <QUrl>
 #include <QFile>
-#include <QTimer>
-#include <QSystemTrayIcon>
-#include <QTcpSocket>
 
 
 class ModeloTareas;
@@ -110,33 +108,17 @@ class ModeloPaquetes : public QSqlTableModel {
 		void procesarColaEjecucion();
 		Q_INVOKABLE void iniciarSesionToDus();
 		Q_INVOKABLE void crearDirectorio(const QString &ubicacion);
-		Q_INVOKABLE void notificar(const QString &llave, bool valorPredeterminado, const QString &titulo, const QString &mensaje, const QString &sonido);
-		Q_INVOKABLE void restablecerDatosFabrica();
-
-	private slots:
-		void mostrarOcultarVentana(QSystemTrayIcon::ActivationReason razon);
-		void verificarDisponibilidadTodus();
-		void eventoConexionTodus();
-		void eventoErrorConexionTodus(QAbstractSocket::SocketError errorSocalo);
 
 	private:
-		enum EstadosTodus {
-			Desconocido,
-			Disponible,
-			Perdido
-		};
 		int _categoria;
 		QSettings _configuraciones;
 		toDus _toDus;
 		QMap<qint64, QPointer<Paquete>> _paquetes;
 		QMap<qint64, QPointer<Tarea>> _tareasPublicaciones;
 		QMap<qint64, QPointer<Tarea>> _tareasDescargas;
-		QSystemTrayIcon _bandejaIcono;
-		QTimer _temporizadorVerificadorDisponibilidadTodus;
-		QTcpSocket _socaloTCPDisponibilidadTodus;
-		EstadosTodus _estadoDisponibilidadTodus;
+		Utiles _utiles;
 
-		void procesarArchivoDescargaClasico(const QUrl &url);
+		void procesarArchivoDescargaClasico(const QString &ruta);
 		void actualizarCampo(int fila, const QString &campo, const QVariant &valor);
 		void actualizarCampos(int fila, const QVariantMap &campos);
 		bool corregirFila(int &fila, qint64 id);

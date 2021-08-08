@@ -31,8 +31,8 @@ RowLayout {
 		focusPolicy: Qt.StrongFocus
 		hoverEnabled: true
 		icon.color: visual === true ? Material.accentColor : Material.iconDisabledColor
-		icon.height: tamanoIconos === 48 ? 22 : 16
-		icon.width: tamanoIconos === 48 ? 22 : 16
+		icon.height: 16
+		icon.width: 16
 		icon.source: visual === true ? "qrc:/svg/eye.svg" : "qrc:/svg/eye-slash.svg"
 
 		onClicked: {
@@ -47,8 +47,8 @@ RowLayout {
 		focusPolicy: Qt.StrongFocus
 		hoverEnabled: true
 		icon.color: audible === true ? Material.accentColor : Material.iconDisabledColor
-		icon.height: tamanoIconos === 48 ? 22 : 16
-		icon.width: tamanoIconos === 48 ? 22 : 16
+		icon.height: 16
+		icon.width: 16
 		icon.source: audible === true ? "qrc:/svg/volume-up.svg" : "qrc:/svg/volume-mute.svg"
 
 		onClicked: {
@@ -66,8 +66,8 @@ RowLayout {
 		flat: true
 		focusPolicy: Qt.StrongFocus
 		hoverEnabled: true
-		icon.height: tamanoIconos === 48 ? 22 : 16
-		icon.width: tamanoIconos === 48 ? 22 : 16
+		icon.height: 16
+		icon.width: 16
 		icon.source: reproductor.playbackState === Audio.PlayingState ? "qrc:/svg/pause.svg" : "qrc:/svg/play.svg"
 
 		onClicked: reproductor.play()

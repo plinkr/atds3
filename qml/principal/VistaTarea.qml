@@ -5,9 +5,11 @@ import QtQuick.Controls.Material 2.12
 
 
 RowLayout {
+	property bool filaPaquete: false
+
 	Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-	Layout.minimumHeight: tamanoIconos === 48 ? 40 : 32
-	Layout.maximumHeight: tamanoIconos === 48 ? 40 : 32
+	Layout.minimumHeight: filaPaquete === true ? (orientacionHorizontal === true ? 32 : 64) : 32
+	Layout.maximumHeight: filaPaquete === true ? (orientacionHorizontal === true ? 32 : 64) : 32
 	Layout.fillWidth: true
 	spacing: 8
 
@@ -16,8 +18,8 @@ RowLayout {
 		Layout.minimumWidth: anchoCabeceraEstado
 		Layout.maximumWidth: anchoCabeceraEstado
 		fillMode: Image.PreserveAspectFit
-		sourceSize.height: tamanoIconos === 48 ? 24 : 16
-		sourceSize.width: tamanoIconos === 48 ? 24 : 16
+		sourceSize.height: filaPaquete === true ? (orientacionHorizontal === true ? 16 : 32) : 16
+		sourceSize.width: filaPaquete === true ? (orientacionHorizontal === true ? 16 : 32) : 16
 		state: model.estado
 		states: [
 			State {
@@ -71,57 +73,152 @@ RowLayout {
 		}
 	}
 
-	Label {
-		Layout.fillWidth: true
-		color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-		elide: Label.ElideMiddle
-		text: model.nombre !== undefined ? decodeURIComponent(model.nombre) : ""
-		verticalAlignment: Qt.AlignVCenter
-	}
-
-	Label {
-		Layout.minimumWidth: anchoCabeceraTamano
-		Layout.maximumWidth: anchoCabeceraTamano
-		color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-		text: model.tamano !== undefined ? representarTamano(model.tamano) : "0B"
-		horizontalAlignment: Qt.AlignHCenter
-		verticalAlignment: Qt.AlignVCenter
-	}
-
-	Label {
-		Layout.minimumWidth: anchoCabeceraTamanoTransferido
-		Layout.maximumWidth: anchoCabeceraTamanoTransferido
-		color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-		text: model.tamanoTransferido !== undefined ? representarTamano(model.tamanoTransferido) : "0B"
-		horizontalAlignment: Qt.AlignHCenter
-		verticalAlignment: Qt.AlignVCenter
-	}
-
 	RowLayout {
-		Layout.minimumWidth: anchoCabeceraCompletado
-		Layout.maximumWidth: anchoCabeceraCompletado
-		spacing: 4
+		Layout.fillWidth: true
+		visible: orientacionHorizontal
 
-		ProgressBar {
-			Layout.fillWidth: true
-			indeterminate: model.estado === Paquetes.Estados.EnEsperaIniciar
-			from: 0
-			to: 100
-			value: model.completado !== undefined ? model.completado : 0
-		}
 		Label {
+			Layout.fillWidth: true
 			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-			text: model.completado !== undefined ? `${model.completado}%` : "0%"
+			elide: Label.ElideMiddle
+			text: model.nombre !== undefined ? decodeURIComponent(model.nombre) : ""
+			verticalAlignment: Qt.AlignVCenter
+		}
+
+		Label {
+			Layout.minimumWidth: anchoCabeceraTamano
+			Layout.maximumWidth: anchoCabeceraTamano
+			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+			text: model.tamano !== undefined ? representarTamano(model.tamano) : "0B"
+			horizontalAlignment: Qt.AlignHCenter
+			verticalAlignment: Qt.AlignVCenter
+		}
+
+		Label {
+			Layout.minimumWidth: anchoCabeceraTamanoTransferido
+			Layout.maximumWidth: anchoCabeceraTamanoTransferido
+			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+			text: model.tamanoTransferido !== undefined ? representarTamano(model.tamanoTransferido) : "0B"
+			horizontalAlignment: Qt.AlignHCenter
+			verticalAlignment: Qt.AlignVCenter
+		}
+
+		RowLayout {
+			Layout.minimumWidth: anchoCabeceraCompletado
+			Layout.maximumWidth: anchoCabeceraCompletado
+			spacing: 4
+
+			ProgressBar {
+				Layout.fillWidth: true
+				indeterminate: model.estado === Paquetes.Estados.EnEsperaIniciar
+				from: 0
+				to: 100
+				value: model.completado !== undefined ? model.completado : 0
+			}
+			Label {
+				color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+				text: model.completado !== undefined ? `${model.completado}%` : "0%"
+				verticalAlignment: Qt.AlignVCenter
+			}
+		}
+
+		Label {
+			Layout.minimumWidth: anchoCabeceraVelocidad
+			Layout.maximumWidth: anchoCabeceraVelocidad
+			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+			text: model.velocidad !== undefined ? `${representarTamano(model.velocidad)}/s` : "0B/s"
+			horizontalAlignment: Qt.AlignHCenter
 			verticalAlignment: Qt.AlignVCenter
 		}
 	}
 
-	Label {
-		Layout.minimumWidth: anchoCabeceraVelocidad
-		Layout.maximumWidth: anchoCabeceraVelocidad
-		color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
-		text: model.velocidad !== undefined ? `${representarTamano(model.velocidad)}/s` : "0B/s"
-		horizontalAlignment: Qt.AlignHCenter
-		verticalAlignment: Qt.AlignVCenter
+	ColumnLayout {
+		Layout.fillWidth: true
+		Layout.rightMargin: 10
+		visible: filaPaquete === true && orientacionHorizontal === false
+
+		RowLayout {
+			Layout.fillWidth: true
+
+			Label {
+				Layout.fillWidth: true
+				color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+				elide: Label.ElideMiddle
+				text: model.nombre !== undefined ? decodeURIComponent(model.nombre) : ""
+				verticalAlignment: Qt.AlignVCenter
+			}
+
+			Label {
+				Layout.leftMargin: 20
+				color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+				text: (model.tamanoTransferido !== undefined ? representarTamano(model.tamanoTransferido) : "0B") + " / " + (model.tamano !== undefined ? representarTamano(model.tamano) : "0B")
+				horizontalAlignment: Qt.AlignHCenter
+				verticalAlignment: Qt.AlignVCenter
+			}
+		}
+
+		RowLayout {
+			Layout.fillWidth: true
+
+			RowLayout {
+				Layout.fillWidth: true
+				spacing: 4
+
+				ProgressBar {
+					Layout.fillWidth: true
+					indeterminate: model.estado === Paquetes.Estados.EnEsperaIniciar
+					from: 0
+					to: 100
+					value: model.completado !== undefined ? model.completado : 0
+				}
+				Label {
+					color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+					text: model.completado !== undefined ? `${model.completado}%` : "0%"
+					verticalAlignment: Qt.AlignVCenter
+				}
+			}
+
+			Label {
+				Layout.leftMargin: 20
+				color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+				text: model.velocidad !== undefined ? `${representarTamano(model.velocidad)}/s` : "0B/s"
+				horizontalAlignment: Qt.AlignHCenter
+				verticalAlignment: Qt.AlignVCenter
+			}
+		}
+	}
+
+	RowLayout {
+		Layout.fillWidth: true
+		Layout.rightMargin: 10
+		visible: filaPaquete === false && orientacionHorizontal === false
+
+		Label {
+			Layout.fillWidth: true
+			color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+			elide: Label.ElideMiddle
+			text: model.nombre !== undefined ? decodeURIComponent(model.nombre) : ""
+			verticalAlignment: Qt.AlignVCenter
+		}
+
+		RowLayout {
+			Layout.minimumWidth: anchoCabeceraCompletado
+			Layout.maximumWidth: anchoCabeceraCompletado
+			Layout.leftMargin: 10
+			spacing: 4
+
+			ProgressBar {
+				Layout.fillWidth: true
+				indeterminate: model.estado === Paquetes.Estados.EnEsperaIniciar
+				from: 0
+				to: 100
+				value: model.completado !== undefined ? model.completado : 0
+			}
+			Label {
+				color: model.error === 1 ? Material.color(Material.Red) : Material.foreground
+				text: model.completado !== undefined ? `${model.completado}%` : "0%"
+				verticalAlignment: Qt.AlignVCenter
+			}
+		}
 	}
 }

@@ -48,32 +48,6 @@ Dialog {
 					currentIndex = configuraciones.valor("atds3/temaColores", 4)
 				}
 			}
-
-			Label {
-				Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-				text: "Tamaño:"
-			}
-
-			ComboBox {
-				id: listadoTamanoIconos
-				Accessible.role: Accessible.ComboBox
-				Accessible.name: "Tamaño de la interfaz de usuario"
-				Accessible.description: "Define el tamaño de la interfaz de usuario a utilizar en ATDS3"
-				Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-				Layout.fillWidth: true
-				focusPolicy: Qt.WheelFocus
-				hoverEnabled: true
-				wheelEnabled: true
-				model: [ "Pequeño", "Grande" ]
-
-				onActivated: {
-					actualizarTamanoIconos(currentIndex)
-				}
-
-				Component.onCompleted: {
-					currentIndex = configuraciones.valor("atds3/tamanoIconos", 0)
-				}
-			}
 		}
 	}
 }

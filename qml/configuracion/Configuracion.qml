@@ -23,14 +23,6 @@ Page {
 	property alias pantallaConfiguracionAvanzadas: pantallaConfiguracionAvanzadas
 	property alias pantallaConfiguracionInformacion: pantallaConfiguracionInformacion
 
-	function mostrar() {
-		vistaApilable.push(this)
-
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
-
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de las configuraciones de ATDS3"
 	Accessible.description: "Aquí se muestran los accesos a las diferentes secciones de configuración de ATDS3"
@@ -107,16 +99,19 @@ Page {
 						Accessible.name: `${model.titulo}. ${model.descripcion}`
 						Layout.fillWidth: true
 						Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-						Layout.preferredHeight: tamanoIconos + 40
 						clip: true
 						display: AbstractButton.TextBesideIcon
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
-						icon.height: tamanoIconos
-						icon.width: tamanoIconos
+						icon.height: 32
+						icon.width: 32
 						icon.source: model.icono
+						leftPadding: 30
+						rightPadding: 30
+						topPadding: 20
+						bottomPadding: 20
 						spacing: 30
-						text: `<h3>${model.titulo}</h3><p>${model.descripcion}</p>`
+						text: `<h3>${model.titulo}</h3><span>${model.descripcion}</span>`
 						width: listadoConfiguraciones.width
 
 						onClicked: {
@@ -125,25 +120,25 @@ Page {
 									dialogoConfiguracionApariencia.open()
 									break;
 								case 1: // toDus
-									pantallaConfiguracionTodus.mostrar()
+									vistaApilable.push(pantallaConfiguracionTodus)
 									break;
 								case 2: // Descargas
-									pantallaConfiguracionDescargas.mostrar()
+									vistaApilable.push(pantallaConfiguracionDescargas)
 									break;
 								case 3: // Publicaciones
-									pantallaConfiguracionPublicaciones.mostrar()
+									vistaApilable.push(pantallaConfiguracionPublicaciones)
 									break;
 								case 4: // Notificaciones
-									pantallaConfiguracionNotificaciones.mostrar()
+									vistaApilable.push(pantallaConfiguracionNotificaciones)
 									break;
 								case 5: // Proxy
-									pantallaConfiguracionProxy.mostrar()
+									vistaApilable.push(pantallaConfiguracionProxy)
 									break;
 								case 6: // Avanzadas
-									pantallaConfiguracionAvanzadas.mostrar()
+									vistaApilable.push(pantallaConfiguracionAvanzadas)
 									break;
 								case 7: // Informacion
-									pantallaConfiguracionInformacion.mostrar()
+									vistaApilable.push(pantallaConfiguracionInformacion)
 									break;
 								default:
 									break;
@@ -157,41 +152,53 @@ Page {
 
 	Apariencia {
 		id: dialogoConfiguracionApariencia
-		visible: false
 	}
 
-	Todus {
+	Component {
 		id: pantallaConfiguracionTodus
-		visible: false
+
+		Todus {}
 	}
 
-	Descargas {
+	Component {
 		id: pantallaConfiguracionDescargas
-		visible: false
+
+		Descargas {}
 	}
 
-	Publicaciones {
+	Component {
 		id: pantallaConfiguracionPublicaciones
-		visible: false
+
+		Publicaciones {}
 	}
 
-	Notificaciones {
+	Component {
 		id: pantallaConfiguracionNotificaciones
-		visible: false
+
+		Notificaciones {}
 	}
 
-	Proxy {
+	Component {
 		id: pantallaConfiguracionProxy
-		visible: false
+
+		Proxy {}
 	}
 
-	Avanzadas {
+	Component {
 		id: pantallaConfiguracionAvanzadas
-		visible: false
+
+		Avanzadas {}
 	}
 
-	Informacion {
+	Component {
 		id: pantallaConfiguracionInformacion
-		visible: false
+
+		Informacion {}
+	}
+
+	Component.onCompleted: {
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
 	}
 }

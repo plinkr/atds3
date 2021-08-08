@@ -9,11 +9,6 @@ Page {
 	property string titulo: "Código de verificación"
 	property alias codigo: codigo
 
-	function mostrar() {
-		codigo.text = ""
-		vistaApilable.push(this)
-	}
-
 	function confirmarCodigo() {
 		modeloPaquetes.confirmarCodigo(codigo.text)
 		vistaApilable.pop()
@@ -37,8 +32,8 @@ Page {
 			Image {
 				Layout.fillWidth: true
 				fillMode: Image.PreserveAspectFit
-				sourceSize.height: tamanoIconos === 48 ? 128 : 64
-				sourceSize.width: tamanoIconos === 48 ? 128 : 64
+				sourceSize.height: 80
+				sourceSize.width: 80
 				source: "qrc:/svg/code.svg"
 			}
 
@@ -95,5 +90,10 @@ Page {
 				onClicked: confirmarCodigo()
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		codigo.text = ""
+		codigo.forceActiveFocus()
 	}
 }

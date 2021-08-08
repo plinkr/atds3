@@ -2,7 +2,7 @@ import Qt.labs.platform 1.0
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
-import cu.atds3 1.0
+import cu.atds3.librerias 1.0
 
 
 Pane {
@@ -11,7 +11,7 @@ Pane {
 	property int anchoCabeceraTamano: 80
 	property int anchoCabeceraTamanoTransferido: 100
 	property int anchoCabeceraCompletado: 120
-	property int anchoCabeceraVelocidad: 120
+	property int anchoCabeceraVelocidad: 100
 
 	function representarTamano(tamano) {
 		const listadoUnidadesTamano = [ "B", "KiB", "MiB", "GiB", "TiB" ]
@@ -72,20 +72,12 @@ Pane {
 			}
 		}
 
-		ListView {
-			id: listadoPaquetes
-			Accessible.role: Accessible.List
-			Accessible.name: "Listado de paquetes y tareas"
-			anchors.fill: parent
-			boundsBehavior: Flickable.StopAtBounds
-			clip: true
-			currentIndex: -1
-			highlightFollowsCurrentItem: true
-			spacing: 5
-			model: modeloPaquetes
-			header: Item {
+		Component {
+			id: componenteListadoPaquetesCabecera
+
+			Item {
 				height: 30
-				width: parent.width
+				width: listadoPaquetes.width
 
 				RowLayout {
 					anchors.fill: parent
@@ -139,108 +131,154 @@ Pane {
 					}
 				}
 			}
+		}
 
-			delegate: ItemDelegate {
-				property int idPaquete: model.id
-				property alias listadoTareas: listadoTareas
+		ColumnLayout {
+			anchors.fill: parent
 
-				Accessible.role: Accessible.ListItem
-				Accessible.name: "Paquete " + (model.nombre !== undefined ? decodeURIComponent(model.nombre) : "") + ". Completado: " + (model.completado !== undefined ? model.completado : "0") + "%"
+			ListView {
+				id: listadoPaquetes
+				Accessible.role: Accessible.List
+				Accessible.name: "Listado de paquetes y tareas"
+				Layout.fillHeight: true
+				Layout.fillWidth: true
+				boundsBehavior: Flickable.StopAtBounds
 				clip: true
-				focusPolicy: Qt.StrongFocus
-				highlighted: ListView.isCurrentItem
-				hoverEnabled: true
-				height: ListView.isCurrentItem === false ? (tamanoIconos === 48 ? 40 : 32) : (tamanoIconos === 48 ? 40 : 32) + 4 + etiquetaTituloListadoTareas.height + 4 + listadoTareas.height
-				width: ListView.view.width
+				currentIndex: -1
+				highlightFollowsCurrentItem: true
+				spacing: 5
+				model: modeloPaquetes
+				visible: count > 0
+				header: orientacionHorizontal ? componenteListadoPaquetesCabecera : null
 
-				Behavior on height {
-					NumberAnimation {
-						duration: 200
-					}
-				}
+				delegate: ItemDelegate {
+					property int idPaquete: model.id
+					property alias vistaFilaPaquete: vistaFilaPaquete
+					property alias listadoTareas: listadoTareas
 
-				ColumnLayout {
-					height: parent.height
-					width: parent.width
-					spacing: 4
+					Accessible.role: Accessible.ListItem
+					Accessible.name: "Paquete " + (model.nombre !== undefined ? decodeURIComponent(model.nombre) : "") + ". Completado: " + (model.completado !== undefined ? model.completado : "0") + "%"
+					clip: true
+					focusPolicy: Qt.StrongFocus
+					highlighted: ListView.isCurrentItem
+					hoverEnabled: true
+					height: ListView.isCurrentItem === false ? vistaFilaPaquete.height : vistaFilaPaquete.height + 4 + etiquetaTituloListadoTareas.height + 4 + listadoTareas.height
+					width: ListView.view.width
 
-					VistaTarea {}
-
-					Label {
-						id: etiquetaTituloListadoTareas
-						Layout.leftMargin: 16
-						font.bold: true
-					}
-
-					ListView {
-						id: listadoTareas
-						Layout.fillWidth: true
-						Layout.minimumHeight: 40
-						Layout.maximumHeight: tamanoIconos === 48 ? 200 : 160
-						boundsBehavior: Flickable.StopAtBounds
-						clip: true
-						highlightFollowsCurrentItem: true
-						model: ModeloTareas {
-							id: modeloTareas
+					Behavior on height {
+						NumberAnimation {
+							duration: 200
 						}
-						delegate: Item {
+					}
+
+					ColumnLayout {
+						height: parent.height
+						width: parent.width
+						spacing: 4
+
+						VistaTarea {
+							id: vistaFilaPaquete
+							filaPaquete: true
+						}
+
+						Label {
+							id: etiquetaTituloListadoTareas
+							Layout.leftMargin: 16
+							font.bold: true
+						}
+
+						ListView {
+							id: listadoTareas
+							Layout.fillWidth: true
+							Layout.minimumHeight: 40
+							Layout.maximumHeight: 160
+							boundsBehavior: Flickable.StopAtBounds
 							clip: true
-							height: tamanoIconos === 48 ? 40 : 32
-							width: ListView.view.width
+							highlightFollowsCurrentItem: true
+							model: ModeloTareas {
+								id: modeloTareas
+							}
+							delegate: Item {
+								clip: true
+								height: 32
+								width: ListView.view.width
 
-							ColumnLayout {
-								height: parent.height
-								width: parent.width
-								spacing: 4
+								ColumnLayout {
+									height: parent.height
+									width: parent.width
+									spacing: 4
 
-								VistaTarea {}
+									VistaTarea {}
+								}
+							}
+
+							ScrollIndicator.vertical: ScrollIndicator {}
+
+							Component.onCompleted: {
+								modeloPaquetes.establecerModeloTareas(idPaquete, modeloTareas);
+								modeloTareas.establecerFiltroPaquete(idPaquete)
+								listadoTareas.Layout.preferredHeight = modeloTareas.rowCount() * 32
+								etiquetaTituloListadoTareas.text = `Listado de tareas: ${modeloTareas.rowCount()} en total`
+							}
+
+							Component.onDestruction: {
+								modeloPaquetes.eliminarModeloTareas(idPaquete)
 							}
 						}
+					}
 
-						ScrollIndicator.vertical: ScrollIndicator {}
-
-						Component.onCompleted: {
-							modeloPaquetes.establecerModeloTareas(idPaquete, modeloTareas);
-							modeloTareas.establecerFiltroPaquete(idPaquete)
-							listadoTareas.Layout.preferredHeight = modeloTareas.rowCount() * (tamanoIconos === 48 ? 40 : 32)
-							etiquetaTituloListadoTareas.text = `Listado de tareas: ${modeloTareas.rowCount()} en total`
-						}
-
-						Component.onDestruction: {
-							modeloPaquetes.eliminarModeloTareas(idPaquete)
+					onClicked: {
+						if (index === listadoPaquetes.currentIndex) {
+							listadoPaquetes.currentIndex = -1
+						} else {
+							listadoPaquetes.currentIndex = index
 						}
 					}
-				}
 
-				onClicked: {
-					if (index === listadoPaquetes.currentIndex) {
-						listadoPaquetes.currentIndex = -1
-					} else {
-						listadoPaquetes.currentIndex = index
+					onPressAndHold: {
+						menuPaquete.x = (ventanaPrincipal.width / 2) - (menuPaquete.width / 2)
+						menuPaquete.y = (ventanaPrincipal.height / 2) - (menuPaquete.height / 2)
+						menuPaquete.open()
 					}
-				}
 
-				onPressAndHold: {
-					menuPaquete.x = (ventanaPrincipal.width / 2) - (menuPaquete.width / 2)
-					menuPaquete.y = (ventanaPrincipal.height / 2) - (menuPaquete.height / 2)
-					menuPaquete.open()
-				}
+					MouseArea {
+						anchors.fill: parent
+						acceptedButtons: Qt.RightButton
 
-				MouseArea {
-					anchors.fill: parent
-					acceptedButtons: Qt.RightButton
+						onPressed: {
+						   listadoPaquetes.currentIndex = index
 
-					onPressed: {
-					   listadoPaquetes.currentIndex = index
-
-						if (mouse.button === Qt.RightButton) {
-						   menuPaquete.popup()
+							if (mouse.button === Qt.RightButton) {
+							   menuPaquete.popup()
+						   }
 					   }
-				   }
+					}
 				}
+
+				ScrollIndicator.vertical: ScrollIndicator {}
 			}
 
-			ScrollIndicator.vertical: ScrollIndicator {}
+			ColumnLayout {
+				Layout.fillHeight: true
+				Layout.fillWidth: true
+				visible: listadoPaquetes.count === 0
+
+				Image {
+					Layout.fillWidth: true
+					fillMode: Image.PreserveAspectFit
+					sourceSize.height: 64
+					sourceSize.width: 64
+					source: "qrc:/svg/toilet-paper-slash.svg"
+				}
+
+				Label {
+					Layout.fillWidth: true
+					Layout.topMargin: 40
+					horizontalAlignment: Qt.AlignHCenter
+					text: "<h3>No existen paquetes en esta categoría.</h3>"
+					wrapMode: Label.WordWrap
+				}
+			}
 		}
 	}
 
@@ -251,7 +289,6 @@ Pane {
 		MenuItem {
 			enabled: false
 			font.bold: true
-			height: tamanoIconos === 48 ? 48 : 38
 			text: {
 				if (listadoPaquetes.currentIndex === -1) {
 					return ""
@@ -262,14 +299,12 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
-			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/play.svg"
 			text: "Iniciar"
 			onTriggered: modeloPaquetes.iniciar(listadoPaquetes.currentIndex)
 		}
 		MenuItem {
-			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/pause.svg"
 			text: "Pausar"
@@ -277,7 +312,6 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
-			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/minus-square.svg"
 			text: "Eliminar"
@@ -285,7 +319,6 @@ Pane {
 		}
 		MenuSeparator {}
 		MenuItem {
-			height: tamanoIconos === 48 ? 48 : 38
 			hoverEnabled: true
 			icon.source: "qrc:/svg/folder-open.svg"
 			text: "Abrir ubicación"

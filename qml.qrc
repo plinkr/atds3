@@ -28,5 +28,7 @@
         <file>qml/configuracion/notificaciones/Notificacion.qml</file>
         <file>qml/comun/Subtitulo.qml</file>
         <file>qml/principal/FalloInicioSesion.qml</file>
+        <file>qml/principal/BotonesPaquetes.qml</file>
+        <file>qml/principal/BotonesTransferencias.qml</file>
     </qresource>
 </RCC>

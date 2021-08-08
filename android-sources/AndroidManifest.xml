@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<manifest package="cu.atds3.android" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.4.0" android:versionCode="0x1400" android:installLocation="auto">
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+	<uses-permission android:name="android.permission.INTERNET"/>
+	<uses-permission android:name="android.permission.MANAGE_DOCUMENTS"/>
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.READ_USER_DICTIONARY"/>
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
+	<application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="Administrador de Transferencias para toDus (S3)" android:extractNativeLibs="true" android:icon="@drawable/icon" android:requestLegacyExternalStorage="true">
+		<activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="org.qtproject.qt5.android.bindings.QtActivity" android:label="ATDS3" android:screenOrientation="unspecified" android:launchMode="singleTop">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN"/>
+				<category android:name="android.intent.category.LAUNCHER"/>
+			</intent-filter>
+			<intent-filter>
+				<action android:name="android.intent.action.SEND"/>
+				<category android:name="android.intent.category.DEFAULT"/>
+				<data android:pathPattern="\\.[s3|txt]$" android:mimeType="text/*"/>
+			</intent-filter>
+			<meta-data android:name="android.app.lib_name" android:value="atds3"/>
+			<meta-data android:name="android.app.qt_sources_resource_id" android:resource="@array/qt_sources"/>
+			<meta-data android:name="android.app.repository" android:value="default"/>
+			<meta-data android:name="android.app.qt_libs_resource_id" android:resource="@array/qt_libs"/>
+			<meta-data android:name="android.app.bundled_libs_resource_id" android:resource="@array/bundled_libs"/>
+			<meta-data android:name="android.app.bundle_local_qt_libs" android:value="1"/>
+			<meta-data android:name="android.app.use_local_qt_libs" android:value="1"/>
+			<meta-data android:name="android.app.libs_prefix" android:value="/data/local/tmp/qt/"/>
+			<meta-data android:name="android.app.load_local_libs_resource_id" android:resource="@array/load_local_libs"/>
+			<meta-data android:name="android.app.load_local_jars" android:value="jar/QtAndroid.jar:jar/QtAndroidBearer.jar:jar/QtAndroidExtras.jar:jar/QtAndroidNetwork.jar:jar/QtMultimedia.jar"/>
+			<meta-data android:name="android.app.static_init_classes" android:value="org.qtproject.qt5.android.multimedia.QtMultimediaUtils"/>
+			<meta-data android:name="android.app.ministro_not_found_msg" android:value="@string/ministro_not_found_msg"/>
+			<meta-data android:name="android.app.ministro_needed_msg" android:value="@string/ministro_needed_msg"/>
+			<meta-data android:name="android.app.fatal_error_msg" android:value="@string/fatal_error_msg"/>
+			<meta-data android:name="android.app.unsupported_android_version" android:value="@string/unsupported_android_version"/>
+			<meta-data android:name="android.app.background_running" android:value="true"/>
+			<meta-data android:name="android.app.auto_screen_scale_factor" android:value="false"/>
+			<meta-data android:name="android.app.extract_android_style" android:value="default"/>
+		</activity>
+	</application>
+</manifest>

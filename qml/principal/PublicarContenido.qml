@@ -2,7 +2,7 @@ import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
-import Qt.labs.platform 1.0
+import QtQuick.Dialogs 1.2
 import "qrc:/qml/comun"
 
 
@@ -17,18 +17,11 @@ Page {
 	property alias formatoArchivoDescarga: formatoArchivoDescarga
 	property alias clasificacion: clasificacion
 
-	function mostrar() {
-		tituloPaquete.text = ""
-		modeloArchivosPublicar.clear()
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
-
 	function agregarArchivosAlListado(archivos) {
-		for (let ruta of archivos) {
-			modeloArchivosPublicar.append({ nombre: decodeURIComponent(ruta.toString().substring(ruta.toString().lastIndexOf("/") + 1)), ruta: ruta.toString() });
+		for (let archivo of archivos) {
+			let ruta = utiles.rutaDesdeURI(archivo.toString())
+
+			modeloArchivosPublicar.append({ nombre: ruta.substring(ruta.lastIndexOf("/") + 1), ruta: ruta });
 		}
 	}
 
@@ -54,33 +47,8 @@ Page {
 				Layout.maximumWidth: 720
 				Layout.margins: 20
 
-				Image {
-					Layout.fillWidth: true
-					fillMode: Image.PreserveAspectFit
-					sourceSize.height: tamanoIconos === 48 ? 128 : 64
-					sourceSize.width: tamanoIconos === 48 ? 128 : 64
-					source: "qrc:/svg/file-upload.svg"
-/*
-					ColorOverlay {
-						anchors.fill: parent
-						source: parent
-						color: Material.accent
-					}
-*/
-				}
-
-				Label {
-					Layout.fillWidth: true
-					Layout.topMargin: 20
-					horizontalAlignment: Qt.AlignHCenter
-					font.bold: true
-					text: "Defina el título del paquete, agregue los archivos que desea publicar en el siguiente listado, luego, seleccione el formato para crear el archivo de descarga del paquete que compartirá con los demás y, por último, presione el botón <u>Publicar</u>."
-					wrapMode: Label.WordWrap
-				}
-
 				GridLayout {
 					Layout.fillWidth: true
-					Layout.topMargin: 40
 					columns: 2
 
 					Label {
@@ -118,7 +86,9 @@ Page {
 					onDropped: {
 						if (drop.hasUrls === true) {
 							for (let url of drop.urls) {
-								modeloArchivosPublicar.append({ nombre: decodeURIComponent(url.toString().substring(url.toString().lastIndexOf("/") + 1)), ruta: url.toString() });
+								let ruta = modeloPaquetes.rutaDesdeURI(decodeURIComponent(url.toString()))
+
+								modeloArchivosPublicar.append({ nombre: decodeURIComponent(ruta.substring(ruta.lastIndexOf("/") + 1)), ruta: ruta });
 							}
 						}
 					}
@@ -147,7 +117,10 @@ Page {
 									icon.source: "qrc:/svg/file-medical.svg"
 									text: ventanaPrincipal.orientacionHorizontal === true ? "Archivos" : ""
 
-									onClicked: dialogoArchivos.open()
+									onClicked: {
+										dialogoArchivos.folder = configuraciones.valor("atds3/ultimaRutaUtilizada", rutaSistemaDescargas)
+										dialogoArchivos.open()
+									}
 								}
 /*
 								Button {
@@ -290,6 +263,9 @@ Page {
 					}
 
 					Label {
+						Layout.columnSpan: 2
+					}
+					Label {
 						Layout.alignment: alineacionColumnasVistaVertical
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						text: "Clasificación:"
@@ -362,14 +338,16 @@ Page {
 */
 	FileDialog {
 		id: dialogoArchivos
-		fileMode: FileDialog.OpenFiles
-		folder: configuraciones.valor("atds3/ultimaRutaUtilizada", StandardPaths.writableLocation(StandardPaths.DownloadLocation))
-		nameFilters: [ "Todos los archivos(*.*)" ]
-		options: FileDialog.ReadOnly
+		title: "Seleccione los archivos a publicar"
+		selectExisting: true
+		selectMultiple: true
+		selectFolder: false
+		nameFilters: [ "Todos los archivos(*)" ]
+		selectedNameFilterIndex: 0
 
 		onAccepted: {
-			agregarArchivosAlListado(files)
-			configuraciones.establecerValor("atds3/ultimaRutaUtilizada", folder.toString())
+			configuraciones.establecerValor("atds3/ultimaRutaUtilizada", decodeURIComponent(folder))
+			agregarArchivosAlListado(fileUrls)
 		}
 	}
 /*
@@ -391,4 +369,11 @@ Page {
 		}
 	}
 */
+
+	Component.onCompleted: {
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		tituloPaquete.forceActiveFocus()
+	}
 }

@@ -123,7 +123,7 @@ bool HTTP::ejecutar() {
 	_ejecutado = false;
 	_cabecerasRecibidas = false;
 	_cabecerasRespuesta.clear();
-	_codigoHTTP = 503;
+	_codigoHTTP = 502;
 	_tiempoUltimaCarga = std::time(nullptr);
 	_tiempoUltimaDescarga = _tiempoUltimaCarga;
 
@@ -276,7 +276,11 @@ void HTTP::eventoFinalizado() {
 				_error = false;
 				emit finalizado(_id);
 			} else {
-				emit detenido(_id);
+				if (_metodo == HTTP::Metodo::OBTENER) {
+					emit detenidoParaReiniciar(_id);
+				} else {
+					emit detenido(_id);
+				}
 			}
 		}
 	}
@@ -291,7 +295,7 @@ void HTTP::eventoError(QNetworkReply::NetworkError errorSocalo) {
 			break;
 	}
 
-	emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Error: " << errorSocalo << std::endl;
+	emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Error en socalo: " << errorSocalo << "; Codigo HTTP: " << _codigoHTTP << std::endl;
 
 	if (_id == 0) {
 		emit finalizado(_id);

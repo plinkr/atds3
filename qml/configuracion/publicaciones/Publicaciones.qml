@@ -11,21 +11,8 @@ Page {
 	property int columnasIntegradasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? 1 : 2
 	property alias publicacionesParalelas: publicacionesParalelas
 	property alias publicacionesReintentarTareasErroneas: publicacionesReintentarTareasErroneas
-	property alias publicacionesGenerarArchivosDescargaAlFinalizar: publicacionesGenerarArchivosDescargaAlFinalizar
 //	property alias publicacionesDividirPorVolumenes: publicacionesDividirPorVolumenes
 //	property alias publicacionesTamanoVolumenes: publicacionesTamanoVolumenes
-
-	function mostrar() {
-		publicacionesParalelas.value = configuraciones.valor("publicaciones/paralelas", 1)
-		publicacionesReintentarTareasErroneas.checked = configuraciones.valor("publicaciones/reintentarTareasErroneas", false)
-		publicacionesGenerarArchivosDescargaAlFinalizar.checked = configuraciones.valor("publicaciones/generarArchivosDescargaAlFinalizar", true)
-//		publicacionesDividirPorVolumenes.checked = configuraciones.publicacionesDividirPorVolumenes
-//		publicacionesTamanoVolumenes.text = configuraciones.publicacionesTamanoVolumenes
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
 
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de configuración de las publicaciones"
@@ -132,38 +119,6 @@ Page {
 						wrapMode: Label.WordWrap
 					}
 
-					Label {
-						Layout.columnSpan: 2
-					}
-					Label {
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						visible: columnasIntegradasVistaVertical === 1
-					}
-					Switch {
-						id: publicacionesGenerarArchivosDescargaAlFinalizar
-						Accessible.role: Accessible.CheckBox
-						Accessible.name: text
-						Accessible.description: "Habilite esta opción si desea esperar a finalizar la publicación del paquete para generar el archivo de descarga. Si se deshabilita entonces se generará el archivo de descarga según vayan finalizando cada tarea del paquete a publicar"
-						focusPolicy: Qt.StrongFocus
-						hoverEnabled: true
-						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						Layout.fillWidth: true
-						text: "Generar el archivo de descarga al finalizar"
-
-						onToggled: configuraciones.establecerValor("publicaciones/generarArchivosDescargaAlFinalizar", checked)
-					}
-					Label {
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						visible: columnasIntegradasVistaVertical === 1
-					}
-					Label {
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						Layout.fillWidth: true
-						font.pointSize: ventanaPrincipal.font.pointSize - 2
-						text: "Habilite esta opción si desea esperar a finalizar la publicación del paquete para generar el archivo de descarga. Si se deshabilita entonces se generará el archivo de descarga según vayan finalizando cada tarea del paquete a publicar."
-						wrapMode: Label.WordWrap
-					}
 /*
 					Label {
 						Layout.columnSpan: 2
@@ -227,5 +182,16 @@ Page {
 				}
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		publicacionesParalelas.value = configuraciones.valor("publicaciones/paralelas", 1)
+		publicacionesReintentarTareasErroneas.checked = configuraciones.valor("publicaciones/reintentarTareasErroneas", false)
+//		publicacionesDividirPorVolumenes.checked = configuraciones.publicacionesDividirPorVolumenes
+//		publicacionesTamanoVolumenes.text = configuraciones.publicacionesTamanoVolumenes
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		publicacionesParalelas.forceActiveFocus()
 	}
 }

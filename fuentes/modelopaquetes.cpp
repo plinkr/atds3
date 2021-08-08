@@ -3,13 +3,7 @@
 #include "modelotareas.hpp"
 #include "main.hpp"
 #include <ctime>
-//#if defined(Q_OS_UNIX) && !defined(Q_OS_ANDROID)
 #include <QApplication>
-/*
-#else
-#include <QGuiApplication>
-#endif
-*/
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlResult>
@@ -20,9 +14,8 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
-#include <QMenu>
-#include <QTcpSocket>
 #include <QStandardPaths>
+#include <QQmlFile>
 
 
 ModeloPaquetes::ModeloPaquetes(QObject *padre)
@@ -48,30 +41,6 @@ ModeloPaquetes::ModeloPaquetes(QObject *padre)
 	setTable("paquetes");
 	setSort(0, Qt::AscendingOrder);
 	select();
-
-	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::connected, this, &ModeloPaquetes::eventoConexionTodus);
-	connect(&_socaloTCPDisponibilidadTodus, &QTcpSocket::errorOccurred, this, &ModeloPaquetes::eventoErrorConexionTodus);
-	_temporizadorVerificadorDisponibilidadTodus.setInterval(30000);
-	connect(&_temporizadorVerificadorDisponibilidadTodus, &QTimer::timeout, this, &ModeloPaquetes::verificarDisponibilidadTodus);
-	_temporizadorVerificadorDisponibilidadTodus.start();
-	_estadoDisponibilidadTodus = EstadosTodus::Desconocido;
-	QTimer::singleShot(5000, this, &ModeloPaquetes::verificarDisponibilidadTodus);
-
-	_bandejaIcono.setIcon(QIcon(":/png/atds3.png"));
-	_bandejaIcono.setToolTip(_aplicacionTitulo);
-
-	QMenu *menuBandeIcono = new QMenu();
-//#if defined(Q_OS_UNIX) && !defined(Q_OS_ANDROID)
-	menuBandeIcono->addAction(QIcon(":/svg/window-close.svg"), "Terminar", this, &QApplication::quit);
-/*
-#else
-	menuBandeIcono->addAction(QIcon(":/svg/window-close.svg"), "Terminar", this, &QGuiApplication::quit);
-#endif
-*/
-
-	_bandejaIcono.setContextMenu(menuBandeIcono);
-	_bandejaIcono.show();
-	connect(&_bandejaIcono, &QSystemTrayIcon::activated, this, &ModeloPaquetes::mostrarOcultarVentana);
 
 	procesarColaEjecucion();
 }
@@ -150,6 +119,7 @@ QVariantMap ModeloPaquetes::obtener(int fila) const {
 	resultados["id"] = QSqlTableModel::data(index(fila, fieldIndex("id")));
 	resultados["tipo"] = QSqlTableModel::data(index(fila, fieldIndex("tipo")));
 	resultados["formato"] = QSqlTableModel::data(index(fila, fieldIndex("formato")));
+	resultados["clasificacion"] = QSqlTableModel::data(index(fila, fieldIndex("clasificacion")));
 	resultados["categoria"] = QSqlTableModel::data(index(fila, fieldIndex("categoria")));
 	resultados["estado"] = QSqlTableModel::data(index(fila, fieldIndex("estado")));
 	resultados["nombre"] = QSqlTableModel::data(index(fila, fieldIndex("nombre")));
@@ -172,6 +142,7 @@ QVariantMap ModeloPaquetes::obtenerDesdeId(qint64 id) const {
 		resultados["id"] = solicitudSQL.value("id");
 		resultados["tipo"] = solicitudSQL.value("tipo");
 		resultados["formato"] = solicitudSQL.value("formato");
+		resultados["clasificacion"] = solicitudSQL.value("clasificacion");
 		resultados["categoria"] = solicitudSQL.value("categoria");
 		resultados["estado"] = solicitudSQL.value("estado");
 		resultados["nombre"] = solicitudSQL.value("nombre");
@@ -291,12 +262,7 @@ void ModeloPaquetes::eliminar(int fila) {
 	qint64 idPaquete = QSqlTableModel::data(index(fila, fieldIndex("id"))).toLongLong();
 
 	pausar(fila);
-/*
-	if (_paquetes.find(idPaquete) != _paquetes.end()) {
-		_paquetes[idPaquete]->temporizadorActualizacionCampos.stop();
-		_paquetes.remove(idPaquete);
-	}
-*/
+
 	solicitudSQL.exec("DELETE FROM tareas WHERE (paquete = " + QString::number(idPaquete) + ")");
 	solicitudSQL.exec("DELETE FROM paquetes WHERE (id = " + QString::number(idPaquete) + ")");
 
@@ -320,15 +286,11 @@ void ModeloPaquetes::eliminarTodas() {
 }
 
 void ModeloPaquetes::agregarDescargasDesdeArchivos(QList<QUrl> archivos) {
-	QString archivo;
+	for (const QUrl &uri : archivos) {
+		QString ruta = _utiles.rutaDesdeURI(uri.toString());
 
-	for (const QUrl &url : archivos) {
-		if (url.isLocalFile() == true) {
-			archivo = url.toLocalFile();
-
-			if (archivo.endsWith(".txt") == true) {
-				procesarArchivoDescargaClasico(url);
-			}
+		if (ruta.endsWith(".txt") == true) {
+			procesarArchivoDescargaClasico(ruta);
 		}
 	}
 }
@@ -351,7 +313,9 @@ void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemMode
 
 	for (int f = 0; f < modeloArchivos->rowCount(); f++) {
 		nombre = modeloArchivos->data(modeloArchivos->index(f, 0), 0).toByteArray();
-		ruta = QUrl(modeloArchivos->data(modeloArchivos->index(f, 0), 1).toString()).toLocalFile();
+		nombre.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+		nombre.replace("\\", "_");
+		ruta = modeloArchivos->data(modeloArchivos->index(f, 0), 1).toString();
 
 		informacionArchivo.setFile(ruta);
 		if (informacionArchivo.exists() == true) {
@@ -383,15 +347,17 @@ void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemMode
 	}
 }
 
-void ModeloPaquetes::procesarArchivoDescargaClasico(const QUrl &url) {
+void ModeloPaquetes::procesarArchivoDescargaClasico(const QString &ruta) {
 	QSqlQuery solicitudSQL;
 	QString instruccionSQL;
 	bool primeraFila = true;
-	QFile lector(url.toLocalFile());
+	QFile lector(ruta);
 	QString nombreArchivo = lector.fileName().mid(lector.fileName().lastIndexOf("/") + 1);
 	qint64 idPaquete = 0;
 
 	nombreArchivo.chop(4);
+	nombreArchivo.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+	nombreArchivo.replace("\\", "_");
 	primeraFila = true;
 
 	if (lector.open(QIODevice::ReadOnly | QIODevice::Text) == false) {
@@ -402,13 +368,18 @@ void ModeloPaquetes::procesarArchivoDescargaClasico(const QUrl &url) {
 
 	while (lector.atEnd() == false) {
 		QList<QByteArray> campos = lector.readLine().split('\t');
+		QString nombre, enlace;
 
 		if (campos.size() > 0) {
+			enlace = campos[0].trimmed();
 			if (campos[0].startsWith("https://s3.todus.cu/") == true) {
 				if (primeraFila == false) {
 					instruccionSQL += ", ";
 				}
-				instruccionSQL += "(##ID_PAQUETE##, " + QString::number(Estados::Pausado) + ", '" + campos[1].trimmed().toPercentEncoding() + "', '', '" + campos[0].trimmed() + "', '', 0, 0, 0, 0, false)";
+				nombre = campos[1].trimmed();
+				nombre.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+				nombre.replace("\\", "_");
+				instruccionSQL += "(##ID_PAQUETE##, " + QString::number(Estados::Pausado) + ", '" + nombre.toUtf8().toPercentEncoding() + "', '', '" + enlace + "', '', 0, 0, 0, 0, false)";
 				if (primeraFila == true) {
 					primeraFila = false;
 				}
@@ -928,17 +899,17 @@ void ModeloPaquetes::eventoPaqueteActualizarCampos(qint64 idPaquete) {
 					}
 
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
-						notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles.notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
 					} else {
-						notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles.notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
 					}
 				}
 
 				if (error == true) {
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
-						notificar("FinalizacionErroneaPaquete", true, "Paquete de publicación detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+						_utiles.notificar("FinalizacionErroneaPaquete", true, "Paquete de publicación detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
 					} else {
-						notificar("FinalizacionErroneaPaquete", true, "Paquete de descarga detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+						_utiles.notificar("FinalizacionErroneaPaquete", true, "Paquete de descarga detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
 					}
 				}
 
@@ -992,9 +963,9 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 			QMetaObject::invokeMethod(_qmlRaiz, "visualizarTareaIniciada", Qt::QueuedConnection, Q_ARG(QVariant, _paquetes[tarea->paquete]->categoria), Q_ARG(QVariant, tarea->paquete), Q_ARG(QVariant, _paquetes[tarea->paquete]->fila), Q_ARG(QVariant, tarea->fila));
 
 			if (publicacion == false) {
-				notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles.notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			} else {
-				notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles.notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			}
 		}
 	}
@@ -1023,6 +994,9 @@ void ModeloPaquetes::eventoTareaTotalBytesTransferidos(qint64 id, qint64 transfe
 			}
 		}
 		tarea->velocidad = (transferido - tarea->tamanoTransferido);
+		if (tarea->velocidad < 0) {
+			tarea->velocidad = 0;
+		}
 		tarea->tamanoTransferido = transferido;
 		tarea->ultimoTiempoTransferencia = std::time(nullptr);
 
@@ -1107,10 +1081,10 @@ void ModeloPaquetes::eventoTareaDetenida(qint64 id) {
 
 				if (publicacion == true) {
 					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de publicación detenida con error" << std::endl;
-					notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+					_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
 				} else {
 					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de descarga detenida con error" << std::endl;
-					notificar("FinalizacionErroneaTarea", true, "Tarea de descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+					_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 				}
 			} else {
 				if (_modelosTareas[tarea->paquete]) {
@@ -1240,15 +1214,13 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 			}
 
 			if (_paquetes[tarea->paquete]->tipo == Tipos::Publicacion) {
-				if (_configuraciones.value("publicaciones/generarArchivosDescargaAlFinalizar", true).toBool() == false) {
-					generarArchivoDescarga(tarea->paquete);
-				}
+				generarArchivoDescarga(tarea->paquete);
 			}
 
 			if (publicacion == true) {
-				notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles.notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
 			} else {
-				notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles.notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
 			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
@@ -1279,9 +1251,9 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 			}
 
 			if (publicacion == true) {
-				notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+				_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
 			} else {
-				notificar("FinalizacionErroneaTarea", true, "Tarea des descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+				_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea des descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
@@ -1406,10 +1378,10 @@ void ModeloPaquetes::agregarPaqueteAlListado(qint64 id, int fila) {
 
 		if (tipo == Tipos::Publicacion) {
 			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Publicacion. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << ". Tamano: " << tamano << std::endl;
-			notificar("InicializacionPaquete", false, "Paquete de publicación iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
+			_utiles.notificar("InicializacionPaquete", false, "Paquete de publicación iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		} else {
 			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
-			notificar("InicializacionPaquete", false, "Paquete de descarga iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
+			_utiles.notificar("InicializacionPaquete", false, "Paquete de descarga iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		}
 	}
 }
@@ -1445,67 +1417,3 @@ void ModeloPaquetes::eliminarPaqueteDelListado(qint64 id) {
 void ModeloPaquetes::agregarTareaAlListado(qint64 id, int fila) {}
 void ModeloPaquetes::eliminarTareaDelListado(qint64 id) {}
 */
-void ModeloPaquetes::notificar(const QString &llave, bool valorPredeterminado, const QString &titulo, const QString &mensaje, const QString &sonido) {
-	QString llaveVisual = "notificaciones/visual" + llave;
-	QString llaveAudible = "notificaciones/audible" + llave;
-
-	if (_configuraciones.value(llaveVisual, valorPredeterminado).toBool() == true) {
-		_bandejaIcono.showMessage(titulo, mensaje, QIcon(":/svg/atds3.svg"));
-	}
-	if (_configuraciones.value(llaveAudible, valorPredeterminado).toBool() == true) {
-		QMetaObject::invokeMethod(_qmlRaiz, "reproducirNotificacion", Qt::QueuedConnection, Q_ARG(QVariant, sonido));
-	}
-}
-
-void ModeloPaquetes::mostrarOcultarVentana(QSystemTrayIcon::ActivationReason razon) {
-	if (razon == QSystemTrayIcon::Trigger || razon == QSystemTrayIcon::MiddleClick) {
-		QMetaObject::invokeMethod(_qmlRaiz, "mostrarOcultarVentana", Qt::QueuedConnection);
-	}
-}
-
-void ModeloPaquetes::verificarDisponibilidadTodus() {
-	QString servidorMensajeria = _configuraciones.value("avanzadas/servidorMensajeria", "im.todus.cu").toString();
-	int servidorMensajeriaPuerto = _configuraciones.value("avanzadas/servidorMensajeriaPuerto", 1756).toInt();
-
-	_socaloTCPDisponibilidadTodus.close();
-	_socaloTCPDisponibilidadTodus.connectToHost(servidorMensajeria, servidorMensajeriaPuerto);
-}
-
-void ModeloPaquetes::eventoConexionTodus() {
-	QMetaObject::invokeMethod(_qmlRaiz, "actualizarIndicadorDisponibilidadTodus", Qt::QueuedConnection, Q_ARG(QVariant, "disponible"));
-	if (_estadoDisponibilidadTodus != EstadosTodus::Disponible) {
-		notificar("ConexionDisponibleTodus", false, "Disponibilidad de toDus", "Se ha detectado disponibilidad de acceso a la red toDus.", "conexion-disponible-todus.mp3");
-	}
-	_socaloTCPDisponibilidadTodus.close();
-	_estadoDisponibilidadTodus = EstadosTodus::Disponible;
-}
-
-void ModeloPaquetes::eventoErrorConexionTodus(QAbstractSocket::SocketError errorSocalo) {
-	Q_UNUSED(errorSocalo);
-
-	QMetaObject::invokeMethod(_qmlRaiz, "actualizarIndicadorDisponibilidadTodus", Qt::QueuedConnection, Q_ARG(QVariant, "perdido"));
-	if (_estadoDisponibilidadTodus != EstadosTodus::Perdido) {
-		notificar("ConexionPerdidaTodus", true, "Pérdida de la disponibilidad de toDus", "Se ha detectado la pérdida de la disponibilidad de acceso a la red toDus.", "conexion-perdida-todus.mp3");
-	}
-	_estadoDisponibilidadTodus = EstadosTodus::Perdido;
-}
-
-void ModeloPaquetes::restablecerDatosFabrica() {
-	QSqlDatabase bd = QSqlDatabase::database();
-	QSqlQuery solicitudSQL;
-	qint64 idPaquete = 0;
-	QDir directorio;
-
-	solicitudSQL.exec("SELECT id FROM paquetes WHERE (estado = " + QString::number(Estados::EnEsperaIniciar) + " OR estado = " + QString::number(Estados::Iniciado) + ")");
-	while (solicitudSQL.next() == true) {
-		idPaquete = solicitudSQL.value("id").toLongLong();
-		eliminarPaqueteDelListado(idPaquete);
-	}
-
-	bd.close();
-	directorio.remove(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/" + _aplicacionNombreCorto + ".db");
-
-	_configuraciones.remove("");
-
-	qApp->quit();
-}

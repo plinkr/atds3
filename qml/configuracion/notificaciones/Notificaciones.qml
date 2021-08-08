@@ -1,7 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
-import cu.atds3 1.0
+import cu.atds3.librerias 1.0
 import "qrc:/qml/comun"
 
 
@@ -19,30 +19,6 @@ Page {
 	property alias notificacionInicializacionTarea: notificacionInicializacionTarea
 	property alias notificacionFinalizacionExitosaTarea: notificacionFinalizacionExitosaTarea
 	property alias notificacionFinalizacionErroneaTarea: notificacionFinalizacionErroneaTarea
-
-	function mostrar() {
-		temaSonidos.currentIndex = temaSonidos.indexOfValue(configuraciones.valor("notificaciones/temaSonidos", "encantado"))
-		notificacionConexionDisponibleTodus.visual = configuraciones.valor("notificaciones/visualConexionDisponibleTodus", false)
-		notificacionConexionDisponibleTodus.audible = configuraciones.valor("notificaciones/audibleConexionDisponibleTodus", false)
-		notificacionConexionPerdidaTodus.visual = configuraciones.valor("notificaciones/visualConexionPerdidaTodus", true)
-		notificacionConexionPerdidaTodus.audible = configuraciones.valor("notificaciones/audibleConexionPerdidaTodus", true)
-		notificacionInicializacionPaquete.visual = configuraciones.valor("notificaciones/visualInicializacionPaquete", false)
-		notificacionInicializacionPaquete.audible = configuraciones.valor("notificaciones/audibleInicializacionPaquete", false)
-		notificacionFinalizacionExitosaPaquete.visual = configuraciones.valor("notificaciones/visualFinalizacionExitosaPaquete", false)
-		notificacionFinalizacionExitosaPaquete.audible = configuraciones.valor("notificaciones/audibleFinalizacionExitosaPaquete", false)
-		notificacionFinalizacionErroneaPaquete.visual = configuraciones.valor("notificaciones/visualFinalizacionErroneaPaquete", true)
-		notificacionFinalizacionErroneaPaquete.audible = configuraciones.valor("notificaciones/audibleFinalizacionErroneaPaquete", true)
-		notificacionInicializacionTarea.visual = configuraciones.valor("notificaciones/visualInicializacionTarea", false)
-		notificacionInicializacionTarea.audible = configuraciones.valor("notificaciones/audibleInicializacionTarea", false)
-		notificacionFinalizacionExitosaTarea.visual = configuraciones.valor("notificaciones/visualFinalizacionExitosaTarea", false)
-		notificacionFinalizacionExitosaTarea.audible = configuraciones.valor("notificaciones/audibleFinalizacionExitosaTarea", false)
-		notificacionFinalizacionErroneaTarea.visual = configuraciones.valor("notificaciones/visualFinalizacionErroneaTarea", true)
-		notificacionFinalizacionErroneaTarea.audible = configuraciones.valor("notificaciones/audibleFinalizacionErroneaTarea", true)
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
 
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de configuración de las notificaciones"
@@ -190,5 +166,29 @@ Page {
 				}
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		temaSonidos.currentIndex = temaSonidos.indexOfValue(configuraciones.valor("notificaciones/temaSonidos", "encantado"))
+		notificacionConexionDisponibleTodus.visual = configuraciones.valor("notificaciones/visualConexionDisponibleTodus", false)
+		notificacionConexionDisponibleTodus.audible = configuraciones.valor("notificaciones/audibleConexionDisponibleTodus", false)
+		notificacionConexionPerdidaTodus.visual = configuraciones.valor("notificaciones/visualConexionPerdidaTodus", true)
+		notificacionConexionPerdidaTodus.audible = configuraciones.valor("notificaciones/audibleConexionPerdidaTodus", true)
+		notificacionInicializacionPaquete.visual = configuraciones.valor("notificaciones/visualInicializacionPaquete", false)
+		notificacionInicializacionPaquete.audible = configuraciones.valor("notificaciones/audibleInicializacionPaquete", false)
+		notificacionFinalizacionExitosaPaquete.visual = configuraciones.valor("notificaciones/visualFinalizacionExitosaPaquete", false)
+		notificacionFinalizacionExitosaPaquete.audible = configuraciones.valor("notificaciones/audibleFinalizacionExitosaPaquete", false)
+		notificacionFinalizacionErroneaPaquete.visual = configuraciones.valor("notificaciones/visualFinalizacionErroneaPaquete", true)
+		notificacionFinalizacionErroneaPaquete.audible = configuraciones.valor("notificaciones/audibleFinalizacionErroneaPaquete", true)
+		notificacionInicializacionTarea.visual = configuraciones.valor("notificaciones/visualInicializacionTarea", false)
+		notificacionInicializacionTarea.audible = configuraciones.valor("notificaciones/audibleInicializacionTarea", false)
+		notificacionFinalizacionExitosaTarea.visual = configuraciones.valor("notificaciones/visualFinalizacionExitosaTarea", false)
+		notificacionFinalizacionExitosaTarea.audible = configuraciones.valor("notificaciones/audibleFinalizacionExitosaTarea", false)
+		notificacionFinalizacionErroneaTarea.visual = configuraciones.valor("notificaciones/visualFinalizacionErroneaTarea", true)
+		notificacionFinalizacionErroneaTarea.audible = configuraciones.valor("notificaciones/audibleFinalizacionErroneaTarea", true)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		temaSonidos.forceActiveFocus()
 	}
 }

@@ -10,7 +10,6 @@ Menu {
 		Accessible.name: "Cortar"
 		Accessible.description: "Copia el texto seleccionado hacia el portapapeles y lo elimina del cuadro de texto"
 		enabled: control.readOnly === false && control.selectedText.length > 0
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/cut.svg"
 		text: "Cortar"
@@ -22,7 +21,6 @@ Menu {
 		Accessible.name: "Copiar"
 		Accessible.description: "Copia el texto seleccionado hacia el portapapeles"
 		enabled: control.selectedText.length > 0
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/copy.svg"
 		text: "Copiar"
@@ -34,7 +32,6 @@ Menu {
 		Accessible.name: "Pegar"
 		Accessible.description: "Inserta el texto del portapapeles en el cuadro de texto reemplazando el texto seleccionado si había"
 		enabled: control.readOnly === false
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/paste.svg"
 		text: "Pegar"
@@ -47,7 +44,6 @@ Menu {
 		Accessible.name: "Borrar"
 		Accessible.description: "Elimina el texto seleccionado"
 		enabled: control.readOnly === false && control.selectedText.length > 0
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/backspace.svg"
 		text: "Borrar"
@@ -59,7 +55,6 @@ Menu {
 		Accessible.name: "Borrar todo"
 		Accessible.description: "Elimina todo el contenido del cuadro de texto"
 		enabled: control.readOnly === false && control.text.length > 0
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/eraser.svg"
 		text: "Borrar todo"
@@ -72,7 +67,6 @@ Menu {
 		Accessible.name: "Seleccionar todo"
 		Accessible.description: "Selecciona todo el contenido en el cuadro de texto"
 		enabled: control.text.length > 0
-		height: tamanoIconos === 48 ? 48 : 38
 		hoverEnabled: true
 		icon.source: "qrc:/svg/crop-alt.svg"
 		text: "Seleccionar todo"

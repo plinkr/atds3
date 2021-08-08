@@ -5,19 +5,22 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
 import QtMultimedia 5.12
-import cu.atds3 1.0
+import cu.atds3.librerias 1.0
 import "qrc:/qml/configuracion"
 import "qrc:/qml/principal"
 
 
 ApplicationWindow {
-//	property bool orientacionHorizontal: (ventanaPrincipal.width > ventanaPrincipal.height)
-    property bool orientacionHorizontal: true
+	property bool orientacionHorizontal: width > 649
+	property bool sistemaOperativoAndroid: Qt.platform.os.toLowerCase() === "android"
 	property color colorPrimario: Material.color(colorTemaPrimario(), Material.Shade800)
 	property int colorAcento: colorTemaPrimario()
-	property int tamanoIconos: obtenerTamanoIconos()
 	property string estadoListadoCategorias: configuraciones.valor("atds3/estadoListadoCategorias", "expandido")
-	property int categoriaActual: configuraciones.valor("atds3/ultimaCategoriaSeleccionada", 0)
+	property int categoriaActual: parseInt(configuraciones.valor("atds3/ultimaCategoriaSeleccionada", 0))
+	property string nombreCategoriaActual: ""
+	property string iconoCategoriaActual: ""
+	property string estadoDisponibilidadTodus: "perdido"
+	property string rutaSistemaDescargas: StandardPaths.writableLocation(StandardPaths.DownloadLocation)
 	property alias modeloIconoCategorias: modeloIconoCategorias
 	property alias modeloCategorias: modeloCategorias
 	property alias modeloPaquetes: modeloPaquetes
@@ -26,17 +29,19 @@ ApplicationWindow {
 	property alias pantallaCodigoVerificacion: pantallaCodigoVerificacion
 	property alias pantallaPublicarContenido: pantallaPublicarContenido
 	property alias vistaApilable: vistaApilable
-//	property alias bandejaIconos: bandejaIconos
 
 	id: ventanaPrincipal
-	font.pointSize: tamanoIconos === 48 ? 12 : 10
+	font.pointSize: tamanoFuente
 	height: 620
     width: 1080
 	visible: true
-//    visibility: Window.Maximized
 
 	Configuraciones {
 		id: configuraciones
+	}
+
+	Utiles {
+		id: utiles
 	}
 
 	function mostrarOcultarVentana() {
@@ -120,61 +125,32 @@ ApplicationWindow {
 		colorAcento = colorTemaPrimario()
 	}
 
-	function obtenerTamanoIconos() {
-		let valor = parseInt(configuraciones.valor("atds3/tamanoIconos", 0))
-
-		if (valor < 0) {
-			valor = 0;
-		}
-		if (valor > 1) {
-			valor = 1
-		}
-
-		switch (valor) {
-			case 0:
-				return 32
-			default:
-				return 48
-		}
-	}
-
-	function actualizarTamanoIconos(valor) {
-		configuraciones.establecerValor("atds3/tamanoIconos", valor)
-		tamanoIconos = obtenerTamanoIconos()
-	}
-
 	function actualizarEstadoListadoCategorias(valor) {
 		configuraciones.establecerValor("atds3/estadoListadoCategorias", valor)
 		estadoListadoCategorias = valor
 	}
 
 	function visualizarTareaIniciada(idCategoria, idPaquete, filaPaquete, filaTarea) {
-		let filaCategoria = 0
+		const registroPaquete = modeloPaquetes.obtener(filaPaquete)
 
-		for (let f = 0; f < modeloCategorias.rowCount(); f++) {
-			let registroCategoria = modeloCategorias.obtener(f)
-
-			if (registroCategoria.id === idCategoria) {
-				filaCategoria = f;
-				break;
-			}
-		}
-
-		if (pantallaPrincipal.vistaCategorias.listadoCategorias.currentIndex === filaCategoria) {
-			if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentIndex === filaPaquete) {
+		if (registroPaquete.id === idPaquete && pantallaPrincipal.vistaPaquetes !== undefined) {
+			if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentIndex !== -1) {
 				if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem !== null) {
-					pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.listadoTareas.currentIndex = filaTarea
+					if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.idPaquete === idPaquete) {
+						pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.listadoTareas.currentIndex = filaTarea
+					}
 				}
 			}
 		}
 	}
 
 	function mostrarPantallaCodigoVerificacion() {
-		pantallaCodigoVerificacion.mostrar();
+		vistaApilable.push(pantallaCodigoVerificacion)
 	}
 
 	function mostrarPantallaFalloInicioSesion(error) {
-		pantallaFalloInicioSesion.mostrar(error);
+		vistaApilable.push(pantallaFalloInicioSesion)
+		vistaApilable.currentItem.mostrar(error);
 	}
 
 	Audio {
@@ -187,8 +163,8 @@ ApplicationWindow {
 		reproductorNotificacion.play()
 	}
 
-	function actualizarIndicadorDisponibilidadTodus(estado) {
-		pantallaPrincipal.vistaCategorias.indicadorDisponibilidadTodus.state = estado
+	function actualizarEstadoDisponibilidadTodus(estado) {
+		estadoDisponibilidadTodus = estado
 	}
 
 	Material.primary: colorPrimario
@@ -218,29 +194,34 @@ ApplicationWindow {
 		id: modeloPaquetes
 	}
 
-	Configuracion {
+	Component {
 		id: pantallaConfiguracion
-		visible: false
+
+		Configuracion {}
 	}
 
-	Principal {
+	Component {
 		id: pantallaPrincipal
-		visible: false
+
+		Principal {}
 	}
 
-	CodigoVerificacion {
+	Component {
 		id: pantallaCodigoVerificacion
-		visible: false
+
+		CodigoVerificacion {}
 	}
 
-	FalloInicioSesion {
+	Component {
 		id: pantallaFalloInicioSesion
-		visible: false
+
+		FalloInicioSesion {}
 	}
 
-	PublicarContenido {
+	Component {
 		id: pantallaPublicarContenido
-		visible: false
+
+		PublicarContenido {}
 	}
 
 	StackView {
@@ -248,31 +229,16 @@ ApplicationWindow {
 		anchors.fill: parent
 		initialItem: pantallaPrincipal
 	}
-/*
-	SystemTrayIcon {
-		id: bandejaIconos
-		iconSource: "qrc:/svg/atds3.svg"
-		visible: true
-		menu: Menu {
-			MenuItem {
-				iconSource: "qrc:/svg/eye.svg"
-				text: ventanaPrincipal.visible === true ? "Ocultar" : "Mostrar"
-				onTriggered: mostrarOcultarVentana()
-			}
-			MenuSeparator {}
-			MenuItem {
-				iconSource: "qrc:/svg/window-close.svg"
-				text: "Terminar"
-				onTriggered: Qt.quit()
-			}
-		}
 
-		onActivated: mostrarOcultarVentana()
-	}
-*/
 	Component.onCompleted: {
-		let categoria = modeloCategorias.obtener(configuraciones.valor("atds3/ultimaCategoriaSeleccionada", 0))
+		let registroCategoria = modeloCategorias.obtener(categoriaActual)
 
-		modeloPaquetes.establecerFiltroCategoria(categoria.id)
+		utiles.iniciarMonitorizacionConexionTodus()
+		utiles.crearBandejaIcono()
+
+		nombreCategoriaActual = registroCategoria.titulo
+		iconoCategoriaActual = registroCategoria.icono
+
+		modeloPaquetes.establecerFiltroCategoria(registroCategoria.id)
 	}
 }

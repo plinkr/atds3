@@ -24,10 +24,6 @@ Page {
 		categoriaIcono.currentIndex = 0
 //		categoriaCanalTodus.text = ''
 //		categoriaDescargarAutomaticamente.checked = false
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
 	}
 
 	function editar(indice) {
@@ -41,12 +37,12 @@ Page {
 		categoriaIcono.currentIndex = 0
 //		categoriaCanalTodus.text = categoria.canalTodus
 //		categoriaDescargarAutomaticamente.checked = categoria.descargarAutomaticamente
-		vistaApilable.push(this)
 	}
 
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de creación y edición de una categoría"
 	Accessible.description: "Aquí se muestran los elementos necesarios para crear y editar una categoría"
+	id: panel
 	header: BarraBotones {
 		titulo: parent.titulo
 
@@ -100,6 +96,7 @@ Page {
 
 			GridLayout {
 				Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+				Layout.fillHeight: true
 				Layout.fillWidth: true
 				Layout.maximumWidth: 720
 				Layout.margins: 20
@@ -149,6 +146,7 @@ Page {
 				}
 				Label {
 					Layout.columnSpan: columnasIntegradasVistaVertical
+					Layout.fillHeight: columnasIntegradasVistaVertical === 1 ? true : false
 					visible: columnasIntegradasVistaVertical === 1
 				}
 				GridView {
@@ -160,7 +158,7 @@ Page {
 					Layout.columnSpan: columnasIntegradasVistaVertical
 					Layout.fillWidth: true
 					Layout.minimumHeight: 240
-					Layout.preferredHeight: pantallaEditarCategoria.height - 260
+					Layout.preferredHeight: panel.height - (orientacionHorizontal === true ? 260 : 290)
 					boundsBehavior: Flickable.StopAtBounds
 					clip: true
 					cellHeight: 54
@@ -249,5 +247,12 @@ Page {
 */
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		categoriaTitulo.forceActiveFocus()
 	}
 }

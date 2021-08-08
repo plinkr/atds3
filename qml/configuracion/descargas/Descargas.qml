@@ -1,7 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
-import Qt.labs.platform 1.0
+import QtQuick.Dialogs 1.2
 import "qrc:/qml/comun"
 
 
@@ -13,17 +13,6 @@ Page {
 	property alias descargasRutas: descargasRutas
 	property alias descargasParalelas: descargasParalelas
 	property alias descargasEliminarDelListadoAlFinalizar: descargasEliminarDelListadoAlFinalizar
-
-	function mostrar() {
-		descargasRutas.text = configuraciones.valor("descargas/ruta", StandardPaths.writableLocation(StandardPaths.DownloadLocation) + "/atds3")
-		dialogoCarpetas.currentFolder = descargasRutas.text
-		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 1)
-		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
 
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de configuración de las descargas"
@@ -77,6 +66,7 @@ Page {
 						readOnly: true
 					}
 					Button {
+						id: botonExaminar
 						Accessible.role: Accessible.Button
 						Accessible.name: "Examinar"
 						Accessible.description: "Muestra el cuadro de diálogo para seleccionar la ruta de guardado de las descargas"
@@ -203,13 +193,29 @@ Page {
 		}
 	}
 
-	FolderDialog {
+	FileDialog {
 		id: dialogoCarpetas
-		options: FolderDialog.ShowDirsOnly
+		title: "Seleccione la carpeta de las descargas"
+		selectExisting: true
+		selectMultiple: false
+		selectFolder: true
 
 		onAccepted: {
-			configuraciones.establecerValor("descargas/ruta", folder.toString())
-			descargasRutas.text = folder.toString()
+			let uri = decodeURIComponent(fileUrl)
+
+			configuraciones.establecerValor("descargas/ruta", uri)
+			descargasRutas.text = modeloPaquetes.rutaDesdeURI(uri)
 		}
+	}
+
+	Component.onCompleted: {
+		dialogoCarpetas.folder = configuraciones.valor("descargas/ruta", rutaSistemaDescargas + "/atds3")
+		descargasRutas.text = utiles.rutaDesdeURI(dialogoCarpetas.folder)
+		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 1)
+		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		descargasParalelas.forceActiveFocus()
 	}
 }

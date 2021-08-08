@@ -1,10 +1,13 @@
 QT += quick quickcontrols2 svg sql network websockets multimedia
 
-CONFIG += c++latest
+CONFIG += c++17
 
 unix: !android {
 	QT += widgets
 	CONFIG += x11
+}
+android {
+	QT += androidextras
 }
 windows: CONFIG += windows embed_manifest_exe
 
@@ -12,7 +15,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 1.3.0
+VERSION = 1.4.0
 windows {
 	RC_ICONS = recursos/ico/atds3.ico
 	QMAKE_TARGET_COMPANY = ATDS3
@@ -25,6 +28,7 @@ windows {
 
 HEADERS += \
 	cabeceras/configuraciones.hpp \
+	cabeceras/utiles.hpp \
 	cabeceras/http.hpp \
 	cabeceras/todus.pb.h \
 	cabeceras/todus.hpp \
@@ -36,6 +40,7 @@ HEADERS += \
 
 SOURCES += \
 	fuentes/configuraciones.cpp \
+	fuentes/utiles.cpp \
 	fuentes/http.cpp \
 	fuentes/todus.pb.cc \
 	fuentes/todus.cpp \
@@ -50,12 +55,18 @@ RESOURCES += recursos/recursos.qrc qml.qrc
 DISTFILES +=	README.md \
 				LICENSE
 
+unix: android {
+	DISTFILES +=	android-sources/AndroidManifest.xml \
+					android-sources/src/org/ekkescorner/utils/QSharePathResolver.java
+}
+
 INCLUDEPATH += cabeceras
 
-unix: QML_IMPORT_PATH += qml
-windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.0.0/qml
+unix: !android: QML_IMPORT_PATH += qml
+unix: android: QML_IMPORT_PATH += c:/proyectos/atds3-1.4.0/qml
+windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.4.0/qml
 
-unix: !android {
+unix: !android: !macx {
 	INCLUDEPATH += /usr/include /usr/local/include
 	LIBS += -lssl -lcrypto
 
@@ -80,18 +91,30 @@ unix: !android {
 	unix_desktop.path = $${QMAKE_INSTALL_PREFIX}/share/applications
 }
 
-android {
-	JAVA_HOME = C:/Program Files/Java/jdk1.8.0_291
-	ANDROID_ABIS = arm64-v8a armeabi-v7a
-	ANDROID_MIN_SDK_VERSION = 21
-	ANDROID_TARGET_SDK_VERSION = 30
-#	ANDROID_FEATURES +=
-	ANDROID_PERMISSIONS += WRITE_EXTERNAL_STORAGE INTERNET FOREGROUND_SERVICE
-	ANDROID_VERSION_CODE = 0x1000
-	ANDROID_VERSION_NAME = 1.0.0
+unix: macx {
+	ICON = recursos/icns/atds3.icns
+	INCLUDEPATH += /usr/local/Cellar/openssl@1.1/1.1.1k/include /usr/local/include
+	LIBS +=	-L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -L/usr/local/lib \
+			-lssl -lcrypto /usr/local/lib/libprotobuf.a
+}
 
-	INCLUDEPATH += C:/proyectos/protobuf-3.16.0/_construccion/android/$${ANDROID_TARGET_ARCH}/include
-	LIBS += C:/proyectos/protobuf-3.16.0/_construccion/android/$${ANDROID_TARGET_ARCH}/lib/libprotobuf.a
+android {
+	include(C:/android/sdk/android_openssl/openssl.pri)
+
+	JAVA_HOME = C:/Program Files/Java/jdk1.8.0_291
+#	ANDROID_ABIS = arm64-v8a armeabi-v7a
+	ANDROID_MIN_SDK_VERSION = 21
+	ANDROID_TARGET_SDK_VERSION = 29
+	ANDROID_PERMISSIONS = android.permission.ACCESS_NETWORK_STATE android.permission.ACCESS_WIFI_STATE android.permission.INTERNET android.permission.MANAGE_DOCUMENTS android.permission.READ_EXTERNAL_STORAGE android.permission.READ_USER_DICTIONARY android.permission.WRITE_EXTERNAL_STORAGE
+	ANDROID_VERSION_CODE = 0x1400
+	ANDROID_VERSION_NAME = 1.4.0
+	ANDROID_BUNDLED_JAR_DEPENDENCIES += jar/QtAndroid.jar jar/QtAndroidBearer.jar jar/QtAndroidExtras.jar jar/QtAndroidNetwork.jar jar/QtMultimedia.jar
+	ANDROID_PACKAGE_SOURCE_DIR = $${PWD}/android-sources
+
+	INCLUDEPATH +=	$${SSL_PATH}/static/include \
+					C:/proyectos/protobuf-3.16.0/_construccion/android/$${ANDROID_TARGET_ARCH}/include
+	LIBS +=	-L$${SSL_PATH}/latest/$${ANDROID_TARGET_ARCH} -lssl_1_1 -lcrypto_1_1 \
+			C:/proyectos/protobuf-3.16.0/_construccion/android/$${ANDROID_TARGET_ARCH}/lib/libprotobuf.a
 }
 
 windows {
@@ -99,6 +122,7 @@ windows {
 		INCLUDEPATH +=	C:/msys64/mingw64/include
 		LIBS += -LC:/msys64/mingw64/lib C:/msys64/mingw64/lib/libprotobuf.a
 	} else {
+		DEFINES += PROTOBUF_USE_DLLS
 		INCLUDEPATH +=	C:/msys64/mingw32/include
 		LIBS += -LC:/msys64/mingw32/lib -lprotobuf
 	}
@@ -108,5 +132,5 @@ windows {
 
 target.path = $${QMAKE_INSTALL_PREFIX}/bin
 INSTALLS += target
-unix: !android: INSTALLS += unix_desktop_icon unix_desktop
+unix: !android: !macx: INSTALLS += unix_desktop_icon unix_desktop
 android: include(C:/android/sdk/android_openssl/openssl.pri)

@@ -16,19 +16,6 @@ Page {
 	property alias proxyUsuario: proxyUsuario
 	property alias proxyContrasena: proxyContrasena
 
-	function mostrar() {
-		proxyActivado.checked = configuraciones.valor("proxy/activado", false)
-		proxyTipo.currentIndex = proxyTipo.indexOfValue(configuraciones.valor("proxy/tipo", 3))
-		proxyAnfitrion.text = configuraciones.valor("proxy/anfitrion", "proxy.local")
-		proxyPuerto.text = configuraciones.valor("proxy/puerto", 3128)
-		proxyUsuario.text = configuraciones.valor("proxy/usuario", "")
-		proxyContrasena.text = ""
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
-
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de información del proxy"
 	Accessible.description: "Aquí se definen las opciones del proxy a utilizar en las conexiones"
@@ -174,5 +161,18 @@ Page {
 				}
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		proxyActivado.checked = configuraciones.valor("proxy/activado", false)
+		proxyTipo.currentIndex = proxyTipo.indexOfValue(configuraciones.valor("proxy/tipo", 3))
+		proxyAnfitrion.text = configuraciones.valor("proxy/anfitrion", "proxy.local")
+		proxyPuerto.text = configuraciones.valor("proxy/puerto", 3128)
+		proxyUsuario.text = configuraciones.valor("proxy/usuario", "")
+		proxyContrasena.text = ""
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		proxyActivado.forceActiveFocus()
 	}
 }

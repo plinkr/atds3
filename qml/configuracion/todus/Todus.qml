@@ -16,27 +16,15 @@ Page {
 	property alias toDusProgramaPiscinaFichasInternet: toDusProgramaPiscinaFichasInternet
 	property alias pantallaPPFInformacion: pantallaPPFInformacion
 
-	function mostrar() {
-		telefonoAnterior = configuraciones.valor("todus/telefono", "")
-		toDusTelefono.text = telefonoAnterior
-		toDusFichaAcceso.text = configuraciones.valor("todus/fichaAcceso", "")
-		toDusProgramaPiscinaFichas.checked = configuraciones.valor("todus/programaPiscinaFichas", false)
-		toDusProgramaPiscinaFichasInternet.checked = configuraciones.valor("todus/programaPiscinaFichasInternet", true)
-		toDusProgramaPiscinaFichasLocal.text = configuraciones.valor("todus/programaPiscinaFichasLocal", "")
-		vistaApilable.push(this)
-		deslizante.contentY = 1
-		deslizante.flick(0, 1)
-		deslizante.contentY = 0
-	}
-
 	Accessible.role: Accessible.Pane
 	Accessible.name: "Pantalla de configuración del servicio toDus"
 	Accessible.description: "Aquí se definen las opciones que definen el comportamiento del servicio toDus"
 	header: BarraBotones { titulo: parent.titulo }
 
-	PPFInformacion {
+	Component {
 		id: pantallaPPFInformacion
-		visible: false
+
+		PPFInformacion {}
 	}
 
 	Flickable {
@@ -105,7 +93,7 @@ Page {
 						Layout.alignment: Qt.AlignCenter
 						Layout.columnSpan: 2
 						Layout.topMargin: 10
-						enabled: toDusTelefono.text.length === 8 && toDusTelefono.text !== telefonoAnterior
+						enabled: toDusTelefono.text.length === 8
 						flat: true
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
@@ -189,7 +177,7 @@ Page {
 							hoverEnabled: true
 							icon.source: "qrc:/svg/question-circle.svg"
 
-							onClicked: pantallaPPFInformacion.mostrar()
+							onClicked: vistaApilable.push(pantallaPPFInformacion)
 						}
 					}
 
@@ -275,5 +263,18 @@ Page {
 				}
 			}
 		}
+	}
+
+	Component.onCompleted: {
+		telefonoAnterior = configuraciones.valor("todus/telefono", "")
+		toDusTelefono.text = telefonoAnterior
+		toDusFichaAcceso.text = configuraciones.valor("todus/fichaAcceso", "")
+		toDusProgramaPiscinaFichas.checked = configuraciones.valor("todus/programaPiscinaFichas", false)
+		toDusProgramaPiscinaFichasInternet.checked = configuraciones.valor("todus/programaPiscinaFichasInternet", true)
+		toDusProgramaPiscinaFichasLocal.text = configuraciones.valor("todus/programaPiscinaFichasLocal", "")
+		deslizante.contentY = 1
+		deslizante.flick(0, 1)
+		deslizante.contentY = 0
+		toDusTelefono.forceActiveFocus()
 	}
 }

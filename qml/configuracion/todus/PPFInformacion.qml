@@ -40,8 +40,8 @@ Page {
 				Image {
 					Layout.fillWidth: true
 					fillMode: Image.PreserveAspectFit
-					sourceSize.height: tamanoIconos === 48 ? 128 : 64
-					sourceSize.width: tamanoIconos === 48 ? 128 : 64
+					sourceSize.height: 80
+					sourceSize.width: 80
 					source: "qrc:/svg/atom.svg"
 				}
 
