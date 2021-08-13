@@ -30,5 +30,6 @@
         <file>qml/principal/FalloInicioSesion.qml</file>
         <file>qml/principal/BotonesPaquetes.qml</file>
         <file>qml/principal/BotonesTransferencias.qml</file>
+        <file>qml/configuracion/programacion/Programacion.qml</file>
     </qresource>
 </RCC>

@@ -204,7 +204,7 @@ Page {
 			let uri = decodeURIComponent(fileUrl)
 
 			configuraciones.establecerValor("descargas/ruta", uri)
-			descargasRutas.text = modeloPaquetes.rutaDesdeURI(uri)
+			descargasRutas.text = utiles.rutaDesdeURI(uri)
 		}
 	}
 

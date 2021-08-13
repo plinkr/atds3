@@ -86,9 +86,9 @@ Page {
 					onDropped: {
 						if (drop.hasUrls === true) {
 							for (let url of drop.urls) {
-								let ruta = modeloPaquetes.rutaDesdeURI(decodeURIComponent(url.toString()))
+								let ruta = utiles.rutaDesdeURI(url.toString())
 
-								modeloArchivosPublicar.append({ nombre: decodeURIComponent(ruta.substring(ruta.lastIndexOf("/") + 1)), ruta: ruta });
+								modeloArchivosPublicar.append({ nombre: ruta.substring(ruta.lastIndexOf("/") + 1), ruta: ruta });
 							}
 						}
 					}

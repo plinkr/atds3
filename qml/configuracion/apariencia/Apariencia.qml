@@ -4,15 +4,11 @@ import QtQuick.Controls 2.12
 
 
 Dialog {
-	id: dialogoApariencia
 	anchors.centerIn: parent
 	modal: true
 	title: "Apariencia"
 
 	standardButtons: Dialog.Ok
-	onAccepted: {
-		dialogoApariencia.close()
-	}
 
 	ColumnLayout {
 		spacing: 20
@@ -49,5 +45,9 @@ Dialog {
 				}
 			}
 		}
+	}
+
+	onAccepted: {
+		close()
 	}
 }

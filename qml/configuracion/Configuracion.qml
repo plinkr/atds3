@@ -6,6 +6,7 @@ import "qrc:/qml/configuracion/apariencia"
 import "qrc:/qml/configuracion/todus"
 import "qrc:/qml/configuracion/descargas"
 import "qrc:/qml/configuracion/publicaciones"
+import "qrc:/qml/configuracion/programacion"
 import "qrc:/qml/configuracion/notificaciones"
 import "qrc:/qml/configuracion/proxy"
 import "qrc:/qml/configuracion/avanzadas"
@@ -19,6 +20,8 @@ Page {
 	property alias pantallaConfiguracionTodus: pantallaConfiguracionTodus
 	property alias pantallaConfiguracionDescargas: pantallaConfiguracionDescargas
 	property alias pantallaConfiguracionPublicaciones: pantallaConfiguracionPublicaciones
+	property alias pantallaConfiguracionProgramacion: pantallaConfiguracionProgramacion
+	property alias pantallaConfiguracionNotificaciones: pantallaConfiguracionNotificaciones
 	property alias pantallaConfiguracionProxy: pantallaConfiguracionProxy
 	property alias pantallaConfiguracionAvanzadas: pantallaConfiguracionAvanzadas
 	property alias pantallaConfiguracionInformacion: pantallaConfiguracionInformacion
@@ -72,6 +75,11 @@ Page {
 							icono: "qrc:/svg/cloud-upload-alt.svg"
 							titulo: "Publicaciones"
 							descripcion: "Define las opciones del comportamiento de las publicaciones."
+						}
+						ListElement {
+							icono: "qrc:/svg/business-time.svg"
+							titulo: "Programación"
+							descripcion: "Define las opciones de la programación de acciones."
 						}
 						ListElement {
 							icono: "qrc:/svg/bell.svg"
@@ -128,16 +136,19 @@ Page {
 								case 3: // Publicaciones
 									vistaApilable.push(pantallaConfiguracionPublicaciones)
 									break;
-								case 4: // Notificaciones
+								case 4: // Programación
+									vistaApilable.push(pantallaConfiguracionProgramacion)
+									break;
+								case 5: // Notificaciones
 									vistaApilable.push(pantallaConfiguracionNotificaciones)
 									break;
-								case 5: // Proxy
+								case 6: // Proxy
 									vistaApilable.push(pantallaConfiguracionProxy)
 									break;
-								case 6: // Avanzadas
+								case 7: // Avanzadas
 									vistaApilable.push(pantallaConfiguracionAvanzadas)
 									break;
-								case 7: // Informacion
+								case 8: // Informacion
 									vistaApilable.push(pantallaConfiguracionInformacion)
 									break;
 								default:
@@ -170,6 +181,12 @@ Page {
 		id: pantallaConfiguracionPublicaciones
 
 		Publicaciones {}
+	}
+
+	Component {
+		id: pantallaConfiguracionProgramacion
+
+		Programacion {}
 	}
 
 	Component {

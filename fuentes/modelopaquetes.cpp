@@ -1,6 +1,7 @@
 #include "modelopaquetes.hpp"
 #include "modelocategorias.hpp"
 #include "modelotareas.hpp"
+#include "utiles.hpp"
 #include "main.hpp"
 #include <ctime>
 #include <QApplication>
@@ -88,6 +89,10 @@ bool ModeloPaquetes::setData(const QModelIndex &indice, const QVariant &valor, i
 	emit dataChanged(indice, indice, {rolModificado});
 
 	return true;
+}
+
+void ModeloPaquetes::establecerObjetoUtiles(Utiles *objeto) {
+	_utiles = objeto;
 }
 
 void ModeloPaquetes::establecerFiltroCategoria(int categoria) {
@@ -239,18 +244,22 @@ void ModeloPaquetes::actualizarCampos(int fila, const QVariantMap &campos) {
 }
 
 bool ModeloPaquetes::corregirFila(int &fila, qint64 id) {
-	if (QSqlTableModel::data(index(fila, 0)).toInt() != id) {
-		for (int f = 0; f < rowCount(); f++) {
-			if (QSqlTableModel::data(index(f, 0)).toInt() == id) {
-				fila = f;
-				return true;
+	if (fila < rowCount()) {
+		if (QSqlTableModel::data(index(fila, 0)).toInt() != id) {
+			for (int f = 0; f < rowCount(); f++) {
+				if (QSqlTableModel::data(index(f, 0)).toInt() == id) {
+					fila = f;
+					return true;
+				}
 			}
+
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void ModeloPaquetes::eliminar(int fila) {
@@ -287,7 +296,7 @@ void ModeloPaquetes::eliminarTodas() {
 
 void ModeloPaquetes::agregarDescargasDesdeArchivos(QList<QUrl> archivos) {
 	for (const QUrl &uri : archivos) {
-		QString ruta = _utiles.rutaDesdeURI(uri.toString());
+		QString ruta = _utiles->rutaDesdeURI(uri.toString());
 
 		if (ruta.endsWith(".txt") == true) {
 			procesarArchivoDescargaClasico(ruta);
@@ -481,6 +490,43 @@ void ModeloPaquetes::pausarTodas() {
 	qint64 idPaquete = 0;
 
 	solicitudSQL.exec("SELECT id FROM paquetes WHERE (" + filtroCategoria + " AND (estado = " + QString::number(Estados::EnEsperaIniciar) + " OR estado = " + QString::number(Estados::Iniciado) + "))");
+	while (solicitudSQL.next() == true) {
+		idPaquete = solicitudSQL.value("id").toLongLong();
+		eliminarPaqueteDelListado(idPaquete);
+
+		if (_modelosTareas[idPaquete]) {
+			_modelosTareas[idPaquete]->select();
+		}
+	}
+
+	select();
+
+	procesarColaEjecucion();
+}
+
+void ModeloPaquetes::iniciarTodosPaquetes() {
+	QSqlQuery solicitudSQLPaquetes;
+	QSqlQuery solicitudSQLTareas;
+	QString filtrosEstados = "(estado == " + QString::number(Estados::Pausado) + " OR estado == " + QString::number(Estados::Error) + ")";
+
+	solicitudSQLPaquetes.exec("UPDATE paquetes SET estado = " + QString::number(Estados::EnEsperaIniciar) + ", error = false WHERE (" + filtrosEstados + ")");
+	solicitudSQLPaquetes.exec("SELECT * FROM paquetes WHERE (estado = " + QString::number(Estados::EnEsperaIniciar) + ")");
+	while (solicitudSQLPaquetes.next() == true) {
+		agregarPaqueteAlListado(solicitudSQLPaquetes.value("id").toLongLong(), 0);
+	}
+
+	select();
+
+	procesarColaEjecucion();
+}
+
+void ModeloPaquetes::pausarTodosPaquetes() {
+	QSqlQuery solicitudSQL;
+	QList<qint64> _idPaquetes;
+	QString filtroPaquetes;
+	qint64 idPaquete = 0;
+
+	solicitudSQL.exec("SELECT id FROM paquetes WHERE (estado = " + QString::number(Estados::EnEsperaIniciar) + " OR estado = " + QString::number(Estados::Iniciado) + ")");
 	while (solicitudSQL.next() == true) {
 		idPaquete = solicitudSQL.value("id").toLongLong();
 		eliminarPaqueteDelListado(idPaquete);
@@ -899,17 +945,17 @@ void ModeloPaquetes::eventoPaqueteActualizarCampos(qint64 idPaquete) {
 					}
 
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
-						_utiles.notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
 					} else {
-						_utiles.notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
 					}
 				}
 
 				if (error == true) {
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
-						_utiles.notificar("FinalizacionErroneaPaquete", true, "Paquete de publicación detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+						_utiles->notificar("FinalizacionErroneaPaquete", true, "Paquete de publicación detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
 					} else {
-						_utiles.notificar("FinalizacionErroneaPaquete", true, "Paquete de descarga detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
+						_utiles->notificar("FinalizacionErroneaPaquete", true, "Paquete de descarga detenido con error", "Título: " + _paquetes[idPaquete]->nombre, "finalizacion-erronea-paquete.mp3");
 					}
 				}
 
@@ -963,9 +1009,9 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 			QMetaObject::invokeMethod(_qmlRaiz, "visualizarTareaIniciada", Qt::QueuedConnection, Q_ARG(QVariant, _paquetes[tarea->paquete]->categoria), Q_ARG(QVariant, tarea->paquete), Q_ARG(QVariant, _paquetes[tarea->paquete]->fila), Q_ARG(QVariant, tarea->fila));
 
 			if (publicacion == false) {
-				_utiles.notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles->notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			} else {
-				_utiles.notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles->notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
 			}
 		}
 	}
@@ -1081,10 +1127,10 @@ void ModeloPaquetes::eventoTareaDetenida(qint64 id) {
 
 				if (publicacion == true) {
 					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de publicación detenida con error" << std::endl;
-					_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+					_utiles->notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
 				} else {
 					emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea de descarga detenida con error" << std::endl;
-					_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+					_utiles->notificar("FinalizacionErroneaTarea", true, "Tarea de descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 				}
 			} else {
 				if (_modelosTareas[tarea->paquete]) {
@@ -1218,9 +1264,9 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 			}
 
 			if (publicacion == true) {
-				_utiles.notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
 			} else {
-				_utiles.notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
 			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
@@ -1251,9 +1297,9 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 			}
 
 			if (publicacion == true) {
-				_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
+				_utiles->notificar("FinalizacionErroneaTarea", true, "Tarea de publicación detenida con error", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta, "finalizacion-erronea-tarea.mp3");
 			} else {
-				_utiles.notificar("FinalizacionErroneaTarea", true, "Tarea des descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
+				_utiles->notificar("FinalizacionErroneaTarea", true, "Tarea des descarga detenida con error", "Nombre: " + tarea->nombre, "finalizacion-erronea-tarea.mp3");
 			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);
@@ -1378,10 +1424,10 @@ void ModeloPaquetes::agregarPaqueteAlListado(qint64 id, int fila) {
 
 		if (tipo == Tipos::Publicacion) {
 			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Publicacion. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << ". Tamano: " << tamano << std::endl;
-			_utiles.notificar("InicializacionPaquete", false, "Paquete de publicación iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
+			_utiles->notificar("InicializacionPaquete", false, "Paquete de publicación iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		} else {
 			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
-			_utiles.notificar("InicializacionPaquete", false, "Paquete de descarga iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
+			_utiles->notificar("InicializacionPaquete", false, "Paquete de descarga iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		}
 	}
 }

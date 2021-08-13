@@ -276,7 +276,7 @@ void HTTP::eventoFinalizado() {
 				_error = false;
 				emit finalizado(_id);
 			} else {
-				if (_metodo == HTTP::Metodo::OBTENER) {
+				if (_metodo == HTTP::Metodo::OBTENER && _codigoHTTP < 300) {
 					emit detenidoParaReiniciar(_id);
 				} else {
 					emit detenido(_id);

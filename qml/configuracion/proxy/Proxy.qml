@@ -164,7 +164,7 @@ Page {
 	}
 
 	Component.onCompleted: {
-		proxyActivado.checked = configuraciones.valor("proxy/activado", false)
+		proxyActivado.checked = parseInt(configuraciones.valor("proxy/activado", false))
 		proxyTipo.currentIndex = proxyTipo.indexOfValue(configuraciones.valor("proxy/tipo", 3))
 		proxyAnfitrion.text = configuraciones.valor("proxy/anfitrion", "proxy.local")
 		proxyPuerto.text = configuraciones.valor("proxy/puerto", 3128)

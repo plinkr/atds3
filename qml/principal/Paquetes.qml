@@ -63,12 +63,14 @@ Pane {
 			if (drop.hasUrls === true) {
 				if (vistaCategorias.listadoCategorias.currentIndex !== 2) {
 					if (vistaCategorias.listadoCategorias.currentIndex === 1) {
-						pantallaPublicarContenido.mostrar()
-						pantallaPublicarContenido.agregarArchivosAlListado(drop.urls)
+						vistaApilable.push(pantallaPublicarContenido)
+						vistaApilable.currentItem.agregarArchivosAlListado(drop.urls)
 					} else {
 						modeloPaquetes.agregarDescargasDesdeArchivos(drop.urls)
 					}
 				}
+
+				drop.acceptProposedAction()
 			}
 		}
 

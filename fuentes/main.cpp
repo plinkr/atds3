@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	_organizacionDominio = "atds3.cu";
 	_aplicacionNombreCorto = "atds3";
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
-	_aplicacionVersion ="1.4.0";
+	_aplicacionVersion ="1.5.0";
 	_agenteUsuarioTodus = "ToDus 0.40.19";
 	_numeroVersionTodus = "21823";
 #ifdef Q_OS_WIN
@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
 	maquinaQML.rootContext()->setContextProperty("_agenteUsuarioTodus", _agenteUsuarioTodus);
 	maquinaQML.rootContext()->setContextProperty("_numeroVersionTodus", _numeroVersionTodus);
 #ifdef Q_OS_ANDROID
-	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 12);
+	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 13);
 #else
-	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 10);
+	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 11);
 #endif
 	QObject::connect(&maquinaQML, &QQmlApplicationEngine::objectCreated, &app, [&](QObject *obj, const QUrl &objUrl) {
 		if (!obj && url == objUrl) {

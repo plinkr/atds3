@@ -753,6 +753,7 @@ void toDus::eventoPPFConectado() {
 
 	if (_fichaAccesoActual == _configuraciones.valor("todus/fichaAcceso", "").toByteArray() && _fichaAccesoActual.size() > 0) {
 		socaloWebAportarFicha();
+		return;
 	}
 
 	if (_listadoSolicitudesEnlacesFirmados.size() == 0) {
@@ -822,6 +823,10 @@ void toDus::socaloWebAportarFicha() {
 
 		_socaloWeb.sendTextMessage(QString("{\"accion\":\"aportarFicha\",\"ficha\":\"%1\",\"expiracion\":%2}").arg(_configuraciones.valor("todus/fichaAcceso").toString()).arg(_configuraciones.valor("todus/fichaAccesoTiempoExpiracion").toLongLong()));
 		_socaloWebFichaAportada = true;
+
+		if (_listadoSolicitudesEnlacesFirmados.size() == 0) {
+			_socaloWeb.close();
+		}
 	}
 }
 

@@ -3,8 +3,7 @@ QT += quick quickcontrols2 svg sql network websockets multimedia
 CONFIG += c++17
 
 unix: !android {
-	QT += widgets
-	CONFIG += x11
+	QT += widgets x11extras
 }
 android {
 	QT += androidextras
@@ -15,7 +14,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 1.4.0
+VERSION = 1.5.0
 windows {
 	RC_ICONS = recursos/ico/atds3.ico
 	QMAKE_TARGET_COMPANY = ATDS3
@@ -63,12 +62,12 @@ unix: android {
 INCLUDEPATH += cabeceras
 
 unix: !android: QML_IMPORT_PATH += qml
-unix: android: QML_IMPORT_PATH += c:/proyectos/atds3-1.4.0/qml
-windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.4.0/qml
+unix: android: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
+windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
 
 unix: !android: !macx {
 	INCLUDEPATH += /usr/include /usr/local/include
-	LIBS += -lssl -lcrypto
+	LIBS += -lX11 -lXext -lssl -lcrypto
 
 	CONFIG(protobuf): LIBS += -lprotobuf
 	!CONFIG(protobuf) {

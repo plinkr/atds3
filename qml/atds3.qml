@@ -131,13 +131,22 @@ ApplicationWindow {
 	}
 
 	function visualizarTareaIniciada(idCategoria, idPaquete, filaPaquete, filaTarea) {
-		const registroPaquete = modeloPaquetes.obtener(filaPaquete)
-
-		if (registroPaquete.id === idPaquete && pantallaPrincipal.vistaPaquetes !== undefined) {
+		if (modeloPaquetes.rowCount() > 0) {
 			if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentIndex !== -1) {
-				if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem !== null) {
-					if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.idPaquete === idPaquete) {
-						pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.listadoTareas.currentIndex = filaTarea
+				let registroPaquete
+				let fila
+
+				for (fila = 0; fila < modeloPaquetes.rowCount(); fila++) {
+					registroPaquete = modeloPaquetes.obtener(filaPaquete)
+
+					if (registroPaquete.id === idPaquete) {
+						if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem !== null) {
+							if (pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.idPaquete === idPaquete) {
+								pantallaPrincipal.vistaPaquetes.listadoPaquetes.currentItem.listadoTareas.currentIndex = filaTarea
+							}
+						}
+
+						break;
 					}
 				}
 			}
@@ -200,10 +209,8 @@ ApplicationWindow {
 		Configuracion {}
 	}
 
-	Component {
+	Principal {
 		id: pantallaPrincipal
-
-		Principal {}
 	}
 
 	Component {
@@ -233,8 +240,11 @@ ApplicationWindow {
 	Component.onCompleted: {
 		let registroCategoria = modeloCategorias.obtener(categoriaActual)
 
+		utiles.establecerObjetoModeloPaquetes(modeloPaquetes)
 		utiles.iniciarMonitorizacionConexionTodus()
 		utiles.crearBandejaIcono()
+
+		modeloPaquetes.establecerObjetoUtiles(utiles)
 
 		nombreCategoriaActual = registroCategoria.titulo
 		iconoCategoriaActual = registroCategoria.icono

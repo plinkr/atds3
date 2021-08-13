@@ -1,16 +1,16 @@
 #ifndef _MODELOPAQUETES_HPP
 #define _MODELOPAQUETES_HPP
 
-#include "todus.hpp"
-#include "http.hpp"
-#include "utiles.hpp"
 #include <QSqlTableModel>
 #include <QSettings>
 #include <QUrl>
 #include <QFile>
+#include "todus.hpp"
+#include "http.hpp"
 
 
 class ModeloTareas;
+class Utiles;
 
 class Paquete : public QObject {
 	Q_OBJECT
@@ -84,6 +84,8 @@ class ModeloPaquetes : public QSqlTableModel {
 		QVariant data(const QModelIndex &indice, int rol = Qt::DisplayRole) const;
 		bool setData(const QModelIndex &indice, const QVariant &valor, int rol = Qt::EditRole);
 
+		Q_INVOKABLE void establecerObjetoUtiles(Utiles *objeto);
+
 		Q_INVOKABLE void establecerFiltroCategoria(int categoria);
 		Q_INVOKABLE void establecerModeloTareas(qint64 paquete, ModeloTareas *modelo);
 		Q_INVOKABLE void eliminarModeloTareas(qint64 paquete);
@@ -102,6 +104,8 @@ class ModeloPaquetes : public QSqlTableModel {
 		Q_INVOKABLE void pausar(int fila);
 		Q_INVOKABLE void iniciarTodas();
 		Q_INVOKABLE void pausarTodas();
+		void iniciarTodosPaquetes();
+		void pausarTodosPaquetes();
 		Q_INVOKABLE void confirmarCodigo(const QString &codigo);
 		void iniciarDescarga(qint64 paquete, qint64 id, const QString &enlace);
 		void iniciarPublicacion(qint64 paquete, qint64 id, const QString &enlace, const QString &enlaceFirmado);
@@ -116,7 +120,7 @@ class ModeloPaquetes : public QSqlTableModel {
 		QMap<qint64, QPointer<Paquete>> _paquetes;
 		QMap<qint64, QPointer<Tarea>> _tareasPublicaciones;
 		QMap<qint64, QPointer<Tarea>> _tareasDescargas;
-		Utiles _utiles;
+		Utiles *_utiles;
 
 		void procesarArchivoDescargaClasico(const QString &ruta);
 		void actualizarCampo(int fila, const QString &campo, const QVariant &valor);
