@@ -70,6 +70,7 @@ Page {
 						Accessible.role: Accessible.Button
 						Accessible.name: "Examinar"
 						Accessible.description: "Muestra el cuadro de diálogo para seleccionar la ruta de guardado de las descargas"
+						enabled: sistemaOperativoAndroid === false
 						flat: true
 						focus: true
 						focusPolicy: Qt.StrongFocus
@@ -209,8 +210,9 @@ Page {
 	}
 
 	Component.onCompleted: {
-		dialogoCarpetas.folder = configuraciones.valor("descargas/ruta", rutaSistemaDescargas + "/atds3")
-		descargasRutas.text = utiles.rutaDesdeURI(dialogoCarpetas.folder)
+		let ruta = configuraciones.valor("descargas/ruta", rutaSistemaDescargas + "/atds3")
+		dialogoCarpetas.folder = ruta
+		descargasRutas.text = utiles.rutaDesdeURI(ruta)
 		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 1)
 		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
 		deslizante.contentY = 1

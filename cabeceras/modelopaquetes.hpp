@@ -111,7 +111,6 @@ class ModeloPaquetes : public QSqlTableModel {
 		void iniciarPublicacion(qint64 paquete, qint64 id, const QString &enlace, const QString &enlaceFirmado);
 		void procesarColaEjecucion();
 		Q_INVOKABLE void iniciarSesionToDus();
-		Q_INVOKABLE void crearDirectorio(const QString &ubicacion);
 
 	private:
 		int _categoria;

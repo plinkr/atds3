@@ -1,4 +1,3 @@
-import Qt.labs.platform 1.0
 import QtQuick 2.12
 import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
@@ -311,9 +310,9 @@ Pane {
 			text: "Abrir ubicación"
 			onTriggered: {
 				let registroCategoria = modeloCategorias.obtener(listadoCategorias.currentIndex)
-				let ubicacion = configuraciones.valor("descargas/ruta", StandardPaths.writableLocation(StandardPaths.DownloadLocation) + "/atds3") + "/" + registroCategoria.titulo
+				let ubicacion = configuraciones.valor("descargas/ruta", rutaSistemaDescargas + "/atds3") + "/" + registroCategoria.titulo
 
-				modeloPaquetes.crearDirectorio(ubicacion)
+				utiles.crearDirectorio(ubicacion)
 				Qt.openUrlExternally(ubicacion)
 			}
 		}

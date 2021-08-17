@@ -9,7 +9,7 @@
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
 	<application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="Administrador de Transferencias para toDus (S3)" android:extractNativeLibs="true" android:icon="@drawable/icon" android:requestLegacyExternalStorage="true">
-		<activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="org.qtproject.qt5.android.bindings.QtActivity" android:label="ATDS3" android:screenOrientation="unspecified" android:launchMode="singleTop">
+		<activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:name="cu.atds3.android.ActividadExtendida" android:label="ATDS3" android:screenOrientation="unspecified" android:launchMode="singleTop">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
 				<category android:name="android.intent.category.LAUNCHER"/>

@@ -9,7 +9,6 @@ Page {
 	property string titulo: "toDus"
 	property int alineacionColumnasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? Qt.AlignRight | Qt.AlignBaseline : Qt.AlignLeft | Qt.AlignBaseline
 	property int columnasIntegradasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? 1 : 2
-	property string telefonoAnterior
 	property alias toDusTelefono: toDusTelefono
 	property alias toDusFichaAcceso: toDusFichaAcceso
 	property alias toDusProgramaPiscinaFichas: toDusProgramaPiscinaFichas
@@ -66,13 +65,14 @@ Page {
 
 						onEditingFinished: {
 							configuraciones.establecerValor("todus/telefono", text)
-
+/*
 							if (text.length == 0) {
 								configuraciones.eliminar("todus/fichaAccesoTiempoExpiracion")
 								configuraciones.eliminar("todus/fichaAcceso")
 								configuraciones.eliminar("todus/fichaSolicitud")
 								toDusFichaAcceso.text = ""
 							}
+*/
 						}
 					}
 					Label {
@@ -266,8 +266,7 @@ Page {
 	}
 
 	Component.onCompleted: {
-		telefonoAnterior = configuraciones.valor("todus/telefono", "")
-		toDusTelefono.text = telefonoAnterior
+		toDusTelefono.text = configuraciones.valor("todus/telefono", "")
 		toDusFichaAcceso.text = configuraciones.valor("todus/fichaAcceso", "")
 		toDusProgramaPiscinaFichas.checked = configuraciones.valor("todus/programaPiscinaFichas", false)
 		toDusProgramaPiscinaFichasInternet.checked = configuraciones.valor("todus/programaPiscinaFichasInternet", true)

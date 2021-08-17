@@ -8,18 +8,18 @@
 #include <QStandardPaths>
 #include <QTime>
 #include <QThread>
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID)
 #include <QProcess>
+#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 #include <QX11Info>
 #include <X11/Xlib.h>
 #include <X11/extensions/dpms.h>
-#endif // (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID)
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#endif // (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_MACOS)
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <dev/acpica/acpiio.h>
-#endif // defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#endif // defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_MACOS)
 #ifdef Q_OS_MACOS
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
@@ -177,7 +177,7 @@ void Utiles::ejecutarAccionApagarPantalla() {
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_WINDOWS)
 	emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Apangando la pantalla..." << std::endl;
 #endif
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID)
+#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 	Display *pantalla = QX11Info::display();
 
 	DPMSEnable(pantalla);
@@ -205,7 +205,7 @@ void Utiles::ejecutarAccionSuspender() {
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_WINDOWS)
 	emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Suspendiendo hacia la RAM..." << std::endl;
 #endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 	BSDSolicitarEstadoACPI(EstadosACPI::SuspenderHaciaRAM);
 #endif
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
@@ -232,7 +232,7 @@ void Utiles::ejecutarAccionHibernar() {
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_WINDOWS)
 	emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Suspendiendo hacia el disco duro..." << std::endl;
 #endif
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 	BSDSolicitarEstadoACPI(EstadosACPI::SuspenderHaciaDiscoDuro);
 #endif
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
@@ -259,10 +259,11 @@ void Utiles::ejecutarAccionApagar() {
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_WINDOWS)
 	emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Apagando el sistema..." << std::endl;
 #endif
-#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID)
+#if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 	QProcess::execute("shutdown", QStringList { "-h", "now" });
 #endif
 #ifdef Q_OS_MACOS
+	QProcess::execute("shutdown", QStringList { "-h", "now" });
 #endif
 #ifdef Q_OS_WINDOWS
 	if (WindowsActivarPrivilegios("SeShutdownPrivilege") == true) {
@@ -271,7 +272,7 @@ void Utiles::ejecutarAccionApagar() {
 #endif
 }
 
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 void Utiles::BSDSolicitarEstadoACPI(int estadoACPI) {
 	int daACPI = open("/dev/acpi", O_RDWR);
 
@@ -333,6 +334,27 @@ void Utiles::restablecerDatosFabrica() {
 	QApplication::quit();
 }
 
+void Utiles::crearDirectorio(const QString &ubicacion) {
+	QDir directorio;
+	QString ruta = rutaDesdeURI(ubicacion);
+
+	otorgarPermisosDirectorio(ubicacion);
+
+	if (directorio.exists(ruta) == false) {
+		directorio.mkpath(ruta);
+	}
+}
+
+void Utiles::otorgarPermisosDirectorio(const QString &ruta) {
+#ifdef Q_OS_ANDROID
+	QAndroidJniObject jniRuta = QAndroidJniObject::fromString(ruta);
+
+	QtAndroid::androidActivity().callMethod<void>("otorgarPermisosDirectorio", "(Ljava/lang/String;)V", jniRuta.object<jstring>());
+#else
+	Q_UNUSED(ruta);
+#endif
+}
+
 QString Utiles::rutaDesdeURI(const QString &uri) {
 	QString ruta = QByteArray::fromPercentEncoding(uri.toUtf8());
 
@@ -343,7 +365,7 @@ QString Utiles::rutaDesdeURI(const QString &uri) {
 	ruta = QAndroidJniObject::callStaticObjectMethod(
 			  "org/ekkescorner/utils/QSharePathResolver", "getRealPathFromURI",
 			  "(Landroid/content/Context;Landroid/net/Uri;)Ljava/lang/String;",
-			  QtAndroid::androidContext().object(), jniUri.object<jobject>()
+			  QtAndroid::androidContext().object(), jniUri.object()
 	).toString();
 #else
 #ifdef Q_OS_WINDOWS
@@ -351,10 +373,28 @@ QString Utiles::rutaDesdeURI(const QString &uri) {
 #else
 	ruta.replace("file://", "");
 #endif // Q_OS_WINDOWS
-
 #endif // Q_OS_ANDROID
 
 	return ruta;
+}
+
+int Utiles::androidAbrirArchivo(const QString &uri, const QString &modo) {
+#ifdef Q_OS_ANDROID
+	QAndroidJniObject jniUri = QAndroidJniObject::fromString(uri);
+	QAndroidJniObject jniModo = QAndroidJniObject::fromString(modo);
+	int fd = QAndroidJniObject::callStaticObjectMethod(
+			  "cu/atds3/android/Archivos", "abrirArchivo",
+			  "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+			  QtAndroid::androidContext().object(), jniUri.object(), jniModo.object()
+	).toString().toInt();
+
+	return fd;
+#else
+	Q_UNUSED(uri);
+	Q_UNUSED(modo);
+
+	return -1;
+#endif // Q_OS_ANDROID
 }
 
 void Utiles::activarProgramacionInicioColaTransferencias(bool activar) {

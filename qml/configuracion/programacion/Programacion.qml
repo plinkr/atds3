@@ -99,59 +99,6 @@ Page {
 					}
 
 					Label {
-						Layout.columnSpan: 2
-					}
-
-					Switch {
-						id: colaTransferenciasFinalizar
-						Accessible.role: Accessible.CheckBox
-						Accessible.name: text
-						Accessible.description: "Define si se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no"
-						Layout.alignment: alineacionColumnasVistaVertical
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						enabled: colaTransferenciasInicio.checked
-						focus: true
-						focusPolicy: Qt.StrongFocus
-						hoverEnabled: true
-						text: "Finalización automática?"
-
-						onToggled: {
-							configuraciones.establecerValor("programacion/colaTransferenciasFinalizar", checked)
-							utiles.activarProgramacionFinalizarColaTransferencias(checked)
-						}
-					}
-					EntradaLineaTexto {
-						id: colaTransferenciasFinalizarHora
-						Accessible.name: "Hora de finalización de la cola de las transferencias"
-						Accessible.description: "Define la hora cuando se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no"
-						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
-						Layout.columnSpan: columnasIntegradasVistaVertical > 1 ? 2 : 1
-						Layout.fillWidth: true
-						Layout.maximumWidth: 75
-						enabled: colaTransferenciasInicio.checked === true && colaTransferenciasFinalizar.checked === true
-						horizontalAlignment: Qt.AlignHCenter
-						inputMask: "99:99"
-
-						onEditingFinished: configuraciones.establecerValor("programacion/colaTransferenciasFinalizarHora", text)
-					}
-					Label {
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						visible: columnasIntegradasVistaVertical === 1
-					}
-					Label {
-						Layout.columnSpan: columnasIntegradasVistaVertical
-						Layout.fillWidth: true
-						enabled: colaTransferenciasInicio.checked === true && colaTransferenciasFinalizar.checked === true
-						font.pointSize: ventanaPrincipal.font.pointSize - 2
-						text: "Define la hora cuando se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no."
-						wrapMode: Label.WordWrap
-					}
-
-					Label {
-						Layout.columnSpan: 2
-					}
-
-					Label {
 						Layout.alignment: alineacionColumnasVistaVertical
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						enabled: colaTransferenciasInicio.checked
@@ -193,10 +140,54 @@ Page {
 						Layout.columnSpan: 2
 					}
 
+					Switch {
+						id: colaTransferenciasFinalizar
+						Accessible.role: Accessible.CheckBox
+						Accessible.name: text
+						Accessible.description: "Define si se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no"
+						Layout.alignment: alineacionColumnasVistaVertical
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						focus: true
+						focusPolicy: Qt.StrongFocus
+						hoverEnabled: true
+						text: "Finalización automática?"
+
+						onToggled: {
+							configuraciones.establecerValor("programacion/colaTransferenciasFinalizar", checked)
+							utiles.activarProgramacionFinalizarColaTransferencias(checked)
+						}
+					}
+					EntradaLineaTexto {
+						id: colaTransferenciasFinalizarHora
+						Accessible.name: "Hora de finalización de la cola de las transferencias"
+						Accessible.description: "Define la hora cuando se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no"
+						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
+						Layout.columnSpan: columnasIntegradasVistaVertical > 1 ? 2 : 1
+						Layout.fillWidth: true
+						Layout.maximumWidth: 75
+						enabled: colaTransferenciasFinalizar.checked === true
+						horizontalAlignment: Qt.AlignHCenter
+						inputMask: "99:99"
+
+						onEditingFinished: configuraciones.establecerValor("programacion/colaTransferenciasFinalizarHora", text)
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						enabled: colaTransferenciasFinalizar.checked === true
+						font.pointSize: ventanaPrincipal.font.pointSize - 2
+						text: "Define la hora cuando se debe finalizar de forma automática la cola de las transferencias independientemente de si se completó o no."
+						wrapMode: Label.WordWrap
+					}
+
 					Label {
 						Layout.alignment: alineacionColumnasVistaVertical
 						Layout.columnSpan: columnasIntegradasVistaVertical
-						enabled: colaTransferenciasInicio.checked
+						enabled: colaTransferenciasFinalizar.checked
 						text: "Acción al finalizar:"
 					}
 					ComboBox {
@@ -207,7 +198,7 @@ Page {
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						Layout.fillWidth: true
-						enabled: colaTransferenciasInicio.checked
+						enabled: colaTransferenciasFinalizar.checked
 						focusPolicy: Qt.StrongFocus
 						hoverEnabled: true
 						model: ListModel {
@@ -227,7 +218,7 @@ Page {
 					Label {
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						Layout.fillWidth: true
-						enabled: colaTransferenciasInicio.checked
+						enabled: colaTransferenciasFinalizar.checked
 						font.pointSize: ventanaPrincipal.font.pointSize - 2
 						text: "Define la acción a ejecutar al finalizar la cola de las transferencias."
 						wrapMode: Label.WordWrap

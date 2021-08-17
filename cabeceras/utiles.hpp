@@ -40,7 +40,10 @@ class Utiles : public QObject {
 		Q_INVOKABLE void crearBandejaIcono();
 		Q_INVOKABLE void notificar(const QString &llave, bool valorPredeterminado, const QString &titulo, const QString &mensaje, const QString &sonido);
 		Q_INVOKABLE void restablecerDatosFabrica();
+		Q_INVOKABLE void crearDirectorio(const QString &ubicacion);
+		Q_INVOKABLE void otorgarPermisosDirectorio(const QString &ruta);
 		Q_INVOKABLE QString rutaDesdeURI(const QString &uri);
+		int androidAbrirArchivo(const QString &uri, const QString &modo);
 		Q_INVOKABLE void activarProgramacionInicioColaTransferencias(bool activar);
 		Q_INVOKABLE void activarProgramacionFinalizarColaTransferencias(bool activar);
 
@@ -55,7 +58,7 @@ class Utiles : public QObject {
 		void ejecutarAccionSuspender();
 		void ejecutarAccionHibernar();
 		void ejecutarAccionApagar();
-#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX) && !defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 		void BSDSolicitarEstadoACPI(int estadoACPI);
 #endif
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)

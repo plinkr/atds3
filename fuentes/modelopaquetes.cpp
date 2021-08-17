@@ -316,13 +316,13 @@ void ModeloPaquetes::agregarPublicacion(const QString &titulo, QAbstractItemMode
 	qint64 tamanoTarea = 0;
 	QString tituloPaquete = titulo;
 
-	tituloPaquete.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+	tituloPaquete.replace(QRegularExpression("[/:*?\"'<>|()]"), "_");
 	tituloPaquete.replace("\\", "_");
 	instruccionSQL = "INSERT INTO tareas (paquete, estado, nombre, ruta, enlace, enlaceFirmado, tamano, tamanoTransferido, completado, velocidad, error) VALUES ";
 
 	for (int f = 0; f < modeloArchivos->rowCount(); f++) {
 		nombre = modeloArchivos->data(modeloArchivos->index(f, 0), 0).toByteArray();
-		nombre.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+		nombre.replace(QRegularExpression("[/:*?\"'<>|()]"), "_");
 		nombre.replace("\\", "_");
 		ruta = modeloArchivos->data(modeloArchivos->index(f, 0), 1).toString();
 
@@ -360,18 +360,32 @@ void ModeloPaquetes::procesarArchivoDescargaClasico(const QString &ruta) {
 	QSqlQuery solicitudSQL;
 	QString instruccionSQL;
 	bool primeraFila = true;
+/*
+#ifdef Q_OS_ANDROID
+	QFile lector;
+	lector.open(_utiles->androidAbrirArchivo(ruta, "r"), QIODevice::ReadOnly, QFileDevice::AutoCloseHandle);
+#else
+*/
 	QFile lector(ruta);
+//#endif
 	QString nombreArchivo = lector.fileName().mid(lector.fileName().lastIndexOf("/") + 1);
 	qint64 idPaquete = 0;
 
 	nombreArchivo.chop(4);
-	nombreArchivo.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+	nombreArchivo.replace(QRegularExpression("[/:*?\"'<>|()]"), "_");
 	nombreArchivo.replace("\\", "_");
 	primeraFila = true;
-
+/*
+#ifdef Q_OS_ANDROID
+	if (lector.isOpen() == false) {
+		return;
+	}
+#else
+*/
 	if (lector.open(QIODevice::ReadOnly | QIODevice::Text) == false) {
 		return;
 	}
+//#endif
 
 	instruccionSQL = "INSERT INTO tareas (paquete, estado, nombre, ruta, enlace, enlaceFirmado, tamano, tamanoTransferido, completado, velocidad, error) VALUES ";
 
@@ -386,7 +400,7 @@ void ModeloPaquetes::procesarArchivoDescargaClasico(const QString &ruta) {
 					instruccionSQL += ", ";
 				}
 				nombre = campos[1].trimmed();
-				nombre.replace(QRegularExpression("[/:*?\"'<>|]"), "_");
+				nombre.replace(QRegularExpression("[/:*?\"'<>|()]"), "_");
 				nombre.replace("\\", "_");
 				instruccionSQL += "(##ID_PAQUETE##, " + QString::number(Estados::Pausado) + ", '" + nombre.toUtf8().toPercentEncoding() + "', '', '" + enlace + "', '', 0, 0, 0, 0, false)";
 				if (primeraFila == true) {
@@ -588,7 +602,8 @@ void ModeloPaquetes::iniciarDescarga(qint64 paquete, qint64 id, const QString &e
 
 	rutaHTTP.remove(0, 9 + servidorS3.size());
 
-	rutaArchivo = QString("%1/%2/%3").arg(QUrl(_configuraciones.value("descargas/ruta", _rutaDescargaPredeterminada).toString()).toLocalFile()).arg(registroCategoria["titulo"].toString()).arg(QByteArray::fromPercentEncoding(registroPaquete["nombre"].toByteArray()).constData());
+	_utiles->otorgarPermisosDirectorio(_configuraciones.value("descargas/ruta", _rutaDescargaPredeterminada).toString());
+	rutaArchivo = QString("%1/%2/%3").arg(_utiles->rutaDesdeURI(_configuraciones.value("descargas/ruta", _rutaDescargaPredeterminada).toString())).arg(registroCategoria["titulo"].toString()).arg(QByteArray::fromPercentEncoding(registroPaquete["nombre"].toByteArray()).constData());
 	if (directorioDescarga.exists(rutaArchivo) == false) {
 		directorioDescarga.mkpath(rutaArchivo);
 	}
@@ -679,7 +694,6 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	QByteArray autorizacion = "Bearer " + _configuraciones.value("todus/fichaAcceso").toByteArray();
 	QRegularExpression re;
 	QRegularExpressionMatch rem;
-	QDir directorioDescarga;
 	QFileInfo informacionArchivo;
 	QSqlQuery solicitudSQL;
 
@@ -714,6 +728,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 
 	rutaHTTP.remove(0, 9 + servidorS3.size());
 
+	_utiles->otorgarPermisosDirectorio(_tareasPublicaciones[id]->ruta);
 	informacionArchivo.setFile(_tareasPublicaciones[id]->ruta);
 	if (informacionArchivo.exists() == true) {
 		if (_tareasPublicaciones[id]->tamano != informacionArchivo.size()) {
@@ -1362,14 +1377,6 @@ void ModeloPaquetes::generarArchivoDescargaClasico(const QVariantMap &registroPa
 
 void ModeloPaquetes::iniciarSesionToDus() {
 	QTimer::singleShot(1000, &_toDus, &toDus::iniciarSesion);
-}
-
-void ModeloPaquetes::crearDirectorio(const QString &ubicacion) {
-	QDir directorio;
-
-	if (directorio.exists(QUrl(ubicacion).toLocalFile()) == false) {
-		directorio.mkpath(QUrl(ubicacion).toLocalFile());
-	}
 }
 
 QString ModeloPaquetes::obtenerFiltroCategoria(int categoria) {

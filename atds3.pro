@@ -3,7 +3,10 @@ QT += quick quickcontrols2 svg sql network websockets multimedia
 CONFIG += c++17
 
 unix: !android {
-	QT += widgets x11extras
+	QT += widgets
+}
+unix: !android: !macx {
+	QT += x11extras
 }
 android {
 	QT += androidextras
@@ -54,15 +57,17 @@ RESOURCES += recursos/recursos.qrc qml.qrc
 DISTFILES +=	README.md \
 				LICENSE
 
-unix: android {
+android {
 	DISTFILES +=	android-sources/AndroidManifest.xml \
-					android-sources/src/org/ekkescorner/utils/QSharePathResolver.java
+					android-sources/src/org/ekkescorner/utils/QSharePathResolver.java \
+					android-sources/src/cu/atds3/android/ActividadExtendida.java \
+					android-sources/src/cu/atds3/android/Archivos.java
 }
 
 INCLUDEPATH += cabeceras
 
 unix: !android: QML_IMPORT_PATH += qml
-unix: android: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
+android: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
 windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
 
 unix: !android: !macx {
@@ -90,7 +95,7 @@ unix: !android: !macx {
 	unix_desktop.path = $${QMAKE_INSTALL_PREFIX}/share/applications
 }
 
-unix: macx {
+macx {
 	ICON = recursos/icns/atds3.icns
 	INCLUDEPATH += /usr/local/Cellar/openssl@1.1/1.1.1k/include /usr/local/include
 	LIBS +=	-L/usr/local/Cellar/openssl@1.1/1.1.1k/lib -L/usr/local/lib \
@@ -126,7 +131,7 @@ windows {
 		LIBS += -LC:/msys64/mingw32/lib -lprotobuf
 	}
 
-	LIBS += -lssl -lcrypto
+	LIBS += -lpowrprof -lssl -lcrypto
 }
 
 target.path = $${QMAKE_INSTALL_PREFIX}/bin

@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationName(_aplicacionNombreCorto);
 	QApplication::setApplicationVersion(_aplicacionVersion);
 
-#ifndef Q_OS_ANDROID
+#ifdef Q_OS_WINDOWS
 	QSharedMemory memoriaCompartida(_organizacionNombre);
 	if (memoriaCompartida.create(1) == false) {
 		return codigoSalida;
@@ -116,14 +116,14 @@ int main(int argc, char *argv[])
 	QQmlApplicationEngine maquinaQML;
 	const QUrl url(QStringLiteral("qrc:/qml/atds3.qml"));
 	maquinaQML.setNetworkAccessManagerFactory(&namf);
-	maquinaQML.rootContext()->setContextProperty("_aplicacionTitulo", _aplicacionTitulo);
-	maquinaQML.rootContext()->setContextProperty("_aplicacionVersion", _aplicacionVersion);
-	maquinaQML.rootContext()->setContextProperty("_agenteUsuarioTodus", _agenteUsuarioTodus);
-	maquinaQML.rootContext()->setContextProperty("_numeroVersionTodus", _numeroVersionTodus);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("_aplicacionTitulo"), _aplicacionTitulo);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("_aplicacionVersion"), _aplicacionVersion);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("_agenteUsuarioTodus"), _agenteUsuarioTodus);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("_numeroVersionTodus"), _numeroVersionTodus);
 #ifdef Q_OS_ANDROID
-	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 13);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("tamanoFuente"), 13);
 #else
-	maquinaQML.rootContext()->setContextProperty("tamanoFuente", 11);
+	maquinaQML.rootContext()->setContextProperty(QStringLiteral("tamanoFuente"), 11);
 #endif
 	QObject::connect(&maquinaQML, &QQmlApplicationEngine::objectCreated, &app, [&](QObject *obj, const QUrl &objUrl) {
 		if (!obj && url == objUrl) {
