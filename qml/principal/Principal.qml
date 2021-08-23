@@ -142,4 +142,17 @@ Page {
 			modeloPaquetes.agregarDescargasDesdeArchivos(fileUrls)
 		}
 	}
+
+	Connections {
+		target: utiles
+
+		function onNotificarArchivoCompartido(ruta) {
+			if (vistaCategorias.listadoCategorias.currentIndex > 0 && vistaCategorias.listadoCategorias.currentIndex < 3) {
+				return
+			}
+
+			vistaPaquetes.listadoPaquetes.currentIndex = -1
+			modeloPaquetes.agregarDescargasDesdeArchivos([ ruta ])
+		}
+	}
 }

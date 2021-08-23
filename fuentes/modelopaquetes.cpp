@@ -602,7 +602,6 @@ void ModeloPaquetes::iniciarDescarga(qint64 paquete, qint64 id, const QString &e
 
 	rutaHTTP.remove(0, 9 + servidorS3.size());
 
-	_utiles->otorgarPermisosDirectorio(_configuraciones.value("descargas/ruta", _rutaDescargaPredeterminada).toString());
 	rutaArchivo = QString("%1/%2/%3").arg(_utiles->rutaDesdeURI(_configuraciones.value("descargas/ruta", _rutaDescargaPredeterminada).toString())).arg(registroCategoria["titulo"].toString()).arg(QByteArray::fromPercentEncoding(registroPaquete["nombre"].toByteArray()).constData());
 	if (directorioDescarga.exists(rutaArchivo) == false) {
 		directorioDescarga.mkpath(rutaArchivo);
@@ -661,6 +660,7 @@ void ModeloPaquetes::iniciarDescarga(qint64 paquete, qint64 id, const QString &e
 	_tareasDescargas[id]->http.establecerRuta(rutaHTTP);
 
 	_tareasDescargas[id]->archivo.setFileName(rutaArchivo);
+	_tareasDescargas[id]->archivo.setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser);
 	_tareasDescargas[id]->archivo.open(QIODevice::Append);
 	_tareasDescargas[id]->http.establecerDestinoDescarga(&_tareasDescargas[id]->archivo);
 
@@ -728,7 +728,6 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 
 	rutaHTTP.remove(0, 9 + servidorS3.size());
 
-	_utiles->otorgarPermisosDirectorio(_tareasPublicaciones[id]->ruta);
 	informacionArchivo.setFile(_tareasPublicaciones[id]->ruta);
 	if (informacionArchivo.exists() == true) {
 		if (_tareasPublicaciones[id]->tamano != informacionArchivo.size()) {
@@ -782,6 +781,7 @@ void ModeloPaquetes::iniciarPublicacion(qint64 paquete, qint64 id, const QString
 	_tareasPublicaciones[id]->http.establecerRuta(rutaHTTP);
 
 	_tareasPublicaciones[id]->archivo.setFileName(_tareasPublicaciones[id]->ruta);
+	_tareasPublicaciones[id]->archivo.setPermissions(QFileDevice::ReadUser);
 	_tareasPublicaciones[id]->archivo.open(QIODevice::ReadOnly);
 	_tareasPublicaciones[id]->http.establecerOrigenCarga(&_tareasPublicaciones[id]->archivo);
 
@@ -944,7 +944,7 @@ void ModeloPaquetes::eventoPaqueteActualizarCampos(qint64 idPaquete) {
 				}
 
 				if (_paquetes[idPaquete]->completado == 100 && error == false) {
-					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete finalizado. Transferido: " << _paquetes[idPaquete]->tamano << " B" << std::endl;
+					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete finalizado. Transferido: " << _utiles->representarTamano(_paquetes[idPaquete]->tamano).toStdString() << std::endl;
 
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
 						if (_configuraciones.value("publicaciones/generarArchivosDescargaAlFinalizar", true).toBool() == true) {
@@ -960,9 +960,9 @@ void ModeloPaquetes::eventoPaqueteActualizarCampos(qint64 idPaquete) {
 					}
 
 					if (_paquetes[idPaquete]->tipo == Tipos::Publicacion) {
-						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de publicación finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + _utiles->representarTamano(_paquetes[idPaquete]->tamanoTransferido), "finalizacion-exitosa-paquete.mp3");
 					} else {
-						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + QString::number(_paquetes[idPaquete]->tamanoTransferido) + " B", "finalizacion-exitosa-paquete.mp3");
+						_utiles->notificar("FinalizacionExitosaPaquete", false, "Paquete de descarga finalizado exitosamente", "Título: " + _paquetes[idPaquete]->nombre + "\nTotal transferido: " + _utiles->representarTamano(_paquetes[idPaquete]->tamanoTransferido), "finalizacion-exitosa-paquete.mp3");
 					}
 				}
 
@@ -1015,18 +1015,18 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 			}
 
 			if (_paquetes[tarea->paquete]->tipo == Tipos::Publicacion) {
-				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Publicacion. Tamano: " << tarea->tamano << " B" << std::endl;
+				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Publicacion. Tamano: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
 			}
 			if (_paquetes[tarea->paquete]->tipo == Tipos::Descarga) {
-				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Descarga. Tamano: " << tarea->tamano << " B" << std::endl;
+				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Descarga. Tamano: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
 			}
 
 			QMetaObject::invokeMethod(_qmlRaiz, "visualizarTareaIniciada", Qt::QueuedConnection, Q_ARG(QVariant, _paquetes[tarea->paquete]->categoria), Q_ARG(QVariant, tarea->paquete), Q_ARG(QVariant, _paquetes[tarea->paquete]->fila), Q_ARG(QVariant, tarea->fila));
 
 			if (publicacion == false) {
-				_utiles->notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles->notificar("InicializacionTarea", false, "Tarea de publicación iniciada", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTamaño: " +  _utiles->representarTamano(tarea->tamano), "incializacion-tarea.mp3");
 			} else {
-				_utiles->notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  QString::number(tarea->tamano) + " B", "incializacion-tarea.mp3");
+				_utiles->notificar("InicializacionTarea", false, "Tarea descarga iniciada", "Nombre: " + tarea->nombre + "\nTamaño: " +  _utiles->representarTamano(tarea->tamano), "incializacion-tarea.mp3");
 			}
 		}
 	}
@@ -1117,7 +1117,7 @@ void ModeloPaquetes::eventoTareaDetenida(qint64 id) {
 				solicitudSQL.exec("UPDATE tareas SET estado = " + QString::number(Estados::Pausado) + ", tamanoTransferido = " + QString::number(tarea->tamanoTransferido) + ", completado = " + QString::number(tarea->completado) + ", veloidad = 0, error = false WHERE (id = " + QString::number(id) + ")");
 			}
 
-			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea pausada. Transferido: " << tarea->tamanoTransferido << " B. Completado: " << tarea->completado << "%" << std::endl;
+			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea pausada. Transferido: " << _utiles->representarTamano(tarea->tamanoTransferido).toStdString() << ". Completado: " << tarea->completado << "%" << std::endl;
 		} else {
 			if (_configuraciones.value("publicaciones/reintentarTareasErroneas", false) == false || tarea->http.codigoHTTP() == 404) {
 				if (_modelosTareas[tarea->paquete]) {
@@ -1252,7 +1252,7 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 		tarea->archivo.close();
 
 		if (tarea->http.error() == false) {
-			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea finalizada. Transferido: " << tarea->tamano << " B" << std::endl;
+			emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea finalizada. Transferido: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
 
 			tarea->tamanoTransferido = tarea->tamano;
 			tarea->completado = 100;
@@ -1279,9 +1279,9 @@ void ModeloPaquetes::eventoTareaFinalizada(qint64 id) {
 			}
 
 			if (publicacion == true) {
-				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de publicación finalizada exitosamente", "Nombre: " + tarea->nombre + "\nRuta: " + tarea->ruta + "\nTotal transferido: " + _utiles->representarTamano(tarea->tamanoTransferido), "finalizacion-exitosa-tarea.mp3");
 			} else {
-				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + QString::number(tarea->tamanoTransferido) + " B", "finalizacion-exitosa-tarea.mp3");
+				_utiles->notificar("FinalizacionExitosaTarea", false, "Tarea de descarga finalizada exitosamente", "Nombre: " + tarea->nombre + "\nTotal transferido: " + _utiles->representarTamano(tarea->tamanoTransferido), "finalizacion-exitosa-tarea.mp3");
 			}
 
 			eventoPaqueteActualizarCampos(tarea->paquete);

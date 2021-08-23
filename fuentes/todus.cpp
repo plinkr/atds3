@@ -285,7 +285,7 @@ void toDus::eventoCambiarEstado(QAbstractSocket::SocketState estado) {
 
 			emitirRegistro(TiposRegistro::Informacion, "toDus") << "Conectando a " << nombreDNSServidorSesion.toStdString() << ":" << puertoServidorSesion << std::endl;
 
-			if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
+			if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true && _configuraciones.valor("todus/programaPiscinaFichasInternet", true).toBool() == true) {
 				if (_estadoSocaloWeb == Estados::Desconectado) {
 					iniciarPPF();
 				}
@@ -367,8 +367,6 @@ void toDus::eventoDatosRecibidos() {
 						} else {
 							emitirRegistro(TiposRegistro::Informacion, "PPF") << "La ficha de acceso obtenida no es valida." << std::endl;
 
-							_estado = Estados::SolicitandoFichaAcceso;
-							desconectar();
 							socaloWebSolicitarFicha();
 						}
 					}
@@ -389,6 +387,8 @@ void toDus::eventoDatosRecibidos() {
 				re = QRegularExpression("<iq t='result' i='.+'><b1 xmlns='x4'><jid>(.+)</jid><sid>.+</sid></b1></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
+					emitirRegistro(TiposRegistro::Informacion, "toDus") << "Sesion de mensajeria establecida" << std::endl;
+
 					_jID = rem.captured(1);
 //					xmppEstablecerTiempoInactividad();
 					_estado = Estados::Listo;
@@ -433,7 +433,7 @@ void toDus::eventoDatosRecibidos() {
 				}
 */
 				// Comando: GURL
-				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:gurl' du='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				re = QRegularExpression("<iq.+i='(.+)'><query xmlns='todus:gurl' du='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
@@ -447,16 +447,14 @@ void toDus::eventoDatosRecibidos() {
 								modeloPaquetes->iniciarDescarga(_listadoSolicitudesEnlacesFirmados[id].paquete, id, enlaceFirmado);
 								_listadoSolicitudesEnlacesFirmados.remove(id);
 							} else {
-								if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
-									socaloWebSolicitarFicha();
-								}
+								socaloWebSolicitarFicha();
 							}
 						}
 					}
 					break;
 				}
 				// Comando: PURL
-				re = QRegularExpression("<iq.+i='(.+)'.*><query xmlns='todus:purl' put='(.*)' get='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
+				re = QRegularExpression("<iq.+i='(.+)'><query xmlns='todus:purl' put='(.*)' get='(.*)' status='(.*)'/></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
 					ModeloPaquetes *modeloPaquetes = qobject_cast<ModeloPaquetes *>(parent());
@@ -472,9 +470,7 @@ void toDus::eventoDatosRecibidos() {
 								modeloPaquetes->iniciarPublicacion(_listadoSolicitudesEnlacesFirmados[id].paquete, id, enlace, enlaceFirmado);
 								_listadoSolicitudesEnlacesFirmados.remove(id);
 							} else {
-								if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
-									socaloWebSolicitarFicha();
-								}
+								socaloWebSolicitarFicha();
 							}
 						}
 					}
@@ -651,31 +647,33 @@ void toDus::iniciarSesionConFichaAcceso() {
 void toDus::xmppEnviar(const QString &buferAEnviar) {
 //	emitirRegistro(TiposRegistro::Depuracion, "toDus") << "<< " << buferAEnviar.toStdString() << std::endl;
 
-	_socaloSSL->write(buferAEnviar.toLocal8Bit());
+	_socaloSSL->write(buferAEnviar.toUtf8());
 }
 
 void toDus::xmppSaludar() {
-	QString buferAEnviar = "<stream:stream xmlns='jc' o='" + _dominioJID.toLocal8Bit() + "' xmlns:stream='x1' v='1.0'>";
+	QString buferAEnviar = "<stream:stream xmlns='jc' o='" + _dominioJID.toUtf8() + "' xmlns:stream='x1' v='1.0'>";
 
 	xmppEnviar(buferAEnviar);
 }
 
 void toDus::xmppIniciarSesion() {
-//	QByteArray fichaAcceso = _configuraciones.valor("todus/fichaAcceso").toByteArray();
 	QByteArray b64Telefono = QByteArray::fromBase64(_fichaAccesoActual.split('.')[1]);
 	QJsonDocument json = QJsonDocument::fromJson(b64Telefono);
 	QString telefono = json.object().value("username").toString();
 	QString credenciales = QChar('\0') + telefono + QChar('\0') + _fichaAccesoActual;
-	QString buferAEnviar = "<ah xmlns='ah:ns' e='PLAIN'>" + credenciales.toLocal8Bit().toBase64() + "</ah>";
+	QString buferAEnviar = "<ah xmlns='ah:ns' e='PLAIN'>" + credenciales.toUtf8().toBase64() + "</ah>";
 
 	xmppEnviar(buferAEnviar);
 }
 
 void toDus::xmppEstablecerSesion() {
+/*
 	QByteArray b64Telefono = QByteArray::fromBase64(_fichaAccesoActual.split('.')[1]);
 	QJsonDocument json = QJsonDocument::fromJson(b64Telefono);
 	QString telefono = json.object().value("username").toString();
 	QString buferAEnviar = "<iq i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='set'><b1 xmlns='x4'><re>" + QCryptographicHash::hash(telefono.toUtf8(), QCryptographicHash::Md5).toHex() + "</re></b1></iq>";
+*/
+	QString buferAEnviar = "<iq i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='set'><b1 xmlns='x4'><re>" + generarIDSesion(32) + "</re></b1></iq>";
 
 	xmppEnviar(buferAEnviar);
 }
@@ -687,27 +685,27 @@ void toDus::xmppEstablecerTiempoInactividad() {
 }
 
 void toDus::xmppEstablecerPresencia() {
-	QString buferAEnviar = "<p i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "'></p>";
+	QString buferAEnviar = "<p i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "'></p>";
 
 	xmppEnviar(buferAEnviar);
 }
 
 void toDus::xmppSolicitarUsuariosBloqueados() {
-	QString buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:block:get'></query></iq>";
+	QString buferAEnviar = "<iq i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:block:get'></query></iq>";
 
 	xmppEnviar(buferAEnviar);
 }
 
 void toDus::xmppSolicitarListadoGruposCanales() {
-	QString buferAEnviar = "<iq o='muclight.im.todus.cu' i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:muclight:my_mucs'></query></iq>";
+	QString buferAEnviar = "<iq o='muclight.im.todus.cu' i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:muclight:my_mucs'></query></iq>";
 
 	xmppEnviar(buferAEnviar);
 }
 
 void toDus::xmppMantenerSesionActiva() {
-//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:roster:hash' hash='CB9C29EED34978062620B4734C36CAA3AC4EE2A36A72C0C7A6D899AE47828490'></query></iq>\n";
-//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:block:get'></query></iq>\n";
-	QString buferAEnviar = "<p i='" + _idSesion.toLocal8Bit() + "-" + QByteArray::number(obtenerProximoIDComando()) + "'></p>";
+//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:roster:hash' hash='CB9C29EED34978062620B4734C36CAA3AC4EE2A36A72C0C7A6D899AE47828490'></query></iq>\n";
+//	QByteArray buferAEnviar = "<iq i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "' t='get'><query xmlns='todus:block:get'></query></iq>\n";
+	QString buferAEnviar = "<p i='" + _idSesion.toUtf8() + "-" + QByteArray::number(obtenerProximoIDComando()) + "'></p>";
 
 	xmppEnviar(buferAEnviar);
 }
@@ -734,7 +732,7 @@ void toDus::xmppSolicitarEnlaceSubida(qint64 id, int clasificacion) {
 }
 
 void toDus::iniciarPPF() {
-	emitirRegistro(TiposRegistro::Informacion, "PPF") << "Conectando a atds3.herokuapp.com:443" << std::endl;
+	emitirRegistro(TiposRegistro::Informacion, "PPF") << "Conectando a atds3.herokuapp.com" << std::endl;
 
 	_socaloWebConexionActiva = false;
 	_socaloWebMismaFichaRecibida = false;
@@ -752,8 +750,11 @@ void toDus::eventoPPFConectado() {
 	_estadoSocaloWeb = Estados::Conectado;
 
 	if (_fichaAccesoActual == _configuraciones.valor("todus/fichaAcceso", "").toByteArray() && _fichaAccesoActual.size() > 0) {
-		socaloWebAportarFicha();
-		return;
+		if (_configuraciones.valor("todus/programaPiscinaFichasInternet", true).toBool() == true) {
+			socaloWebAportarFicha();
+
+			return;
+		}
 	}
 
 	if (_listadoSolicitudesEnlacesFirmados.size() == 0) {
@@ -766,11 +767,13 @@ void toDus::eventoPPFPong() {
 }
 
 void toDus::eventoPPFMensajeRecibido(const QString &mensaje) {
-	QJsonDocument json = QJsonDocument::fromJson(mensaje.toLocal8Bit());
+	QJsonDocument json = QJsonDocument::fromJson(mensaje.toUtf8());
+	QString accion = json.object().value("accion").toString();
 	QByteArray ficha;
 
-	if (json.object().value("accion").toString() == "entregarFicha") {
-		ficha = json.object().value("ficha").toString().toLocal8Bit();
+	if (accion == "entregarFicha") {
+		ficha = json.object().value("ficha").toString().toUtf8();
+		desconectar();
 		_estado = Estados::Desconectado;
 
 		if (ficha != _fichaAccesoActual && ficha != _configuraciones.valor("todus/fichaAcceso", "").toByteArray()) {
@@ -821,7 +824,7 @@ void toDus::socaloWebAportarFicha() {
 	if (_estadoSocaloWeb == Estados::Conectado) {
 		emitirRegistro(TiposRegistro::Informacion, "PPF") << "Aportando la ficha de acceso del usuario configurado" << std::endl;
 
-		_socaloWeb.sendTextMessage(QString("{\"accion\":\"aportarFicha\",\"ficha\":\"%1\",\"expiracion\":%2}").arg(_configuraciones.valor("todus/fichaAcceso").toString()).arg(_configuraciones.valor("todus/fichaAccesoTiempoExpiracion").toLongLong()));
+		_socaloWeb.sendTextMessage(QString("{\"accion\":\"aportarFicha\",\"acceso\":\"%1\",\"ficha\":\"%2\",\"expiracion\":%3}").arg(socaloWebGenerarCadenaAcceso()).arg(_configuraciones.valor("todus/fichaAcceso").toString()).arg(_configuraciones.valor("todus/fichaAccesoTiempoExpiracion").toLongLong()));
 		_socaloWebFichaAportada = true;
 
 		if (_listadoSolicitudesEnlacesFirmados.size() == 0) {
@@ -831,9 +834,14 @@ void toDus::socaloWebAportarFicha() {
 }
 
 void toDus::socaloWebSolicitarFicha() {
-	if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true) {
-		if (_configuraciones.valor("todus/programaPiscinaFichasLocal", "").toString().size() > 0) {
-			QStringList listadoFichasAcceso = _configuraciones.valor("todus/programaPiscinaFichasLocal", "").toString().split("\n");
+	if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true && _estado == Estados::Listo) {
+		QString programaPiscinaFichasLocal = _configuraciones.valor("todus/programaPiscinaFichasLocal", "").toString();
+
+		desconectar();
+		_estado = Estados::SolicitandoFichaAcceso;
+
+		if (programaPiscinaFichasLocal.size() > 0) {
+			QStringList listadoFichasAcceso = programaPiscinaFichasLocal.split("\n");
 
 			for (int i = 0; i < listadoFichasAcceso.size();) {
 				if (listadoFichasAcceso[i].trimmed().isEmpty() == true) {
@@ -849,28 +857,36 @@ void toDus::socaloWebSolicitarFicha() {
 				if (_socaloWebIndiceFichaLocal >= listadoFichasAcceso.size() && _configuraciones.valor("todus/programaPiscinaFichasInternet", true).toBool() == false) {
 					_socaloWebIndiceFichaLocal = 0;
 				}
-				if (_fichaAccesoActual != listadoFichasAcceso[_socaloWebIndiceFichaLocal]) {
+				if (_socaloWebIndiceFichaLocal < listadoFichasAcceso.size()) {
 					_fichaAccesoActual = listadoFichasAcceso[_socaloWebIndiceFichaLocal++].toUtf8();
+					_estado = Estados::Desconectado;
 
-					emitirRegistro(TiposRegistro::Informacion, "PPF") << "Tomada una ficha de acceso nueva desde la Piscina de Fichas de Acceso local" << std::endl;
+					emitirRegistro(TiposRegistro::Informacion, "PPF") << "Tomada la ficha de acceso #" << _socaloWebIndiceFichaLocal << " desde la Piscina Local" << std::endl;
+
+					return;
 				}
 			}
 		}
 		if (_configuraciones.valor("todus/programaPiscinaFichasInternet", true).toBool() == true) {
 			if (_estadoSocaloWeb == Estados::Conectado) {
-				_estado = Estados::SolicitandoFichaAcceso;
-				desconectar();
-
 				emitirRegistro(TiposRegistro::Informacion, "PPF") << "Solicitando una ficha de acceso nueva" << std::endl;
 
 				for (qint64 id : _listadoSolicitudesEnlacesFirmados.keys()) {
 					_listadoSolicitudesEnlacesFirmados[id].reintentos = 0;
 				}
 
-				_socaloWeb.sendTextMessage(QString("{\"accion\":\"solicitarFicha\"}"));
+				_socaloWeb.sendTextMessage(QString("{\"accion\":\"solicitarFicha\",\"acceso\":\"%1\"}").arg(socaloWebGenerarCadenaAcceso()));
 			} else {
 				iniciarPPF();
 			}
 		}
 	}
+}
+
+QString toDus::socaloWebGenerarCadenaAcceso() {
+	QDateTime tiempo = QDateTime::currentDateTimeUtc();
+	QByteArray hora = tiempo.toString("dMHm").toUtf8();
+	std::string cuerpo { 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33, 0x5f, 0x38, 0x32, 0x31, 0x31, 0x31, 0x32, 0x33, 0x32, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33, 0x5f };
+
+	return QCryptographicHash::hash(hora + QByteArray::fromStdString(cuerpo) + hora, QCryptographicHash::Sha256).toHex();
 }

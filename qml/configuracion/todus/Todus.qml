@@ -63,17 +63,7 @@ Page {
 						focus: true
 						maximumLength: 8
 
-						onEditingFinished: {
-							configuraciones.establecerValor("todus/telefono", text)
-/*
-							if (text.length == 0) {
-								configuraciones.eliminar("todus/fichaAccesoTiempoExpiracion")
-								configuraciones.eliminar("todus/fichaAcceso")
-								configuraciones.eliminar("todus/fichaSolicitud")
-								toDusFichaAcceso.text = ""
-							}
-*/
-						}
+						onEditingFinished: configuraciones.establecerValor("todus/telefono", text)
 					}
 					Label {
 						Layout.columnSpan: columnasIntegradasVistaVertical
@@ -268,8 +258,8 @@ Page {
 	Component.onCompleted: {
 		toDusTelefono.text = configuraciones.valor("todus/telefono", "")
 		toDusFichaAcceso.text = configuraciones.valor("todus/fichaAcceso", "")
-		toDusProgramaPiscinaFichas.checked = configuraciones.valor("todus/programaPiscinaFichas", false)
-		toDusProgramaPiscinaFichasInternet.checked = configuraciones.valor("todus/programaPiscinaFichasInternet", true)
+		toDusProgramaPiscinaFichas.checked = parseInt(configuraciones.valor("todus/programaPiscinaFichas", false))
+		toDusProgramaPiscinaFichasInternet.checked = parseInt(configuraciones.valor("todus/programaPiscinaFichasInternet", true))
 		toDusProgramaPiscinaFichasLocal.text = configuraciones.valor("todus/programaPiscinaFichasLocal", "")
 		deslizante.contentY = 1
 		deslizante.flick(0, 1)

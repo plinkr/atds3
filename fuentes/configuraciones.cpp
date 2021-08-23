@@ -1,21 +1,44 @@
+/*!
+ * \file configuraciones.cpp
+ * \brief Lectura y escritura de las configuraciones de la aplicacion
+ * \ingroup cu.atds3
+ * \author Leinier Cruz Salfrán
+ * Contact: leiniercs@gmail.com
+ */
+
 #include "configuraciones.hpp"
 #include "main.hpp"
 #include <openssl/evp.h>
 
 
+/*!
+ * \brief Inicializa la instancia de la clase
+ * \param padre Puntero al objeto padre
+ */
 Configuraciones::Configuraciones(QObject *padre)
 	: QObject(padre) {
 }
 
+/*!
+ * \brief Verifica si existe la llave suministrada en las configuraciones de la aplicacion
+ * \param llave Llave a verificar
+ * \return Verdadero si existe la llave, falso en caso contrario
+ */
 bool Configuraciones::existente(const QString &llave) {
 	return _configuraciones.contains(llave);
 }
 
+/*!
+ * \brief Obtiene el valor de la configuracion de la llave suministrada
+ * \param llave Llave a leer
+ * \param valorPredeterminado Valor prederminado a devolver en caso que no existe la llave en la configuracion
+ * \return Valor de la llave obtenida de la configuracion de la aplicacion
+ */
 QVariant Configuraciones::valor(const QString &llave, const QVariant &valorPredeterminado) {
 	QVariant resultado = _configuraciones.value(llave, valorPredeterminado);
 
 	if (llave == "todus/telefono" || llave == "proxy/contrasena") {
-		std::string contrasena = { 0x33, 0x65, 0x62, 0x38, 0x34, 0x64, 0x62, 0x32, 0x32, 0x37, 0x39, 0x63, 0x35, 0x34, 0x30, 0x66, 0x66, 0x38, 0x38, 0x37, 0x39, 0x66, 0x39, 0x64, 0x33, 0x65, 0x38, 0x30, 0x63, 0x30, 0x61, 0x34 };
+		std::string contrasena { 0x41, 0x54, 0x44, 0x53, 0x33, 0x5f, 0x38, 0x32, 0x31, 0x31, 0x31, 0x32, 0x33, 0x32, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33 };
 
 		resultado = descifrarTexto(resultado.toByteArray(), QString::fromStdString(contrasena));
 	}
@@ -23,6 +46,11 @@ QVariant Configuraciones::valor(const QString &llave, const QVariant &valorPrede
 	return resultado;
 }
 
+/*!
+ * \brief Establece el valor suministrado a la llave suministrada en la configuracion de la aplicacion
+ * \param llave Llave a escribir
+ * \param valor Valor a establecer en la llave suministrada
+ */
 void Configuraciones::establecerValor(const QString &llave, const QVariant &valor) {
 	if (valor.type() == QVariant::Type::String) {
 		if (valor.toString().isEmpty() == true) {
@@ -37,7 +65,7 @@ void Configuraciones::establecerValor(const QString &llave, const QVariant &valo
 			break;
 		case QVariant::Type::ByteArray:
 			if (llave == "todus/telefono" || llave == "proxy/contrasena") {
-				std::string contrasena = { 0x33, 0x65, 0x62, 0x38, 0x34, 0x64, 0x62, 0x32, 0x32, 0x37, 0x39, 0x63, 0x35, 0x34, 0x30, 0x66, 0x66, 0x38, 0x38, 0x37, 0x39, 0x66, 0x39, 0x64, 0x33, 0x65, 0x38, 0x30, 0x63, 0x30, 0x61, 0x34 };
+				std::string contrasena { 0x41, 0x54, 0x44, 0x53, 0x33, 0x5f, 0x38, 0x32, 0x31, 0x31, 0x31, 0x32, 0x33, 0x32, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33 };
 
 				_configuraciones.setValue(llave, cifrarTexto(valor.toString(), QString::fromStdString(contrasena)));
 			} else {
@@ -61,7 +89,7 @@ void Configuraciones::establecerValor(const QString &llave, const QVariant &valo
 			break;
 		case QVariant::Type::String:
 			if (llave == "todus/telefono" || llave == "proxy/contrasena") {
-				std::string contrasena = { 0x33, 0x65, 0x62, 0x38, 0x34, 0x64, 0x62, 0x32, 0x32, 0x37, 0x39, 0x63, 0x35, 0x34, 0x30, 0x66, 0x66, 0x38, 0x38, 0x37, 0x39, 0x66, 0x39, 0x64, 0x33, 0x65, 0x38, 0x30, 0x63, 0x30, 0x61, 0x34 };
+				std::string contrasena { 0x41, 0x54, 0x44, 0x53, 0x33, 0x5f, 0x38, 0x32, 0x31, 0x31, 0x31, 0x32, 0x33, 0x32, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33, 0x33, 0x30, 0x34, 0x5f, 0x41, 0x54, 0x44, 0x53, 0x33 };
 
 				_configuraciones.setValue(llave, cifrarTexto(valor.toString(), QString::fromStdString(contrasena)));
 			} else {
@@ -74,18 +102,25 @@ void Configuraciones::establecerValor(const QString &llave, const QVariant &valo
 	}
 }
 
+/*!
+ * \brief Elimina una llave determinada de las configuraciones de la aplicacion
+ * \param llave Llave a eliminar
+ */
 void Configuraciones::eliminar(const QString &llave) {
 	_configuraciones.remove(llave);
 }
 
-/**
- * @brief Cifra un texto
+/*!
+ * \brief Cifra el texto suministrado con la contraseña suministrada
+ * \param datos Datos a cifrar
+ * \param contrasena Contraseña a utilizar en el cifrado
+ * \return Datos cifrados
  */
 QByteArray Configuraciones::cifrarTexto(const QString &datos, const QString &contrasena) {
 	std::string datosDescifrados = datos.toStdString();
 	int longitudDatosDescifrados1 = 0;
 	int longitudDatosDescifrados2 = 0;
-	std::string vectorInicializacion = { 0x34, 0x61, 0x30, 0x31, 0x62, 0x35, 0x61, 0x38, 0x34, 0x31, 0x30, 0x38, 0x38, 0x65, 0x31, 0x30 };
+	std::string vectorInicializacion { 0x34, 0x61, 0x30, 0x31, 0x62, 0x35, 0x61, 0x38, 0x34, 0x31, 0x30, 0x38, 0x38, 0x65, 0x31, 0x30 };
 	std::string contrasenaStd = contrasena.toStdString();
 	EVP_CIPHER_CTX *evpContextoCifrado;
 	std::string resultados;
@@ -106,14 +141,17 @@ QByteArray Configuraciones::cifrarTexto(const QString &datos, const QString &con
 	return QByteArray::fromStdString(resultados);
 }
 
-/**
- * @brief Descifra un texto
+/*!
+ * \brief Descifra el texto suministrado con la contraseña suministrada
+ * \param datos Datos a descifrar
+ * \param contrasena Contraseña a utilizar en el descifrado
+ * \return Datos descifrados
  */
 QString Configuraciones::descifrarTexto(const QByteArray &datos, const QString &contrasena) {
 	std::string datosCifrados = datos.toStdString();
 	int longitudDatosCifrados1 = 0;
 	int longitudDatosCifrados2 = 0;
-	std::string vectorInicializacion = { 0x34, 0x61, 0x30, 0x31, 0x62, 0x35, 0x61, 0x38, 0x34, 0x31, 0x30, 0x38, 0x38, 0x65, 0x31, 0x30 };
+	std::string vectorInicializacion { 0x34, 0x61, 0x30, 0x31, 0x62, 0x35, 0x61, 0x38, 0x34, 0x31, 0x30, 0x38, 0x38, 0x65, 0x31, 0x30 };
 	std::string contrasenaStd = contrasena.toStdString();
 	EVP_CIPHER_CTX *evpContextoCifrado;
 	std::string resultados;

@@ -2,7 +2,7 @@ ATDS3 es una aplicación para escritorio que automatiza el proceso de publicaci�
 
 ATDS3 posee las siguientes características:
 
-  * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux y Windows.
+  * Multiplataforma: ATDS3 puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS, Windows y Android.
   * Fácil de usar: ATDS3 es fácil de usar gracias a la intuitiva interfaz de usuario que posee.
   * Configurable: ATDS3 ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.
   * Completamente asincrónico: ATDS3 es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.

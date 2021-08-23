@@ -32,13 +32,42 @@
 #include <reason.h>
 #endif
 #ifdef Q_OS_ANDROID
-#include <QtAndroid>
 #include <QAndroidJniObject>
+#include <QAndroidJniEnvironment>
+
+Utiles *_instanciaUtiles;
+
+
+static void _notificarSeleccionRuta(JNIEnv *env, jobject, jstring ruta) {
+	_instanciaUtiles->reportarSeleccionRutaDescarga(QString::fromUtf8(env->GetStringUTFChars(ruta, nullptr)));
+}
+
+static void _notificarSeleccionArchivoDescarga(JNIEnv, jobject, jint descriptor) {
+	_instanciaUtiles->reportarSeleccionArchivoDescarga((int)descriptor);
+}
+
+static void _notificarArchivoCompartido(JNIEnv *env, jobject, jstring ruta) {
+	_instanciaUtiles->reportarArchivoCompartido(QString::fromUtf8(env->GetStringUTFChars(ruta, nullptr)));
+}
 #endif // Q_OS_ANDROID
 
 
 Utiles::Utiles(QObject *padre)
-	: QObject(padre) {}
+	: QObject(padre) {
+#ifdef Q_OS_ANDROID
+	_instanciaUtiles = this;
+
+	JNINativeMethod metodosNativosJava[] {
+		{"notificarSeleccionRutaDescarga", "(Ljava/lang/String;)V", reinterpret_cast<void *>(_notificarSeleccionRuta)},
+		{"notificarSeleccionArchivoDescarga", "(I)V", reinterpret_cast<void *>(_notificarSeleccionArchivoDescarga)},
+		{"notificarArchivoCompartido", "(Ljava/lang/String;)V", reinterpret_cast<void *>(_notificarArchivoCompartido)}
+	};
+	QAndroidJniEnvironment env;
+	jclass objetoClase = env->GetObjectClass(QtAndroid::androidActivity().object<jobject>());
+	env->RegisterNatives(objetoClase, metodosNativosJava, sizeof(metodosNativosJava) / sizeof(metodosNativosJava[0]));
+	env->DeleteLocalRef(objetoClase);
+#endif // Q_OS_ANDROID
+}
 
 void Utiles::establecerObjetoModeloPaquetes(ModeloPaquetes *objeto) {
 	_modeloPaquetes = objeto;
@@ -334,39 +363,71 @@ void Utiles::restablecerDatosFabrica() {
 	QApplication::quit();
 }
 
+QVariant Utiles::obtenerRutaSistema(int indice) {
+#ifdef Q_OS_ANDROID
+	return QVariant(QtAndroid::androidActivity().callObjectMethod("obtenerRutaSistema", "(I)Ljava/lang/String;", indice).toString());
+#else
+	Q_UNUSED(indice)
+
+	return QVariant();
+#endif // Q_OS_ANDROID
+}
+
+void Utiles::seleccionarRutaExterno() {
+#ifdef Q_OS_ANDROID
+	QtAndroid::androidActivity().callMethod<void>("seleccionarRutaExterno");
+#endif // Q_OS_ANDROID
+}
+
+void Utiles::reportarSeleccionRutaDescarga(const QString &ruta) {
+	emit notificarSeleccionRuta(ruta);
+}
+
+void Utiles::reportarSeleccionArchivoDescarga(int descriptor) {
+	emit notificarSeleccionArchivoDescarga(descriptor);
+}
+
+void Utiles::reportarArchivoCompartido(const QString &ruta) {
+	emit notificarArchivoCompartido(ruta);
+}
+
+void Utiles::seleccionarArchivoDescarga() {
+#ifdef Q_OS_ANDROID
+	QtAndroid::androidActivity().callMethod<void>("seleccionarArchivoDescarga");
+#endif
+}
+
 void Utiles::crearDirectorio(const QString &ubicacion) {
+/*#ifdef Q_OS_ANDROID
+	QAndroidJniObject jniRuta = QAndroidJniObject::fromString(ubicacion);
+
+	QtAndroid::androidActivity().callMethod<void>("crearDirectorio", "(Ljava/lang/String;)V", jniRuta.object<jstring>());
+#else*/
 	QDir directorio;
 	QString ruta = rutaDesdeURI(ubicacion);
-
-	otorgarPermisosDirectorio(ubicacion);
 
 	if (directorio.exists(ruta) == false) {
 		directorio.mkpath(ruta);
 	}
-}
-
-void Utiles::otorgarPermisosDirectorio(const QString &ruta) {
-#ifdef Q_OS_ANDROID
-	QAndroidJniObject jniRuta = QAndroidJniObject::fromString(ruta);
-
-	QtAndroid::androidActivity().callMethod<void>("otorgarPermisosDirectorio", "(Ljava/lang/String;)V", jniRuta.object<jstring>());
-#else
-	Q_UNUSED(ruta);
-#endif
+//#endif // Q_OS_ANDROID
 }
 
 QString Utiles::rutaDesdeURI(const QString &uri) {
 	QString ruta = QByteArray::fromPercentEncoding(uri.toUtf8());
 
 #ifdef Q_OS_ANDROID
-	QAndroidJniObject jniPath = QAndroidJniObject::fromString(uri);
-	QAndroidJniObject jniUri = QAndroidJniObject::callStaticObjectMethod("android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;", jniPath.object());
+	if (ruta.startsWith("file://") == false) {
+		QAndroidJniObject jniPath = QAndroidJniObject::fromString(uri);
+		QAndroidJniObject jniUri = QAndroidJniObject::callStaticObjectMethod("android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;", jniPath.object());
 
-	ruta = QAndroidJniObject::callStaticObjectMethod(
-			  "org/ekkescorner/utils/QSharePathResolver", "getRealPathFromURI",
-			  "(Landroid/content/Context;Landroid/net/Uri;)Ljava/lang/String;",
-			  QtAndroid::androidContext().object(), jniUri.object()
-	).toString();
+		ruta = QAndroidJniObject::callStaticObjectMethod(
+				  "org/ekkescorner/utils/QSharePathResolver", "getRealPathFromURI",
+				  "(Landroid/content/Context;Landroid/net/Uri;)Ljava/lang/String;",
+				  QtAndroid::androidContext().object(), jniUri.object()
+		).toString();
+	}
+
+	ruta.replace("file://", "");
 #else
 #ifdef Q_OS_WINDOWS
 	ruta.replace("file:///", "");
@@ -419,4 +480,30 @@ void Utiles::activarProgramacionFinalizarColaTransferencias(bool activar) {
 			_temporizadorProgramacionFinalizarColaTransferencias.stop();
 		}
 	}
+}
+
+QString Utiles::representarTamano(qint64 tamano) {
+	QStringList listadoUnidadesTamano { "B", "KiB", "MiB", "GiB", "TiB" };
+	qint64 unidadTamano = 0;
+	double tamanoAProcesar = tamano;
+	QString representacion = "0 B";
+
+	try {
+		while (tamanoAProcesar > 1024) {
+			tamanoAProcesar /= 1024;
+			unidadTamano++;
+		}
+
+		if (unidadTamano < 2) {
+			representacion = QString::number((qint64)tamanoAProcesar) + " " + listadoUnidadesTamano[unidadTamano];
+		} else {
+			if (tamanoAProcesar - (qint64)tamanoAProcesar > 0) {
+				representacion = QString::number(tamanoAProcesar, 'g', QString::number((qint64)tamanoAProcesar).size() + 2) + " " + listadoUnidadesTamano[unidadTamano];
+			} else {
+				representacion = QString::number((qint64)tamanoAProcesar) + " " + listadoUnidadesTamano[unidadTamano];
+			}
+		}
+	} catch (std::exception &) {}
+
+	return representacion;
 }

@@ -111,11 +111,10 @@ bool HTTP::ejecutar() {
 	solicitud.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);
 	solicitud.setAttribute(QNetworkRequest::CacheSaveControlAttribute, false);
 	solicitud.setAttribute(QNetworkRequest::BackgroundRequestAttribute, true);
-	solicitud.setAttribute(QNetworkRequest::Http2AllowedAttribute, false);
 	solicitud.setPriority(QNetworkRequest::Priority::HighPriority);
 
 	for (const QString &cabecera : _cabecerasSolicitud.keys()) {
-		solicitud.setRawHeader(cabecera.toLocal8Bit(), _cabecerasSolicitud[cabecera].toLocal8Bit());
+		solicitud.setRawHeader(cabecera.toUtf8(), _cabecerasSolicitud[cabecera].toUtf8());
 	}
 
 	_error = false;
@@ -276,7 +275,7 @@ void HTTP::eventoFinalizado() {
 				_error = false;
 				emit finalizado(_id);
 			} else {
-				if (_metodo == HTTP::Metodo::OBTENER && _codigoHTTP < 300) {
+				if (_metodo == HTTP::Metodo::OBTENER && (_codigoHTTP < 300 || _codigoHTTP == 502)) {
 					emit detenidoParaReiniciar(_id);
 				} else {
 					emit detenido(_id);

@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.12
 import QtQuick.Controls 2.12
 import QtQuick.Controls.Material 2.12
 import QtMultimedia 5.12
-import cu.atds3.librerias 1.0
+import cu.atds3.librerias 1.6
 import "qrc:/qml/configuracion"
 import "qrc:/qml/principal"
 
@@ -13,6 +13,8 @@ import "qrc:/qml/principal"
 ApplicationWindow {
 	property bool orientacionHorizontal: width > 649
 	property bool sistemaOperativoAndroid: Qt.platform.os.toLowerCase() === "android"
+	property string androidRutaPrimario: ""
+	property string androidRutaExterno: ""
 	property color colorPrimario: Material.color(colorTemaPrimario(), Material.Shade800)
 	property int colorAcento: colorTemaPrimario()
 	property string estadoListadoCategorias: configuraciones.valor("atds3/estadoListadoCategorias", "expandido")
@@ -239,6 +241,15 @@ ApplicationWindow {
 
 	Component.onCompleted: {
 		let registroCategoria = modeloCategorias.obtener(categoriaActual)
+
+		if (sistemaOperativoAndroid === true) {
+			androidRutaPrimario = utiles.obtenerRutaSistema(0);
+			androidRutaExterno = utiles.obtenerRutaSistema(1);
+
+			if (configuraciones.valor("descargas/ruta", "") === "") {
+				configuraciones.establecerValor("descargas/ruta", androidRutaPrimario);
+			}
+		}
 
 		utiles.establecerObjetoModeloPaquetes(modeloPaquetes)
 		utiles.iniciarMonitorizacionConexionTodus()

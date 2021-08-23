@@ -159,6 +159,7 @@ class toDus : public QObject {
 		void xmppSolicitarEnlaceSubida(qint64 id, int clasificacion);
 		void socaloWebAportarFicha();
 		void socaloWebSolicitarFicha();
+		QString socaloWebGenerarCadenaAcceso();
 };
 
 #endif // TODUS_HPP

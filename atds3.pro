@@ -17,7 +17,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 1.5.0
+VERSION = 1.6.0
 windows {
 	RC_ICONS = recursos/ico/atds3.ico
 	QMAKE_TARGET_COMPANY = ATDS3
@@ -60,15 +60,15 @@ DISTFILES +=	README.md \
 android {
 	DISTFILES +=	android-sources/AndroidManifest.xml \
 					android-sources/src/org/ekkescorner/utils/QSharePathResolver.java \
-					android-sources/src/cu/atds3/android/ActividadExtendida.java \
-					android-sources/src/cu/atds3/android/Archivos.java
+					android-sources/src/cu/atds3/android/Constantes.java \
+					android-sources/src/cu/atds3/android/ActividadExtendida.java
 }
 
 INCLUDEPATH += cabeceras
 
 unix: !android: QML_IMPORT_PATH += qml
-android: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
-windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.5.0/qml
+android: QML_IMPORT_PATH += c:/proyectos/atds3-1.6.0/qml
+windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.6.0/qml
 
 unix: !android: !macx {
 	INCLUDEPATH += /usr/include /usr/local/include
@@ -104,14 +104,14 @@ macx {
 
 android {
 	include(C:/android/sdk/android_openssl/openssl.pri)
-
+# android:requestLegacyExternalStorage="true"
 	JAVA_HOME = C:/Program Files/Java/jdk1.8.0_291
 #	ANDROID_ABIS = arm64-v8a armeabi-v7a
 	ANDROID_MIN_SDK_VERSION = 21
-	ANDROID_TARGET_SDK_VERSION = 29
-	ANDROID_PERMISSIONS = android.permission.ACCESS_NETWORK_STATE android.permission.ACCESS_WIFI_STATE android.permission.INTERNET android.permission.MANAGE_DOCUMENTS android.permission.READ_EXTERNAL_STORAGE android.permission.READ_USER_DICTIONARY android.permission.WRITE_EXTERNAL_STORAGE
-	ANDROID_VERSION_CODE = 0x1400
-	ANDROID_VERSION_NAME = 1.4.0
+	ANDROID_TARGET_SDK_VERSION = 30
+	ANDROID_PERMISSIONS = android.permission.ACCESS_NETWORK_STATE android.permission.ACCESS_WIFI_STATE android.permission.INTERNET android.permission.MANAGE_EXTERNAL_STORAGE android.permission.WRITE_EXTERNAL_STORAGE
+	ANDROID_VERSION_CODE = 0x1600
+	ANDROID_VERSION_NAME = 1.6.0
 	ANDROID_BUNDLED_JAR_DEPENDENCIES += jar/QtAndroid.jar jar/QtAndroidBearer.jar jar/QtAndroidExtras.jar jar/QtAndroidNetwork.jar jar/QtMultimedia.jar
 	ANDROID_PACKAGE_SOURCE_DIR = $${PWD}/android-sources
 

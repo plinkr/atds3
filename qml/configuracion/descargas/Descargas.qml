@@ -10,6 +10,8 @@ Page {
 	property string titulo: "Descargas"
 	property int alineacionColumnasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? Qt.AlignRight | Qt.AlignBaseline : Qt.AlignLeft | Qt.AlignBaseline
 	property int columnasIntegradasVistaVertical: ventanaPrincipal.orientacionHorizontal === true ? 1 : 3
+	property alias androidAlmacenamientoPrimario: androidAlmacenamientoPrimario
+	property alias androidAlmacenamientoExterno: androidAlmacenamientoExterno
 	property alias descargasRutas: descargasRutas
 	property alias descargasParalelas: descargasParalelas
 	property alias descargasEliminarDelListadoAlFinalizar: descargasEliminarDelListadoAlFinalizar
@@ -40,7 +42,6 @@ Page {
 					Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
 					Layout.fillWidth: true
 					columns: 3
-//					columnSpacing: 10
 
 					Subtitulo {
 						Layout.columnSpan: 3
@@ -56,12 +57,42 @@ Page {
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						text: "Ruta de guardado:"
 					}
+					RowLayout {
+						Layout.columnSpan: 2
+						Layout.fillWidth: true
+						visible: sistemaOperativoAndroid === true
+
+						RadioButton {
+							id: androidAlmacenamientoPrimario
+							text: "Primario"
+
+							onClicked: {
+								configuraciones.establecerValor("descargas/androidAlmacenamiento", 0)
+								configuraciones.establecerValor("descargas/ruta", androidRutaPrimario)
+								descargasRutas.text = utiles.rutaDesdeURI(androidRutaPrimario)
+							}
+						}
+						RadioButton {
+							id: androidAlmacenamientoExterno
+							text: "Externo"
+
+							onClicked: {
+								configuraciones.establecerValor("descargas/androidAlmacenamiento", 1)
+								configuraciones.establecerValor("descargas/ruta", androidRutaExterno)
+								descargasRutas.text = utiles.rutaDesdeURI(androidRutaExterno)
+//								utiles.seleccionarRutaExterno()
+							}
+						}
+					}
+					Label {
+						visible: sistemaOperativoAndroid === true && columnasIntegradasVistaVertical === 1
+					}
 					EntradaLineaTexto {
 						id: descargasRutas
 						Accessible.name: "Ruta de guardado"
 						Accessible.description: "Define la ruta en donde se guardarán las nuevas descargas. Dentro de esta ruta se crearán las carpetas de las categorías"
 						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
-						Layout.columnSpan: columnasIntegradasVistaVertical > 1 ? 2 : 1
+						Layout.columnSpan: sistemaOperativoAndroid === true ? (columnasIntegradasVistaVertical === 1 ? 2 : 3) : (columnasIntegradasVistaVertical > 1 ? 2 : 1)
 						Layout.fillWidth: true
 						readOnly: true
 					}
@@ -77,6 +108,7 @@ Page {
 						hoverEnabled: true
 						icon.source: "qrc:/svg/folder.svg"
 						text: "Examinar"
+						visible: sistemaOperativoAndroid === false
 
 						onClicked: dialogoCarpetas.open()
 					}
@@ -211,13 +243,42 @@ Page {
 
 	Component.onCompleted: {
 		let ruta = configuraciones.valor("descargas/ruta", rutaSistemaDescargas + "/atds3")
-		dialogoCarpetas.folder = ruta
-		descargasRutas.text = utiles.rutaDesdeURI(ruta)
-		descargasParalelas.value = configuraciones.valor("descargas/paralelas", 1)
+
+		if (sistemaOperativoAndroid === true) {
+			let androidAlmacenamiento = parseInt(configuraciones.valor("descargas/androidAlmacenamiento", 0));
+
+			androidAlmacenamientoPrimario.checked = androidAlmacenamiento === 0
+			androidAlmacenamientoExterno.checked = androidAlmacenamiento === 1
+
+			switch (androidAlmacenamiento) {
+				case 0:
+					descargasRutas.text = utiles.rutaDesdeURI(androidRutaPrimario)
+					break;
+				case 1:
+					descargasRutas.text = utiles.rutaDesdeURI(androidRutaExterno)
+					break;
+			}
+		} else {
+			dialogoCarpetas.folder = ruta
+			descargasRutas.text = utiles.rutaDesdeURI(ruta)
+		}
+		descargasParalelas.value = parseInt(configuraciones.valor("descargas/paralelas", 1))
 		descargasEliminarDelListadoAlFinalizar.checked = configuraciones.valor("descargas/eliminarDelListadoAlFinalizar", false)
 		deslizante.contentY = 1
 		deslizante.flick(0, 1)
 		deslizante.contentY = 0
 		descargasParalelas.forceActiveFocus()
 	}
+/*
+	Connections {
+		target: utiles
+
+		function onNotificarSeleccionRuta(ruta) {
+			let uri = decodeURIComponent(ruta)
+
+			configuraciones.establecerValor("descargas/ruta", uri)
+			descargasRutas.text = utiles.rutaDesdeURI(uri)
+		}
+	}
+*/
 }
