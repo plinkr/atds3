@@ -821,9 +821,9 @@ void ModeloPaquetes::procesarColaEjecucion() {
 
 			if (_paquetes.find(idPaquete) == _paquetes.end()) {
 				if (tipo == Tipos::Publicacion) {
-					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Publicacion. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Publicación. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << std::endl;
 				} else {
-					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << std::endl;
 				}
 
 				_paquetes.insert(idPaquete, new Paquete());
@@ -855,9 +855,9 @@ void ModeloPaquetes::procesarColaEjecucion() {
 
 			if (_paquetes.find(idPaquete) == _paquetes.end()) {
 				if (tipo == Tipos::Publicacion) {
-					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Publicacion. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Publicación. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << std::endl;
 				} else {
-					emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << idPaquete << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << std::endl;
 				}
 
 				_paquetes.insert(idPaquete, new Paquete());
@@ -1015,10 +1015,10 @@ void ModeloPaquetes::eventoTareaIniciada(qint64 id) {
 			}
 
 			if (_paquetes[tarea->paquete]->tipo == Tipos::Publicacion) {
-				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Publicacion. Tamano: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
+                emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Publicación. Tamaño: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
 			}
 			if (_paquetes[tarea->paquete]->tipo == Tipos::Descarga) {
-				emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Descarga. Tamano: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
+                emitirRegistro(TiposRegistro::Informacion, "TAREAS") << "[" << id << "] Tarea iniciada. Tipo: Descarga. Tamaño: " << _utiles->representarTamano(tarea->tamano).toStdString() << std::endl;
 			}
 
 			QMetaObject::invokeMethod(_qmlRaiz, "visualizarTareaIniciada", Qt::QueuedConnection, Q_ARG(QVariant, _paquetes[tarea->paquete]->categoria), Q_ARG(QVariant, tarea->paquete), Q_ARG(QVariant, _paquetes[tarea->paquete]->fila), Q_ARG(QVariant, tarea->fila));
@@ -1356,7 +1356,7 @@ void ModeloPaquetes::generarArchivoDescargaClasico(const QVariantMap &registroPa
 	QFile archivo;
 	QByteArray datos;
 
-	emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << registroPaquete["id"].toLongLong() << "] Generando archivo de descarga. Formato: Clasico" << std::endl;
+    emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << registroPaquete["id"].toLongLong() << "] Generando archivo de descarga. Formato: Clásico" << std::endl;
 
 	solicitudSQL.exec(QString("SELECT nombre, enlace FROM tareas WHERE (paquete = %1 AND estado = %2)").arg(registroPaquete["id"].toLongLong()).arg(Estados::Finalizado));
 	while (solicitudSQL.next() == true) {
@@ -1430,10 +1430,10 @@ void ModeloPaquetes::agregarPaqueteAlListado(qint64 id, int fila) {
 		_paquetes[id]->temporizadorActualizacionCampos.start();
 
 		if (tipo == Tipos::Publicacion) {
-			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Publicacion. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << ". Tamano: " << tamano << std::endl;
+            emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Publicación. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << ". Tamaño: " << tamano << std::endl;
 			_utiles->notificar("InicializacionPaquete", false, "Paquete de publicación iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		} else {
-			emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clasico") << std::endl;
+            emitirRegistro(TiposRegistro::Informacion, "PAQUETES") << "[" << id << "] Paquete iniciado. Tipo: Descarga. Formato: " << (formato == Formatos::S3 ? "S3" : "Clásico") << std::endl;
 			_utiles->notificar("InicializacionPaquete", false, "Paquete de descarga iniciado", "Título: " + _paquetes[id]->nombre + "\nTamaño: " + QString::number(_paquetes[id]->tamano) + " B", "incializacion-paquete.mp3");
 		}
 	}

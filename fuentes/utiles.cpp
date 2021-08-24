@@ -204,7 +204,7 @@ void Utiles::verificarProgramacionFinalizarColaTransferencias() {
 
 void Utiles::ejecutarAccionApagarPantalla() {
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_MACOS) || defined(Q_OS_WINDOWS)
-	emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Apangando la pantalla..." << std::endl;
+    emitirRegistro(TiposRegistro::Informacion, "UTIL") << "Apagando la pantalla..." << std::endl;
 #endif
 #if (defined(Q_OS_UNIX) || defined(Q_OS_LINUX)) && !defined(Q_OS_ANDROID) && !defined(Q_OS_MACOS)
 	Display *pantalla = QX11Info::display();

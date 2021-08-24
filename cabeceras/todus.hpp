@@ -90,7 +90,7 @@ class toDus : public QObject {
 			Ninguno = 0x00,
 			Saludo = 0x01,
 			MecanismosAutentificacion = 0x02,
-			Autenficicacion = 0x03,
+            Autentificacion = 0x03,
 			SesionIniciada = 0x04
 		};
 		struct SolicitudEnlaceFirmado {

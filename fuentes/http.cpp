@@ -294,7 +294,7 @@ void HTTP::eventoError(QNetworkReply::NetworkError errorSocalo) {
 			break;
 	}
 
-	emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Error en socalo: " << errorSocalo << "; Codigo HTTP: " << _codigoHTTP << std::endl;
+    emitirRegistro(TiposRegistro::Informacion, "HTTP") << "[" << _id << "] " << "Error en zócalo: " << errorSocalo << "; Código HTTP: " << _codigoHTTP << std::endl;
 
 	if (_id == 0) {
 		emit finalizado(_id);

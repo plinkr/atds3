@@ -166,11 +166,11 @@ void toDus::iniciarSesion() {
 	}
 
 	if (_fichaAccesoActual.isEmpty() == false && fichaAcceso.isEmpty() == false) {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Iniciando sesion" << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Iniciando sesión" << std::endl;
 
 		iniciarSesionConFichaAcceso();
 	} else if (telefono.isEmpty() == false) {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Iniciando sesion" << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Iniciando sesión" << std::endl;
 
 		solicitarCodigoSMS(telefono);
 	}
@@ -196,11 +196,11 @@ void toDus::eliminarTodasSolicitudesEnlaceFirmado(qint64 paquete) {
 
 void toDus::eventoFinalizadaCodigoSMS() {
 	if (_httpCodigoSMS->codigoHTTP() == 200 || _httpCodigoSMS->codigoHTTP() == 204) {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Codigo de verificacion por SMS solicitado." << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Código de verificación por SMS solicitado." << std::endl;
 
 		QMetaObject::invokeMethod(_qmlRaiz, "mostrarPantallaCodigoVerificacion", Qt::QueuedConnection);
 	} else {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrio un error al solicitar el codigo de verificacion por SMS" << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrió un error al solicitar el código de verificación por SMS" << std::endl;
 
 		QMetaObject::invokeMethod(_qmlRaiz, "mostrarPantallaFalloInicioSesion", Qt::QueuedConnection, Q_ARG(QVariant, _httpCodigoSMS->codigoHTTP()));
 	}
@@ -211,7 +211,7 @@ void toDus::eventoFinalizadaFichaSolicitud() {
 		toDusPB::RecepcionFichaSolicitud pbRecepcionFichaSolicitud;
 
 		if (pbRecepcionFichaSolicitud.ParseFromArray(_buferDescargaFichaSolicitud.constData(), _buferDescargaFichaSolicitud.size()) == true) {
-			emitirRegistro(TiposRegistro::Informacion, "toDus") << "Codigo verificado correctamente. Obteniendo ficha de solicitud" << std::endl;
+            emitirRegistro(TiposRegistro::Informacion, "toDus") << "Código verificado correctamente. Obteniendo ficha de solicitud" << std::endl;
 
 			_configuraciones.establecerValor("todus/fichaSolicitud", QByteArray(pbRecepcionFichaSolicitud.fichasolicitud().c_str()));
 /*
@@ -228,7 +228,7 @@ void toDus::eventoFinalizadaFichaSolicitud() {
 			solicitarFichaAcceso();
 		}
 	} else {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrio un error al verificar el codigo" << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrió un error al verificar el código" << std::endl;
 
 		desconectar();
 
@@ -256,7 +256,7 @@ void toDus::eventoFinalizadaFichaAcceso() {
 			iniciarSesionConFichaAcceso();
 		}
 	} else {
-		emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrio un error al recibir la ficha de acceso" << std::endl;
+        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Ocurrió un error al recibir la ficha de acceso" << std::endl;
 
 		_configuraciones.eliminar("todus/fichaSolicitud");
 	}
@@ -344,13 +344,13 @@ void toDus::eventoDatosRecibidos() {
 				re = QRegularExpression("<ok xmlns='x2'/>");
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
-					emitirRegistro(TiposRegistro::Informacion, "toDus") << "Sesion iniciada satisfactoriamente" << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "toDus") << "Sesión iniciada satisfactoriamente" << std::endl;
 
-					_progresoInicioSesion = ProgresoInicioSesion::Autenficicacion;
+                    _progresoInicioSesion = ProgresoInicioSesion::Autentificacion;
 					xmppSaludar();
 				} else {
 					if (_solicitudesFichaAcceso > 1) {
-						emitirRegistro(TiposRegistro::Informacion, "toDus") << "Fallo el inicio de sesion. Reintentando" << std::endl;
+                        emitirRegistro(TiposRegistro::Informacion, "toDus") << "Falló el inicio de sesión. Reintentando" << std::endl;
 
 						_configuraciones.eliminar("todus/fichaSolicitud");
 						_configuraciones.eliminar("todus/fichaAccesoTiempoExpiracion");
@@ -361,19 +361,19 @@ void toDus::eventoDatosRecibidos() {
 						desconectar();
 					} else {
 						if (_fichaAccesoActual == _configuraciones.valor("todus/fichaAcceso", "").toByteArray()) {
-							emitirRegistro(TiposRegistro::Informacion, "toDus") << "Fallo el inicio de sesion. Intentando solicitar una nueva ficha de acceso a toDus" << std::endl;
+                            emitirRegistro(TiposRegistro::Informacion, "toDus") << "Falló el inicio de sesión. Intentando solicitar una nueva ficha de acceso a toDus" << std::endl;
 
 							solicitarFichaAcceso();
 						} else {
-							emitirRegistro(TiposRegistro::Informacion, "PPF") << "La ficha de acceso obtenida no es valida." << std::endl;
+                            emitirRegistro(TiposRegistro::Informacion, "PPF") << "La ficha de acceso obtenida no es válida." << std::endl;
 
 							socaloWebSolicitarFicha();
 						}
 					}
 				}
 				break;
-			case ProgresoInicioSesion::Autenficicacion: // Respuesta satisfactoria al intento de establecer sesión
-///				re = QRegularExpression(".*<stream:stream i='.+' v='1.0' xml:lang='en' xmlns:stream='x1' f='im.todus.cu' xmlns='jc'>.*", QRegularExpression::CaseInsensitiveOption);
+            case ProgresoInicioSesion::Autentificacion: // Respuesta satisfactoria al intento de establecer sesión
+//				re = QRegularExpression(".*<stream:stream i='.+' v='1.0' xml:lang='en' xmlns:stream='x1' f='im.todus.cu' xmlns='jc'>.*", QRegularExpression::CaseInsensitiveOption);
 				re = QRegularExpression(".*<stream:features><b1 xmlns='x4'/>.+</stream:features>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
@@ -387,7 +387,7 @@ void toDus::eventoDatosRecibidos() {
 				re = QRegularExpression("<iq t='result' i='.+'><b1 xmlns='x4'><jid>(.+)</jid><sid>.+</sid></b1></iq>", QRegularExpression::CaseInsensitiveOption);
 				rem = re.match(bufer);
 				if (rem.hasMatch() == true) {
-					emitirRegistro(TiposRegistro::Informacion, "toDus") << "Sesion de mensajeria establecida" << std::endl;
+                    emitirRegistro(TiposRegistro::Informacion, "toDus") << "Sesión de mensajería establecida" << std::endl;
 
 					_jID = rem.captured(1);
 //					xmppEstablecerTiempoInactividad();
@@ -520,7 +520,7 @@ void toDus::solicitarCodigoSMS(const QString &telefono) {
 	std::string datos;
 	toDusPB::SolicitudSMS pbSolicitudSMS;
 
-	emitirRegistro(TiposRegistro::Informacion, "toDus") << "Solicitando codigo de verificacion por SMS" << std::endl;
+    emitirRegistro(TiposRegistro::Informacion, "toDus") << "Solicitando código de verificación por SMS" << std::endl;
 
 	_httpCodigoSMS = new HTTP(this);
 
@@ -556,7 +556,7 @@ void toDus::solicitarFichaSolicitud(const QString &codigo) {
 	std::string datos;
 	toDusPB::SolicitudFichaSolicitud pbSolicitudFichaSolicitud;
 
-	emitirRegistro(TiposRegistro::Informacion, "toDus") << "Verificando el codigo de verificacion suministrado" << std::endl;
+    emitirRegistro(TiposRegistro::Informacion, "toDus") << "Verificando el código de verificación suministrado" << std::endl;
 
 	_httpFichaSolicitud = new HTTP(this);
 
@@ -635,7 +635,7 @@ void toDus::iniciarSesionConFichaAcceso() {
 	QString servidorMensajeria = _configuraciones.valor("avanzadas/servidorMensajeria", "im.todus.cu").toString();
 	int servidorMensajeriaPuerto = _configuraciones.valor("avanzadas/servidorMensajeriaPuerto", 1756).toInt();
 
-	//emitirRegistro(TiposRegistro::Depuracion, "toDus") << "Conectando a " << nombreDNSServidorSesion.toStdString() << ":" << puertoServidorSesion << std::endl;
+//	emitirRegistro(TiposRegistro::Depuracion, "toDus") << "Conectando a " << nombreDNSServidorSesion.toStdString() << ":" << puertoServidorSesion << std::endl;
 
 //	_dominioJID = servidorMensajeriaPuerto;
 
