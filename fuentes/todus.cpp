@@ -470,7 +470,7 @@ void toDus::eventoDatosRecibidos() {
 								modeloPaquetes->iniciarPublicacion(_listadoSolicitudesEnlacesFirmados[id].paquete, id, enlace, enlaceFirmado);
 								_listadoSolicitudesEnlacesFirmados.remove(id);
 							} else {
-								socaloWebSolicitarFicha();
+								socaloWebSolicitarFicha(true);
 							}
 						}
 					}
@@ -822,18 +822,23 @@ void toDus::eventoPPFSocaloWebVerificarConexion() {
 
 void toDus::socaloWebAportarFicha() {
 	if (_estadoSocaloWeb == Estados::Conectado) {
-		emitirRegistro(TiposRegistro::Informacion, "PPF") << "Aportando la ficha de acceso del usuario configurado" << std::endl;
+		if (_configuraciones.valor("todus/programaPiscinaFichasInternetSoloPublicacion", false).toBool() == true) {
+			emitirRegistro(TiposRegistro::Informacion, "PPF") << "Aportando la ficha de acceso del usuario configurado (Solo publicacion: Si)" << std::endl;
+		} else {
+			emitirRegistro(TiposRegistro::Informacion, "PPF") << "Aportando la ficha de acceso del usuario configurado" << std::endl;
+		}
 
-		_socaloWeb.sendTextMessage(QString("{\"accion\":\"aportarFicha\",\"acceso\":\"%1\",\"ficha\":\"%2\",\"expiracion\":%3}").arg(socaloWebGenerarCadenaAcceso()).arg(_configuraciones.valor("todus/fichaAcceso").toString()).arg(_configuraciones.valor("todus/fichaAccesoTiempoExpiracion").toLongLong()));
+		_socaloWeb.sendTextMessage(QString("{\"accion\":\"aportarFicha\",\"acceso\":\"%1\",\"ficha\":\"%2\",\"expiracion\":%3,\"solo_publicacion\":%4}").arg(socaloWebGenerarCadenaAcceso()).arg(_configuraciones.valor("todus/fichaAcceso").toString()).arg(_configuraciones.valor("todus/fichaAccesoTiempoExpiracion").toLongLong()).arg(_configuraciones.valor("todus/programaPiscinaFichasInternetSoloPublicacion", false).toBool()));
 		_socaloWebFichaAportada = true;
 
 		if (_listadoSolicitudesEnlacesFirmados.size() == 0) {
 			_socaloWeb.close();
+			desconectar();
 		}
 	}
 }
 
-void toDus::socaloWebSolicitarFicha() {
+void toDus::socaloWebSolicitarFicha(bool publicacion) {
 	if (_configuraciones.valor("todus/programaPiscinaFichas", false).toBool() == true && _estado == Estados::Listo) {
 		QString programaPiscinaFichasLocal = _configuraciones.valor("todus/programaPiscinaFichasLocal", "").toString();
 
@@ -875,7 +880,7 @@ void toDus::socaloWebSolicitarFicha() {
 					_listadoSolicitudesEnlacesFirmados[id].reintentos = 0;
 				}
 
-				_socaloWeb.sendTextMessage(QString("{\"accion\":\"solicitarFicha\",\"acceso\":\"%1\"}").arg(socaloWebGenerarCadenaAcceso()));
+				_socaloWeb.sendTextMessage(QString("{\"accion\":\"solicitarFicha\",\"acceso\":\"%1\",\"publicacion\":%2}").arg(socaloWebGenerarCadenaAcceso()).arg(publicacion));
 			} else {
 				iniciarPPF();
 			}

@@ -31,5 +31,6 @@
         <file>qml/principal/BotonesPaquetes.qml</file>
         <file>qml/principal/BotonesTransferencias.qml</file>
         <file>qml/configuracion/programacion/Programacion.qml</file>
+        <file>qml/configuracion/donar/Donar.qml</file>
     </qresource>
 </RCC>

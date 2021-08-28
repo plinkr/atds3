@@ -158,7 +158,7 @@ class toDus : public QObject {
 		void xmppSolicitarEnlaceDescarga(qint64 id);
 		void xmppSolicitarEnlaceSubida(qint64 id, int clasificacion);
 		void socaloWebAportarFicha();
-		void socaloWebSolicitarFicha();
+		void socaloWebSolicitarFicha(bool publicacion = false);
 		QString socaloWebGenerarCadenaAcceso();
 };
 
