@@ -81,10 +81,10 @@ Page {
 							return `<p><i>ATDS3</i> es una aplicación para escritorio y móviles que automatiza el proceso de publicación y descarga de archivos hacia/desde los servidores de la red toDus (S3).</p>
 <p><i>ATDS3</i> posee las siguientes características:</p>
 <ul>
-  <li><b>Multiplataforma</b>: Puede ser utilizado en cualquier sistema operativo que en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS, Windows y Android.</li>
+  <li><b>Multiplataforma</b>: Puede ser utilizado en cualquier sistema operativo en donde la librería Qt pueda funcionar: UNIX (FreeBSD, NetBSD, OpenBSD), Linux, macOS, Windows y Android.</li>
   <li><b>Fácil de usar</b>: Es fácil de usar gracias a la intuitiva interfaz de usuario que posee.</li>
   <li><b>Configurable</b>: Ofrece diversas opciones configurables que definen el comportamiento de diversas secciones.</li>
-  <li><b>Completamente asincrónico</b>: Es totalmente asincrónico, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.</li>
+  <li><b>Completamente asíncrono</b>: Es totalmente asíncrono, por lo que podrá realizar varias operaciones de publicaciones y descargas al mismo tiempo.</li>
   <li><b>Ajustado al protocolo de red de toDus</b>: Está ajustado lo mayormente posible al protocolo de red que utiliza toDus, incluyendo inicios de sesión partiendo del número telefónico.</li>
   <li><b>Inteligente</b>: Tiene escrito código para comportarse de forma inteligente dependiendo de la situación de la red.</li>
 </ul>`
@@ -106,7 +106,22 @@ Page {
 
                         onLinkActivated: Qt.openUrlExternally(link)
 					}
-                }
+					Label {
+						Layout.fillWidth: true
+						Layout.topMargin: 20
+						font.pointSize: ventanaPrincipal.font.pointSize + 1
+						text: "<p><b>Código fuente</b></p><p><br/><i>ATDS3: <a href=\"https://github.com/leiniercs/atds3-publico\">https://github.com/leiniercs/atds3-publico</a></i></p><p><br/><i>Servidor PPF: <a href=\"https://github.com/leiniercs/atds3-ppf-publico\">https://github.com/leiniercs/atds3-ppf-publico</a></i></p>"
+						wrapMode: Label.WordWrap
+
+						MouseArea {
+							anchors.fill: parent
+							acceptedButtons: Qt.NoButton
+							cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+						}
+
+						onLinkActivated: Qt.openUrlExternally(link)
+					}
+				}
 			}
 		}
 	}

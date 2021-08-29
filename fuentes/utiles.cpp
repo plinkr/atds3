@@ -320,12 +320,14 @@ void Utiles::BSDSolicitarEstadoACPI(int estadoACPI) {
 
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 void Utiles::LinuxSolicitarEstadoACPI(const std::string &estadoACPI) {
+/*
 	int daACPI = open("/sys/power/state", O_RDWR);
 
 	if (daACPI != -1) {
 		write(daACPI, estadoACPI.c_str(), estadoACPI.size());
 		close(daACPI);
 	}
+*/
 }
 #endif
 

@@ -17,7 +17,7 @@ TEMPLATE = app
 
 TARGET = atds3
 
-VERSION = 1.6.0
+VERSION = 1.7.0
 windows {
 	RC_ICONS = recursos/ico/atds3.ico
 	QMAKE_TARGET_COMPANY = ATDS3
@@ -67,8 +67,8 @@ android {
 INCLUDEPATH += cabeceras
 
 unix: !android: QML_IMPORT_PATH += qml
-android: QML_IMPORT_PATH += c:/proyectos/atds3-1.6.0/qml
-windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.6.0/qml
+android: QML_IMPORT_PATH += c:/proyectos/atds3-1.7.0/qml
+windows: QML_IMPORT_PATH += c:/proyectos/atds3-1.7.0/qml
 
 unix: !android: !macx {
 	INCLUDEPATH += /usr/include /usr/local/include
@@ -110,8 +110,8 @@ android {
 	ANDROID_MIN_SDK_VERSION = 21
 	ANDROID_TARGET_SDK_VERSION = 30
 	ANDROID_PERMISSIONS = android.permission.ACCESS_NETWORK_STATE android.permission.ACCESS_WIFI_STATE android.permission.INTERNET android.permission.MANAGE_EXTERNAL_STORAGE android.permission.WRITE_EXTERNAL_STORAGE
-	ANDROID_VERSION_CODE = 0x1600
-	ANDROID_VERSION_NAME = 1.6.0
+	ANDROID_VERSION_CODE = 0x1700
+	ANDROID_VERSION_NAME = 1.7.0
 	ANDROID_BUNDLED_JAR_DEPENDENCIES += jar/QtAndroid.jar jar/QtAndroidBearer.jar jar/QtAndroidExtras.jar jar/QtAndroidNetwork.jar jar/QtMultimedia.jar
 	ANDROID_PACKAGE_SOURCE_DIR = $${PWD}/android-sources
 

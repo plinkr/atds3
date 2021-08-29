@@ -13,6 +13,8 @@ Page {
 	property alias toDusFichaAcceso: toDusFichaAcceso
 	property alias toDusProgramaPiscinaFichas: toDusProgramaPiscinaFichas
 	property alias toDusProgramaPiscinaFichasInternet: toDusProgramaPiscinaFichasInternet
+	property alias toDusProgramaPiscinaFichasInternetSoloPublicacion: toDusProgramaPiscinaFichasInternetSoloPublicacion
+	property alias toDusProgramaPiscinaFichasInternetSoloPublicacionInstruccion: toDusProgramaPiscinaFichasInternetSoloPublicacionInstruccion
 	property alias pantallaPPFInformacion: pantallaPPFInformacion
 
 	Accessible.role: Accessible.Pane
@@ -157,7 +159,13 @@ Page {
 							hoverEnabled: true
 							text: "<b>Programa Piscina de Fichas de ATDS3</b>"
 
-							onToggled: configuraciones.establecerValor("todus/programaPiscinaFichas", checked)
+							onToggled: {
+								configuraciones.establecerValor("todus/programaPiscinaFichas", checked)
+
+								if (checked === true && toDusProgramaPiscinaFichasInternet.checked === true) {
+									modeloPaquetes.iniciarSesionToDus()
+								}
+							}
 						}
 						Button {
 							Accessible.role: Accessible.Button
@@ -187,7 +195,13 @@ Page {
 						enabled: toDusProgramaPiscinaFichas.checked
 						text: "Utilizar el proveedor de fichas de Internet"
 
-						onToggled: configuraciones.establecerValor("todus/programaPiscinaFichasInternet", checked)
+						onToggled: {
+							configuraciones.establecerValor("todus/programaPiscinaFichasInternet", checked)
+
+							if (checked === true) {
+								modeloPaquetes.iniciarSesionToDus()
+							}
+						}
 					}
 					Label {
 						Layout.columnSpan: columnasIntegradasVistaVertical
@@ -201,7 +215,41 @@ Page {
 						text: "Habilitando esta opción usted autoriza a ATDS3 a conectarse al servidor del Programa Piscina de Fichas de ATDS3 para aportar su ficha de acceso de la red toDus y solicitar las otras fichas de acceso para evadir los límites."
 						wrapMode: Label.WordWrap
 					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Switch {
+						id: toDusProgramaPiscinaFichasInternetSoloPublicacion
+						Accessible.role: Accessible.CheckBox
+						Accessible.name: text
+						Accessible.description: toDusProgramaPiscinaFichasInternetSoloPublicacionInstruccion.text
+						Layout.alignment: Qt.AlignLeft | Qt.AlignBaseline
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						hoverEnabled: true
+						enabled: toDusProgramaPiscinaFichas.checked && toDusProgramaPiscinaFichasInternet.checked
+						text: "Aportar solo para publicaciones"
 
+						onToggled: configuraciones.establecerValor("todus/programaPiscinaFichasInternetSoloPublicacion", checked)
+					}
+					Label {
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						visible: columnasIntegradasVistaVertical === 1
+					}
+					Label {
+						id: toDusProgramaPiscinaFichasInternetSoloPublicacionInstruccion
+						Layout.columnSpan: columnasIntegradasVistaVertical
+						Layout.fillWidth: true
+						enabled: toDusProgramaPiscinaFichas.checked && toDusProgramaPiscinaFichasInternet.checked
+						font.pointSize: ventanaPrincipal.font.pointSize - 2
+						text: "Habilitando esta opción usted instruye a ATDS3 a que aporte su ficha de acceso solo para ser utilizada en el proceso de publicación. Si la desactiva, entonces su ficha de acceso será utilizada para publicar y descargar."
+						wrapMode: Label.WordWrap
+					}
+
+					Label {
+						Layout.columnSpan: 2
+					}
 					Label {
 						Layout.columnSpan: columnasIntegradasVistaVertical
 						visible: columnasIntegradasVistaVertical === 1
@@ -260,6 +308,7 @@ Page {
 		toDusFichaAcceso.text = configuraciones.valor("todus/fichaAcceso", "")
 		toDusProgramaPiscinaFichas.checked = parseInt(configuraciones.valor("todus/programaPiscinaFichas", false))
 		toDusProgramaPiscinaFichasInternet.checked = parseInt(configuraciones.valor("todus/programaPiscinaFichasInternet", true))
+		toDusProgramaPiscinaFichasInternetSoloPublicacion.checked = parseInt(configuraciones.valor("todus/programaPiscinaFichasInternetSoloPublicacion", false))
 		toDusProgramaPiscinaFichasLocal.text = configuraciones.valor("todus/programaPiscinaFichasLocal", "")
 		deslizante.contentY = 1
 		deslizante.flick(0, 1)

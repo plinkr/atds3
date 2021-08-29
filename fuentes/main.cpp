@@ -13,11 +13,9 @@
 #include "modeloiconocategorias.hpp"
 #include "modelotareas.hpp"
 #include "modelopaquetes.hpp"
+#include <QApplication>
 #ifdef Q_OS_ANDROID
 #include <QtAndroid>
-#include <QGuiApplication>
-#else
-#include <QApplication>
 #endif
 #include <QIcon>
 #include <QSettings>
@@ -119,7 +117,7 @@ int main(int argc, char *argv[])
 	_organizacionDominio = "atds3.cu";
 	_aplicacionNombreCorto = "atds3";
 	_aplicacionTitulo = "Administrador de Transferencias para toDus (S3)";
-	_aplicacionVersion ="1.6.0";
+	_aplicacionVersion ="1.7.0";
 	_agenteUsuarioTodus = "ToDus 0.40.30";
 	_numeroVersionTodus = "21834";
 #ifdef Q_OS_WIN
@@ -132,19 +130,11 @@ int main(int argc, char *argv[])
 	 * Inicializacion de la variables y atributos de la aplicacion
 	 */
 
-#ifdef Q_OS_ANDROID
-	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	QGuiApplication::setOrganizationName(_organizacionNombre);
-	QGuiApplication::setOrganizationDomain(_organizacionDominio);
-	QGuiApplication::setApplicationName(_aplicacionNombreCorto);
-	QGuiApplication::setApplicationVersion(_aplicacionVersion);
-#else
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 	QApplication::setOrganizationName(_organizacionNombre);
 	QApplication::setOrganizationDomain(_organizacionDominio);
 	QApplication::setApplicationName(_aplicacionNombreCorto);
 	QApplication::setApplicationVersion(_aplicacionVersion);
-#endif
 
 #ifdef Q_OS_WINDOWS
 	/*
@@ -157,11 +147,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-#ifdef Q_OS_ANDROID
-	QGuiApplication app(argc, argv);
-#else
 	QApplication app(argc, argv);
-#endif
 	app.setApplicationDisplayName(_aplicacionTitulo);
 	app.setWindowIcon(QIcon(":/svg/atds3.svg"));
 
@@ -219,7 +205,7 @@ int main(int argc, char *argv[])
 
 	QObject::connect(&maquinaQML, &QQmlApplicationEngine::objectCreated, &app, [&](QObject *obj, const QUrl &objUrl) {
 		if (!obj && url == objUrl) {
-			QCoreApplication::exit(-1);
+			QCoreApplication::exit(codigoSalida);
 		} else {
 			// Guardar la referencia al objeto raiz de la interfaz de usuario creada en QML
 			_qmlRaiz = obj;

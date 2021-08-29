@@ -10,6 +10,7 @@ import "qrc:/qml/configuracion/programacion"
 import "qrc:/qml/configuracion/notificaciones"
 import "qrc:/qml/configuracion/proxy"
 import "qrc:/qml/configuracion/avanzadas"
+import "qrc:/qml/configuracion/donar"
 import "qrc:/qml/configuracion/informacion"
 
 
@@ -24,6 +25,7 @@ Page {
 	property alias pantallaConfiguracionNotificaciones: pantallaConfiguracionNotificaciones
 	property alias pantallaConfiguracionProxy: pantallaConfiguracionProxy
 	property alias pantallaConfiguracionAvanzadas: pantallaConfiguracionAvanzadas
+	property alias pantallaConfiguracionDonar: pantallaConfiguracionDonar
 	property alias pantallaConfiguracionInformacion: pantallaConfiguracionInformacion
 
 	Accessible.role: Accessible.Pane
@@ -97,6 +99,11 @@ Page {
 							descripcion: "Define opciones variadas de nivel avanzado."
 						}
 						ListElement {
+							icono: "qrc:/svg/donate.svg"
+							titulo: "Realizar una donación"
+							descripcion: "Muestra información sobre cómo realizar una donación al creador de la aplicación."
+						}
+						ListElement {
 							icono: "qrc:/svg/info-circle.svg"
 							titulo: "Información"
 							descripcion: "Muestra información variada de la aplicación."
@@ -148,7 +155,10 @@ Page {
 								case 7: // Avanzadas
 									vistaApilable.push(pantallaConfiguracionAvanzadas)
 									break;
-								case 8: // Informacion
+								case 8: // Donar
+									vistaApilable.push(pantallaConfiguracionDonar)
+									break;
+								case 9: // Informacion
 									vistaApilable.push(pantallaConfiguracionInformacion)
 									break;
 								default:
@@ -205,6 +215,12 @@ Page {
 		id: pantallaConfiguracionAvanzadas
 
 		Avanzadas {}
+	}
+
+	Component {
+		id: pantallaConfiguracionDonar
+
+		Donar {}
 	}
 
 	Component {
